@@ -19,6 +19,9 @@ COPY . .
 # Set environment variables for build
 ENV NODE_ENV=production
 
+# Install bash for our build script
+RUN apk add --no-cache bash
+
 # Build the application using our custom script
 RUN bash scripts/build.sh
 
@@ -33,19 +36,16 @@ RUN adduser --system --uid 1001 nextjs
 
 # Copy the built application
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-# Ensure .next directory has correct permissions
-RUN chown -R nextjs:nodejs .next
+# Verify .next directory exists before starting (as root before switching user)
+RUN ls -la .next/prerender-manifest.json
 
 USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-
-# Verify .next directory exists before starting
-RUN ls -la .next/prerender-manifest.json
 
 CMD ["npm", "start"]
