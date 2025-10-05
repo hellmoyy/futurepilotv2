@@ -41,28 +41,32 @@
    - Environment variables are validated at runtime, not during build
 
 4. **Deploy**
-   - Railway will automatically detect Next.js
-   - Build command: `bash scripts/build.sh`
-   - Start command: `npm start`
-   - Build time: ~2-3 minutes
-   - Uses standard Next.js build (not standalone mode)
+   - Railway will use custom Dockerfile
+   - Builder: DOCKERFILE (not NIXPACKS)
+   - Build time: ~3-4 minutes (multi-stage build)
+   - Uses custom multi-stage Docker build for reliability
 
 ## Build Configuration
 
 ### `railway.toml`
 ```toml
 [build]
-builder = "NIXPACKS"
-buildCommand = "bash scripts/build.sh"
+builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 [env]
 NODE_ENV = "production"
 ```
+
+### `Dockerfile`
+- **Custom multi-stage build** for guaranteed .next directory preservation
+- **Builder stage:** Runs build process and creates .next artifacts
+- **Runner stage:** Copies built artifacts and runs production server
+- **Alpine Linux** for optimized image size
+- **Explicit .next copying** ensures all build artifacts are available
 
 ### `next.config.js`
 - **Standard Build:** Uses default Next.js output (not standalone)
@@ -98,12 +102,13 @@ Starting...
 - `npm start` requires the full `.next/` directory to run
 
 **Solution Implemented:**
-- **Removed `.next` from `.dockerignore`**
-- Added comment: `# .next - DO NOT IGNORE, needed for production`
-- Build artifacts now included in deployment container
-- All necessary files available at runtime
+- **Switched from NIXPACKS to custom Dockerfile**
+- Multi-stage Docker build explicitly copies .next directory
+- Builder stage creates build artifacts, runner stage uses them
+- Added verification step to ensure prerender-manifest.json exists
+- Dockerfile has explicit control over what gets copied
 
-**Important:** Never add `.next` to `.dockerignore` when deploying Next.js!
+**Alternative tried:** Removed `.next` from `.dockerignore` but NIXPACKS still had issues
 
 ### ✅ FIXED: Environment Variables at Build Time
 
