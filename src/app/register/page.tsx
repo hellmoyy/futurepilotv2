@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const referralCode = searchParams.get('ref');
+  const referralCode = searchParams?.get('ref') || null;
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

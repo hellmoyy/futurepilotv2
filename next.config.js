@@ -6,6 +6,10 @@ const nextConfig = {
   },
   // Output configuration for deployment
   output: 'standalone',
+  // Skip generating error pages at build time
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
 }
 
 module.exports = nextConfig
