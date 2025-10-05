@@ -42,9 +42,10 @@
 
 4. **Deploy**
    - Railway will automatically detect Next.js
-   - Build command: `npm run build`
-   - Start command: `npm start`
+   - Build command: `bash scripts/build.sh`
+   - Start command: `node .next/standalone/server.js`
    - Build time: ~2-3 minutes
+   - Uses Next.js standalone output for optimized deployment
 
 ## Build Configuration
 
@@ -55,7 +56,7 @@ builder = "NIXPACKS"
 buildCommand = "bash scripts/build.sh"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node .next/standalone/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
@@ -70,10 +71,34 @@ NODE_ENV = "production"
 
 ### `scripts/build.sh`
 - Custom build script that validates successful page generation
+- Runs postbuild script to prepare standalone deployment
 - Handles Next.js export errors gracefully
 - Ensures deployment succeeds even if default error page warnings appear
 
+### `scripts/postbuild.sh`
+- Copies `public` folder to `.next/standalone/`
+- Copies `.next/static` to `.next/standalone/.next/static`
+- Ensures all assets are available in standalone build
+
 ## Known Issues & Solutions
+
+### ✅ FIXED: Missing prerender-manifest.json error
+
+**Previous Symptom:**
+```
+Error: ENOENT: no such file or directory, open '/app/.next/prerender-manifest.json'
+```
+
+**Root Cause:**
+- Using `output: 'standalone'` in Next.js config
+- Standalone mode creates a minimal production server
+- `npm start` expects full `.next` directory structure
+- Public and static files not copied to standalone directory
+
+**Solution Implemented:**
+- Changed start command to `node .next/standalone/server.js`
+- Created `postbuild.sh` to copy necessary files to standalone
+- Build script now runs postbuild after successful build
 
 ### ✅ FIXED: `/404` and `/500` prerender errors
 
