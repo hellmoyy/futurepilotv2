@@ -8,6 +8,7 @@ A modern Next.js application with Tailwind CSS for beautiful, responsive web dev
 - **Tailwind CSS** - Utility-first CSS framework
 - **TypeScript** - Type-safe development
 - **ESLint** - Code linting and formatting
+- **OpenAI Integration** - AI-powered trading assistant and market analysis
 
 ## Getting Started
 
@@ -29,7 +30,16 @@ cd futurepilotv2
 npm install
 ```
 
-3. Run the development server:
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Then edit `.env` and add your OpenAI API key:
+```env
+OPENAI_API_KEY=sk-your-api-key-here
+```
+
+4. Run the development server:
 ```bash
 npm run dev
 ```
@@ -48,12 +58,26 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ```
 futurepilotv2/
 ├── src/
-│   └── app/
-│       ├── globals.css
-│       ├── layout.tsx
-│       └── page.tsx
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── ai/
+│   │   │       ├── chat/
+│   │   │       └── analyze/
+│   │   ├── ai-demo/
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── AIChat.tsx
+│   │   └── MarketAnalyzer.tsx
+│   └── lib/
+│       └── openai.ts
 ├── .github/
 │   └── copilot-instructions.md
+├── docs/
+│   └── OPENAI_INTEGRATION.md
+├── .env
+├── .env.example
 ├── package.json
 ├── tailwind.config.js
 ├── postcss.config.js
@@ -70,6 +94,16 @@ futurepilotv2/
 - Maintain clean, readable code with proper TypeScript types
 
 ## Learn More
+
+### AI Features
+
+Visit `/ai-demo` to try:
+- **AI Chat Assistant** - Conversational AI for trading insights
+- **Market Analyzer** - AI-powered technical analysis
+
+See [OpenAI Integration Guide](./docs/OPENAI_INTEGRATION.md) for detailed documentation.
+
+### Next.js Resources
 
 To learn more about Next.js, take a look at the following resources:
 

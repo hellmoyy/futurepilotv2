@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FuturePilot v2',
-  description: 'A Next.js app with Tailwind CSS',
+  title: 'FuturePilot - AI-Powered Trading Automation',
+  description: 'Advanced AI-powered trading automation platform for cryptocurrency and forex markets. Trade smarter with cutting-edge artificial intelligence.',
 }
 
 export default function RootLayout({
