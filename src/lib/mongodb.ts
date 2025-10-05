@@ -1,10 +1,12 @@
 import mongoose from 'mongoose';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MongoDB URI to .env');
+// Validate MongoDB URI at runtime, not at import time
+function getMongoDBUri(): string {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('Please add your MongoDB URI to .env');
+  }
+  return process.env.MONGODB_URI;
 }
-
-const MONGODB_URI: string = process.env.MONGODB_URI;
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -36,7 +38,7 @@ async function connectDB(): Promise<typeof mongoose> {
     };
 
     console.log('🔄 Creating new MongoDB connection...');
-    cached.promise = mongoose.connect(MONGODB_URI, opts);
+    cached.promise = mongoose.connect(getMongoDBUri(), opts);
   }
 
   try {
