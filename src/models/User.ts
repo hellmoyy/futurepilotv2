@@ -9,8 +9,15 @@ export interface IUser extends Document {
   provider?: string;
   image?: string;
   emailVerified?: boolean;
+  verificationToken?: string;
+  verificationTokenExpiry?: Date;
   binanceApiKey?: string;
   binanceApiSecret?: string;
+  referralCode?: string;
+  referredBy?: mongoose.Types.ObjectId;
+  membershipLevel?: 'bronze' | 'silver' | 'gold' | 'platinum';
+  totalEarnings?: number;
+  gasFeeBalance?: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -45,6 +52,14 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    verificationToken: {
+      type: String,
+      select: false,
+    },
+    verificationTokenExpiry: {
+      type: Date,
+      select: false,
+    },
     binanceApiKey: {
       type: String,
       select: false,
@@ -52,6 +67,29 @@ const UserSchema = new Schema<IUser>(
     binanceApiSecret: {
       type: String,
       select: false,
+    },
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'futurepilotcol',
+    },
+    membershipLevel: {
+      type: String,
+      enum: ['bronze', 'silver', 'gold', 'platinum'],
+      default: 'bronze',
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+    },
+    gasFeeBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {
@@ -72,14 +110,20 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
+// Generate referral code before saving
+UserSchema.pre('save', async function(next) {
+  if (!this.referralCode) {
+    const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
+    this.referralCode = `FP${randomString}`;
+  }
+  next();
+});
+
 // Method to compare passwords
 UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   if (!this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Indexes
-UserSchema.index({ email: 1 });
-
 export const User: Model<IUser> =
-  mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+  mongoose.models.futurepilotcol || mongoose.model<IUser>('futurepilotcol', UserSchema);

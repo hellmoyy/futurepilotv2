@@ -2,140 +2,181 @@ import Navigation from '@/components/Navigation';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated Background Gradients */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-blue-600/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Navigation */}
       <Navigation />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="relative pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-8">
-            {/* Badge */}
-            <div className="inline-flex items-center space-x-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-sm text-gray-300">AI-Powered Trading • Live Now</span>
+            {/* Liquid Glass Badge */}
+            <div className="inline-flex items-center space-x-2 px-5 py-2.5 bg-white/5 backdrop-blur-2xl rounded-full border border-white/20 shadow-2xl shadow-blue-500/10">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></span>
+              <span className="text-sm text-white/90 font-medium">AI-Powered Trading • Live Now</span>
             </div>
 
-            {/* Main Heading */}
-            <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight">
-              <span className="bg-gradient-to-r from-blue-300 via-blue-500 to-cyan-400 bg-clip-text text-transparent">
-                Trade Smarter
-              </span>
-              <br />
-              <span className="text-white">With AI Precision</span>
-            </h1>
+            {/* Main Heading with Liquid Glass Effect */}
+            <div className="relative">
+              <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight">
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-blue-300 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                    Trade Smarter
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-300 via-blue-400 to-cyan-300 opacity-30 blur-2xl"></div>
+                </span>
+                <br />
+                <span className="text-white drop-shadow-2xl">With AI Precision</span>
+              </h1>
+            </div>
 
             {/* Subheading */}
-            <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Advanced artificial intelligence meets automated trading. 
               Let FuturePilot navigate the markets while you focus on what matters.
             </p>
 
-            {/* CTA Buttons */}
+            {/* Liquid Glass CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-              <button className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-700 rounded-xl font-semibold text-lg hover:shadow-2xl hover:shadow-blue-500/50 transition-all transform hover:scale-105">
-                Start Trading Now
+              <button className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10">Start Trading Now</span>
+                <div className="absolute inset-0 bg-white/20 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
-              <button className="px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all">
+              <button className="px-8 py-4 bg-white/5 backdrop-blur-2xl border border-white/20 rounded-2xl font-semibold text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 shadow-xl">
                 Watch Demo
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 max-w-4xl mx-auto">
-              <div className="space-y-2">
-                <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">99.9%</div>
-                <div className="text-gray-400">Uptime</div>
+            {/* Liquid Glass Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-16 max-w-5xl mx-auto">
+              <div className="group relative bg-white/5 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-2">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-300 to-blue-500 bg-clip-text text-transparent">99.9%</div>
+                  <div className="text-gray-300 font-medium">Uptime</div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent">$2.5B+</div>
-                <div className="text-gray-400">Volume Traded</div>
+              <div className="group relative bg-white/5 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-2">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">$2.5B+</div>
+                  <div className="text-gray-300 font-medium">Volume Traded</div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">50K+</div>
-                <div className="text-gray-400">Active Users</div>
+              <div className="group relative bg-white/5 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-2">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">50K+</div>
+                  <div className="text-gray-300 font-medium">Active Users</div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">24/7</div>
-                <div className="text-gray-400">AI Monitoring</div>
+              <div className="group relative bg-white/5 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-2">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">24/7</div>
+                  <div className="text-gray-300 font-medium">AI Monitoring</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Dashboard Preview */}
-      <section className="py-20 px-6">
+      {/* Dashboard Preview with Liquid Glass */}
+      <section className="relative py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="relative">
-            {/* Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-3xl"></div>
+            {/* Ambient Glow */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 blur-3xl opacity-50"></div>
             
-            {/* Dashboard Card */}
-            <div className="relative bg-black/50 backdrop-blur-xl rounded-3xl border border-white/10 p-8 overflow-hidden">
+            {/* Liquid Glass Dashboard Card */}
+            <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-[2rem] border border-white/10 p-8 overflow-hidden shadow-2xl">
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5"></div>
+              
               {/* Header */}
-              <div className="flex items-center justify-between mb-8">
+              <div className="relative flex items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Trading Dashboard</h3>
-                  <p className="text-gray-400">Real-time market analysis powered by AI</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">Trading Dashboard</h3>
+                  <p className="text-gray-300">Real-time market analysis powered by AI</p>
                 </div>
-                <div className="flex items-center space-x-2 px-4 py-2 bg-green-500/10 rounded-full border border-green-500/20">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="text-green-500 text-sm font-semibold">Live</span>
+                <div className="flex items-center space-x-2 px-4 py-2 bg-green-500/10 backdrop-blur-xl rounded-full border border-green-500/20">
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></span>
+                  <span className="text-green-300 text-sm font-semibold">Live</span>
                 </div>
               </div>
 
-              {/* Charts */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-2xl p-6 border border-white/5">
-                  <div className="text-sm text-gray-400 mb-4">Portfolio Value</div>
-                  <div className="text-3xl font-bold mb-2">$128,450</div>
-                  <div className="text-green-500 text-sm">+12.5% this month</div>
-                  <div className="mt-6 flex items-end space-x-2 h-24">
-                    <div className="flex-1 bg-gradient-to-t from-blue-500 to-blue-600 rounded-t opacity-50" style={{height: '40%'}}></div>
-                    <div className="flex-1 bg-gradient-to-t from-blue-500 to-blue-600 rounded-t opacity-60" style={{height: '60%'}}></div>
-                    <div className="flex-1 bg-gradient-to-t from-blue-500 to-blue-600 rounded-t opacity-70" style={{height: '75%'}}></div>
-                    <div className="flex-1 bg-gradient-to-t from-blue-500 to-cyan-500 rounded-t opacity-80" style={{height: '85%'}}></div>
-                    <div className="flex-1 bg-gradient-to-t from-blue-500 to-cyan-500 rounded-t" style={{height: '100%'}}></div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-cyan-900/30 to-blue-900/30 rounded-2xl p-6 border border-white/5">
-                  <div className="text-sm text-gray-400 mb-4">Active Trades</div>
-                  <div className="text-3xl font-bold mb-2">24</div>
-                  <div className="text-cyan-500 text-sm">8 winning positions</div>
-                  <div className="mt-6 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">BTC/USD</span>
-                      <span className="text-green-500 text-sm">+2.4%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">ETH/USD</span>
-                      <span className="text-green-500 text-sm">+1.8%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">SOL/USD</span>
-                      <span className="text-cyan-500 text-sm">+3.2%</span>
+              {/* Charts with Liquid Glass */}
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Portfolio Card */}
+                <div className="group relative bg-white/5 backdrop-blur-2xl rounded-3xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    <div className="text-sm text-gray-300 mb-4 font-medium">Portfolio Value</div>
+                    <div className="text-3xl font-bold text-white mb-2">$128,450</div>
+                    <div className="text-green-400 text-sm font-medium">+12.5% this month</div>
+                    <div className="mt-6 flex items-end space-x-2 h-24">
+                      <div className="flex-1 bg-gradient-to-t from-blue-400/80 to-blue-500/80 backdrop-blur-xl rounded-t-lg shadow-lg shadow-blue-500/20" style={{height: '40%'}}></div>
+                      <div className="flex-1 bg-gradient-to-t from-blue-400/80 to-blue-500/80 backdrop-blur-xl rounded-t-lg shadow-lg shadow-blue-500/20" style={{height: '60%'}}></div>
+                      <div className="flex-1 bg-gradient-to-t from-blue-400/80 to-blue-500/80 backdrop-blur-xl rounded-t-lg shadow-lg shadow-blue-500/20" style={{height: '75%'}}></div>
+                      <div className="flex-1 bg-gradient-to-t from-blue-400/80 to-cyan-400/80 backdrop-blur-xl rounded-t-lg shadow-lg shadow-cyan-500/20" style={{height: '85%'}}></div>
+                      <div className="flex-1 bg-gradient-to-t from-blue-400/80 to-cyan-400/80 backdrop-blur-xl rounded-t-lg shadow-lg shadow-cyan-500/20" style={{height: '100%'}}></div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-2xl p-6 border border-white/5">
-                  <div className="text-sm text-gray-400 mb-4">AI Confidence</div>
-                  <div className="text-3xl font-bold mb-2">94%</div>
-                  <div className="text-blue-500 text-sm">High confidence level</div>
-                  <div className="mt-6">
-                    <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style={{width: '94%'}}></div>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400">Market Analysis</span>
-                        <span className="text-blue-500">Bullish</span>
+                {/* Active Trades Card */}
+                <div className="group relative bg-white/5 backdrop-blur-2xl rounded-3xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    <div className="text-sm text-gray-300 mb-4 font-medium">Active Trades</div>
+                    <div className="text-3xl font-bold text-white mb-2">24</div>
+                    <div className="text-cyan-400 text-sm font-medium">8 winning positions</div>
+                    <div className="mt-6 space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-white/5 backdrop-blur-xl rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                        <span className="text-sm text-gray-300 font-medium">BTC/USD</span>
+                        <span className="text-green-400 text-sm font-semibold">+2.4%</span>
                       </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400">Risk Level</span>
-                        <span className="text-green-500">Low</span>
+                      <div className="flex items-center justify-between p-3 bg-white/5 backdrop-blur-xl rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                        <span className="text-sm text-gray-300 font-medium">ETH/USD</span>
+                        <span className="text-green-400 text-sm font-semibold">+1.8%</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white/5 backdrop-blur-xl rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                        <span className="text-sm text-gray-300 font-medium">SOL/USD</span>
+                        <span className="text-cyan-400 text-sm font-semibold">+3.2%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Confidence Card */}
+                <div className="group relative bg-white/5 backdrop-blur-2xl rounded-3xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    <div className="text-sm text-gray-300 mb-4 font-medium">AI Confidence</div>
+                    <div className="text-3xl font-bold text-white mb-2">94%</div>
+                    <div className="text-blue-400 text-sm font-medium">High confidence level</div>
+                    <div className="mt-6">
+                      <div className="w-full bg-white/5 backdrop-blur-xl rounded-full h-3 overflow-hidden border border-white/10">
+                        <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full shadow-lg shadow-blue-500/30" style={{width: '94%'}}></div>
+                      </div>
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between p-2 bg-white/5 backdrop-blur-xl rounded-lg">
+                          <span className="text-xs text-gray-300">Market Analysis</span>
+                          <span className="text-xs text-blue-400 font-semibold">Bullish</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-white/5 backdrop-blur-xl rounded-lg">
+                          <span className="text-xs text-gray-300">Risk Level</span>
+                          <span className="text-xs text-green-400 font-semibold">Low</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -146,96 +187,108 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 px-6 bg-gradient-to-b from-black via-blue-950/10 to-black">
+      {/* Features Section with Liquid Glass */}
+      <section id="features" className="relative py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-300 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
                 Powerful Features
               </span>
             </h2>
-            <p className="text-xl text-gray-400">Everything you need to dominate the markets</p>
+            <p className="text-xl text-gray-300">Everything you need to dominate the markets</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="bg-gradient-to-br from-blue-900/20 to-blue-700/20 rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all group">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
+            <div className="group relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400/20 to-blue-600/20 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-6 border border-blue-400/20 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-500/30 transition-all duration-300">
+                  <svg className="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-white">AI-Powered Analysis</h3>
+                <p className="text-gray-300 leading-relaxed">Advanced machine learning algorithms analyze market patterns 24/7 to identify profitable opportunities.</p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">AI-Powered Analysis</h3>
-              <p className="text-gray-400">Advanced machine learning algorithms analyze market patterns 24/7 to identify profitable opportunities.</p>
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-gradient-to-br from-blue-800/20 to-cyan-900/20 rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all group">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            <div className="group relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-400/20 to-blue-600/20 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-6 border border-cyan-400/20 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-cyan-500/30 transition-all duration-300">
+                  <svg className="w-8 h-8 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-white">Lightning Fast Execution</h3>
+                <p className="text-gray-300 leading-relaxed">Execute trades in milliseconds with our optimized infrastructure and direct exchange connections.</p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">Lightning Fast Execution</h3>
-              <p className="text-gray-400">Execute trades in milliseconds with our optimized infrastructure and direct exchange connections.</p>
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-gradient-to-br from-cyan-900/20 to-blue-900/20 rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all group">
-              <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-700 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+            <div className="group relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-6 border border-blue-400/20 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-500/30 transition-all duration-300">
+                  <svg className="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-white">Bank-Level Security</h3>
+                <p className="text-gray-300 leading-relaxed">Your assets are protected with military-grade encryption and multi-layer security protocols.</p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">Bank-Level Security</h3>
-              <p className="text-gray-400">Your assets are protected with military-grade encryption and multi-layer security protocols.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6">
+      {/* CTA Section with Liquid Glass */}
+      <section className="relative py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="relative">
-            {/* Glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-blue-400/20 blur-3xl"></div>
+            {/* Ambient Glow */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/30 via-cyan-500/30 to-blue-500/30 blur-3xl opacity-50"></div>
             
-            {/* Card */}
-            <div className="relative bg-gradient-to-br from-blue-900/40 to-blue-700/40 rounded-3xl p-12 border border-white/10 text-center">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                Ready to Start Trading?
-              </h2>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of traders who trust FuturePilot to maximize their returns with AI-powered automation.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-700 rounded-xl font-semibold text-lg hover:shadow-2xl hover:shadow-blue-500/50 transition-all transform hover:scale-105">
-                  Start Free Trial
-                </button>
-                <button className="px-8 py-4 bg-white text-gray-900 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all">
-                  Schedule Demo
-                </button>
+            {/* Liquid Glass Card */}
+            <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-[2rem] p-12 border border-white/10 text-center overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-cyan-500/10"></div>
+              <div className="relative">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+                  Ready to Start Trading?
+                </h2>
+                <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+                  Join thousands of traders who trust FuturePilot to maximize their returns with AI-powered automation.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <button className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <span className="relative z-10">Start Free Trial</span>
+                  </button>
+                  <button className="px-8 py-4 bg-white/90 backdrop-blur-xl text-gray-900 rounded-2xl font-semibold text-lg hover:bg-white transition-all duration-300 shadow-xl">
+                    Schedule Demo
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-6">
+      {/* Footer with Liquid Glass */}
+      <footer className="relative border-t border-white/10 py-12 px-6 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">F</span>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent">
-                FuturePilot
-              </span>
+            <div className="flex items-center mb-4 md:mb-0">
+              <img 
+                src="/images/logos/logo-dark.png" 
+                alt="FuturePilot" 
+                className="h-10 w-auto"
+              />
             </div>
-            <div className="text-gray-400 text-sm">
+            <div className="text-gray-300 text-sm">
               © 2024 FuturePilot.pro - All rights reserved
             </div>
           </div>

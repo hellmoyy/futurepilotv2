@@ -2,10 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const [gasFeeBalance, setGasFeeBalance] = useState<number>(0);
+
+  useEffect(() => {
+    // Fetch gas fee balance from API
+    const fetchGasFeeBalance = async () => {
+      try {
+        const response = await fetch('/api/user/balance');
+        if (response.ok) {
+          const data = await response.json();
+          setGasFeeBalance(data.gasFeeBalance || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching gas fee balance:', error);
+      }
+    };
+
+    if (session) {
+      fetchGasFeeBalance();
+    }
+  }, [session]);
 
   const menuItems = [
     {
@@ -14,6 +36,15 @@ export default function Sidebar() {
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Auto Trading',
+      href: '/dashboard/automation',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
     },
@@ -45,20 +76,20 @@ export default function Sidebar() {
       ),
     },
     {
-      name: 'Automation',
-      href: '/dashboard/automation',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-    },
-    {
       name: 'History',
       href: '/dashboard/history',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Referral',
+      href: '/dashboard/referral',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       ),
     },
@@ -82,13 +113,12 @@ export default function Sidebar() {
     <div className="w-64 bg-black/50 backdrop-blur-xl border-r border-white/10 flex flex-col h-screen fixed left-0 top-0">
       {/* Logo */}
       <div className="p-6 border-b border-white/10">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">F</span>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent">
-            FuturePilot
-          </span>
+        <Link href="/" className="flex items-center">
+          <img 
+            src="/images/logos/logo-dark.png" 
+            alt="FuturePilot" 
+            className="h-8 w-auto"
+          />
         </Link>
       </div>
 
@@ -115,8 +145,36 @@ export default function Sidebar() {
         </div>
       </nav>
 
+      {/* Gas Fee Wallet */}
+      <div className="px-4 py-4 border-t border-white/10">
+        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Gas Fee Balance</p>
+                <p className="text-lg font-bold text-white">${gasFeeBalance.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/topup"
+            className="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg text-white text-sm font-semibold transition-all hover:shadow-lg hover:shadow-blue-500/30"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Top Up</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Sign Out Button */}
-      <div className="p-4 border-t border-white/10">
+      <div className="px-4 pb-4 border-t border-white/10 pt-4">
         <button
           onClick={handleSignOut}
           className="flex items-center space-x-3 px-4 py-3 w-full text-red-400 hover:bg-red-500/10 rounded-lg transition-all"

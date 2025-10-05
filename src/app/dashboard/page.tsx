@@ -30,7 +30,7 @@ export default function DashboardPage() {
             {session?.user?.name}!
           </span>
         </h1>
-        <p className="text-gray-400">Here's an overview of your trading activity</p>
+        <p className="text-gray-400">Here&apos;s an overview of your trading activity</p>
       </div>
 
       {/* Stats Grid */}

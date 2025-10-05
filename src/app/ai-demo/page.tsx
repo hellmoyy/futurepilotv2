@@ -8,13 +8,12 @@ export default function AIDemo() {
       <nav className="fixed top-0 w-full z-50 bg-black/50 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <a href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">F</span>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-blue-600 bg-clip-text text-transparent">
-                FuturePilot
-              </span>
+            <a href="/" className="flex items-center">
+              <img 
+                src="/images/logos/logo-dark.png" 
+                alt="FuturePilot" 
+                className="h-10 w-auto"
+              />
             </a>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-400">AI Demo</span>
