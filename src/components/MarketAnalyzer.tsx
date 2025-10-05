@@ -49,7 +49,7 @@ export default function MarketAnalyzer() {
   return (
     <div className="bg-black/50 rounded-xl border border-white/10 p-6">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
@@ -70,7 +70,7 @@ export default function MarketAnalyzer() {
               onClick={() => setSymbol(pair)}
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                 symbol === pair
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white'
                   : 'bg-white/5 text-gray-400 hover:bg-white/10'
               }`}
             >
@@ -97,7 +97,7 @@ export default function MarketAnalyzer() {
               onClick={() => setTimeframe(tf)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 timeframe === tf
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white'
                   : 'bg-white/5 text-gray-400 hover:bg-white/10'
               }`}
             >
@@ -111,7 +111,7 @@ export default function MarketAnalyzer() {
       <button
         onClick={analyzeMarket}
         disabled={loading}
-        className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-6"
+        className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-700 rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-6"
       >
         {loading ? (
           <span className="flex items-center justify-center space-x-2">

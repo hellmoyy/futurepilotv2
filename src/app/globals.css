@@ -3,8 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --font-rajdhani: 'Rajdhani', sans-serif;
+  }
+  
   body {
-    @apply bg-black text-white;
+    @apply bg-black text-white font-rajdhani;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-rajdhani font-bold;
   }
 }
 
@@ -15,5 +23,25 @@
   
   .glow-purple {
     text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+  }
+  
+  .font-light {
+    font-weight: 300;
+  }
+  
+  .font-normal {
+    font-weight: 400;
+  }
+  
+  .font-medium {
+    font-weight: 500;
+  }
+  
+  .font-semibold {
+    font-weight: 600;
+  }
+  
+  .font-bold {
+    font-weight: 700;
   }
 }
