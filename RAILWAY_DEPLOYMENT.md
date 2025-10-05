@@ -16,15 +16,29 @@
    
    Go to Project Settings → Variables and add:
    
+   **Required Variables:**
    ```bash
-   MONGODB_URI=mongodb+srv://...
+   MONGODB_URI=mongodb+srv://your-username:password@cluster.mongodb.net/futurepilot
    NEXTAUTH_SECRET=your-32-character-secret-here
    NEXTAUTH_URL=https://your-app.railway.app
-   ENCRYPTION_KEY=your-32-character-encryption-key
-   RESEND_API_KEY=re_your_resend_api_key
-   OPENAI_API_KEY=sk-your-openai-key (optional)
    NODE_ENV=production
    ```
+
+   **Optional Variables:**
+   ```bash
+   ENCRYPTION_SECRET_KEY=your-32-character-encryption-key
+   RESEND_API_KEY=re_your_resend_api_key (for email functionality)
+   OPENAI_API_KEY=sk-your-openai-key (for AI features)
+   ```
+
+   **Notes:**
+   - `MONGODB_URI` - Required for database operations
+   - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
+   - `NEXTAUTH_URL` - Will be your Railway deployment URL
+   - `ENCRYPTION_SECRET_KEY` - For encrypting API keys (optional, uses default if not set)
+   - `RESEND_API_KEY` - Only needed if using email verification
+   - `OPENAI_API_KEY` - Only needed if using AI analysis features
+   - Environment variables are validated at runtime, not during build
 
 4. **Deploy**
    - Railway will automatically detect Next.js
@@ -38,7 +52,7 @@
 ```toml
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm run build"
+buildCommand = "bash scripts/build.sh"
 
 [deploy]
 startCommand = "npm start"
@@ -62,6 +76,27 @@ NODE_ENV = "production"
 ## Known Issues & Solutions
 
 ### ✅ FIXED: `/404` and `/500` prerender errors
+
+**Previous Symptom:**
+```
+Error: OPENAI_API_KEY is not defined in environment variables
+Error: Failed to collect page data for /api/ai/analyze
+BUILD ERROR: exit code 1
+```
+
+**Root Cause:**
+- Environment variables were validated at **import time** instead of **runtime**
+- During build, Next.js analyzes all API routes, triggering validation
+- Build process doesn't have access to production environment variables
+
+**Solution Implemented:**
+Changed to **lazy initialization** pattern:
+- OpenAI client uses Proxy pattern for deferred initialization
+- MongoDB URI validation moved to connection time
+- Environment variables only checked when actually used
+- Build completes successfully without requiring env vars
+
+### ✅ FIXED: Default Error Page Warnings
 
 **Previous Symptom:**
 ```
@@ -89,9 +124,13 @@ Created `scripts/build.sh` that:
 ```
 🚀 Starting Next.js build...
 ✓ Generating static pages (27/27)
-✅ All 27 pages built successfully!
-⚠️  Note: Default error page warnings detected (non-critical)
-⚠️  These warnings do not affect application functionality
+
+📊 Build Process Summary:
+- Build Exit Code: 0
+- Pages Generated: 27/27 ✅
+- Export Warnings: None
+
+✅ Build completed successfully!
 ```
 
 ☑️ **Build will succeed** - The custom build script ensures deployment completes successfully.
