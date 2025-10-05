@@ -6,7 +6,7 @@ const nextConfig = {
   },
   // Output configuration for deployment
   output: 'standalone',
-  // Disable generation of default error pages to prevent Pages Router conflicts
+  // Disable type checking and linting during build (optional)
   eslint: {
     ignoreDuringBuilds: false,
   },
