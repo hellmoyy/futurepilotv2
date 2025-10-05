@@ -6,9 +6,12 @@ const nextConfig = {
   },
   // Output configuration for deployment
   output: 'standalone',
-  // Skip generating error pages at build time
-  generateBuildId: async () => {
-    return 'build-' + Date.now()
+  // Disable generation of default error pages to prevent Pages Router conflicts
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
   },
 }
 
