@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Rajdhani } from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from '@/components/AuthProvider'
 
 const rajdhani = Rajdhani({ 
   subsets: ['latin'],
@@ -20,7 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={rajdhani.className}>{children}</body>
+      <body className={rajdhani.className}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   )
 }

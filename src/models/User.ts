@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // User Interface
 export interface IUser extends Document {
@@ -8,8 +9,11 @@ export interface IUser extends Document {
   provider?: string;
   image?: string;
   emailVerified?: boolean;
+  binanceApiKey?: string;
+  binanceApiSecret?: string;
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 // User Schema
@@ -30,6 +34,7 @@ const UserSchema = new Schema<IUser>(
     password: {
       type: String,
       select: false,
+      minlength: 6,
     },
     provider: {
       type: String,
@@ -40,11 +45,38 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    binanceApiKey: {
+      type: String,
+      select: false,
+    },
+    binanceApiSecret: {
+      type: String,
+      select: false,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// Hash password before saving
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password') || !this.password) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+// Method to compare passwords
+UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  if (!this.password) return false;
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 // Indexes
 UserSchema.index({ email: 1 });
