@@ -3,8 +3,8 @@ node_modules
 npm-debug.log
 yarn-error.log
 
-# Build output
-.next
+# Build output (keep .next for deployment!)
+# .next - DO NOT IGNORE, needed for production
 out
 dist
 build
