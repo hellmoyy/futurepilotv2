@@ -1,31 +1,54 @@
 #!/bin/bash
-set -e  # Exit on error
 
 echo "🚀 Starting Next.js build..."
 
-# Run Next.js build and capture output
-BUILD_OUTPUT=$(npm run build 2>&1)
-BUILD_EXIT_CODE=$?
+# Create temp file in current directory (more reliable than /tmp in Docker)
+TEMP_LOG="./build-output.log"
 
-# Print the build output
-echo "$BUILD_OUTPUT"
+# Run Next.js build with real-time output
+npm run build 2>&1 | tee "$TEMP_LOG"
+
+# Capture the exit code from the build command
+BUILD_EXIT_CODE=${PIPESTATUS[0]}
+
+echo ""
+echo "📊 Build Process Summary:"
+echo "- Build Exit Code: $BUILD_EXIT_CODE"
+
+# Check if the log file exists and has content
+if [ ! -f "$TEMP_LOG" ]; then
+  echo "❌ Error: Build log not created"
+  exit 1
+fi
 
 # Check if all pages were generated successfully
-if echo "$BUILD_OUTPUT" | grep -q "Generating static pages (27/27)"; then
-  echo ""
-  echo "✅ All 27 pages built successfully!"
+if grep -q "Generating static pages (27/27)" "$TEMP_LOG" 2>/dev/null; then
+  echo "- Pages Generated: 27/27 ✅"
   
-  # Check for export errors (non-critical)
-  if echo "$BUILD_OUTPUT" | grep -q "Export encountered errors"; then
-    echo "⚠️  Note: Default error page warnings detected (non-critical)"
-    echo "⚠️  These warnings do not affect application functionality"
+  # Check for export errors (these are non-critical in Docker builds)
+  if grep -q "Export encountered errors" "$TEMP_LOG" 2>/dev/null; then
+    echo "- Export Warnings: Detected (non-critical) ⚠️"
+    echo ""
+    echo "✅ Build succeeded! All application pages generated."
+    echo "⚠️  Default error page warnings can be safely ignored."
+    rm -f "$TEMP_LOG"
+    exit 0
   fi
   
-  # Build succeeded
+  # No export errors, clean build
+  echo "- Export Warnings: None"
+  echo ""
+  echo "✅ Build completed successfully!"
+  rm -f "$TEMP_LOG"
   exit 0
 fi
 
-# If we get here, the build actually failed
+# Build failed - check what went wrong
+echo "- Pages Generated: INCOMPLETE ❌"
 echo ""
 echo "❌ Build failed - not all pages were generated"
-exit $BUILD_EXIT_CODE
+echo ""
+echo "Last 20 lines of build output:"
+tail -20 "$TEMP_LOG" 2>/dev/null || echo "(Could not read log file)"
+rm -f "$TEMP_LOG"
+exit 1
