@@ -74,7 +74,36 @@ NODE_ENV = "production"
 - Handles Next.js export errors gracefully
 - Ensures deployment succeeds even if default error page warnings appear
 
+### `.dockerignore`
+- **CRITICAL:** `.next` directory must NOT be ignored
+- Build artifacts in `.next/` are required for production
+- Railway/Docker respects `.dockerignore` during deployment
+- Excluding `.next` causes missing prerender-manifest.json error
+
 ## Known Issues & Solutions
+
+### ✅ FIXED: Missing .next Directory in Deployment
+
+**Previous Symptom:**
+```
+Error: ENOENT: no such file or directory, open '/app/.next/prerender-manifest.json'
+Starting...
+[Error repeats continuously]
+```
+
+**Root Cause:**
+- The `.dockerignore` file was excluding the `.next` directory
+- Railway uses Docker/NIXPACKS which respects `.dockerignore`
+- Build artifacts were created but not copied to production container
+- `npm start` requires the full `.next/` directory to run
+
+**Solution Implemented:**
+- **Removed `.next` from `.dockerignore`**
+- Added comment: `# .next - DO NOT IGNORE, needed for production`
+- Build artifacts now included in deployment container
+- All necessary files available at runtime
+
+**Important:** Never add `.next` to `.dockerignore` when deploying Next.js!
 
 ### ✅ FIXED: Environment Variables at Build Time
 
