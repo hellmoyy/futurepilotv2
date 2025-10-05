@@ -4,8 +4,8 @@ const nextConfig = {
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
-  // Output configuration for deployment
-  output: 'standalone',
+  // Remove standalone output for Railway - use standard build
+  // output: 'standalone',
   // Disable type checking and linting during build (optional)
   eslint: {
     ignoreDuringBuilds: false,

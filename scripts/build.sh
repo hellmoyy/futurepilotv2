@@ -32,11 +32,11 @@ if grep -q "Generating static pages (27/27)" "$TEMP_LOG" 2>/dev/null; then
     echo "✅ Build succeeded! All application pages generated."
     echo "⚠️  Default error page warnings can be safely ignored."
     
-    # Run post-build script to prepare standalone deployment
-    if [ -f "scripts/postbuild.sh" ]; then
-      echo ""
-      bash scripts/postbuild.sh
-    fi
+    # Run post-build script only if standalone mode is enabled
+    # if [ -f "scripts/postbuild.sh" ]; then
+    #   echo ""
+    #   bash scripts/postbuild.sh
+    # fi
     
     rm -f "$TEMP_LOG"
     exit 0
@@ -47,11 +47,11 @@ if grep -q "Generating static pages (27/27)" "$TEMP_LOG" 2>/dev/null; then
   echo ""
   echo "✅ Build completed successfully!"
   
-  # Run post-build script to prepare standalone deployment
-  if [ -f "scripts/postbuild.sh" ]; then
-    echo ""
-    bash scripts/postbuild.sh
-  fi
+  # Run post-build script only if standalone mode is enabled
+  # if [ -f "scripts/postbuild.sh" ]; then
+  #   echo ""
+  #   bash scripts/postbuild.sh
+  # fi
   
   rm -f "$TEMP_LOG"
   exit 0
