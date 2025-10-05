@@ -1,10 +1,13 @@
 import { Resend } from 'resend';
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is not defined in environment variables');
+// Use a placeholder during build time if RESEND_API_KEY is not set
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_placeholder_for_build';
+
+if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('Warning: RESEND_API_KEY is not set. Email functionality will not work.');
 }
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+export const resend = new Resend(RESEND_API_KEY);
 
 export async function sendVerificationEmail(email: string, token: string) {
   const verificationUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`;
