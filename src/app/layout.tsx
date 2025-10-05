@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   description: 'Advanced AI-powered trading automation platform for cryptocurrency and forex markets. Trade smarter with cutting-edge artificial intelligence.',
 }
 
+// Force dynamic rendering for all pages
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: {

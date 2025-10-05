@@ -4,6 +4,8 @@ const nextConfig = {
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
+  // Output configuration for deployment
+  output: 'standalone',
 }
 
 module.exports = nextConfig
