@@ -21,15 +21,7 @@ export default function VerifyEmailPage() {
     }
   }, [sessionStatus, router]);
 
-  // Show loading while checking session
-  if (sessionStatus === 'loading') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
+  // Verify email token
   useEffect(() => {
     if (!token) {
       setStatus('error');
@@ -62,6 +54,15 @@ export default function VerifyEmailPage() {
 
     verifyEmail();
   }, [token]);
+
+  // Show loading while checking session
+  if (sessionStatus === 'loading') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden flex items-center justify-center px-6">
