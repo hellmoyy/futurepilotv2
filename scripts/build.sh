@@ -22,8 +22,11 @@ if [ ! -f "$TEMP_LOG" ]; then
 fi
 
 # Check if all pages were generated successfully
-if grep -q "Generating static pages (27/27)" "$TEMP_LOG" 2>/dev/null; then
-  echo "- Pages Generated: 27/27 ✅"
+# Look for the completion message (any number of pages)
+if grep -q "✓ Generating static pages" "$TEMP_LOG" 2>/dev/null; then
+  # Extract the actual page count
+  PAGE_COUNT=$(grep -o "Generating static pages ([0-9]*/[0-9]*)" "$TEMP_LOG" | tail -1 | grep -o "[0-9]*/[0-9]*")
+  echo "- Pages Generated: $PAGE_COUNT ✅"
   
   # Check for export errors (these are non-critical in Docker builds)
   if grep -q "Export encountered errors" "$TEMP_LOG" 2>/dev/null; then
