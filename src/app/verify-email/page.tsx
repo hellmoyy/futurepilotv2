@@ -2,15 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
   
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('');
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (sessionStatus === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [sessionStatus, router]);
+
+  // Show loading while checking session
+  if (sessionStatus === 'loading') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!token) {

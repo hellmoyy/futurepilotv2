@@ -244,22 +244,24 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-white/20 light:border-blue-200 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
-            Exchange Connections
+          <h1 className="text-5xl font-bold mb-3">
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
+              Exchange Connections
+            </span>
           </h1>
-          <p className="text-gray-400 mt-1">Manage your CEX API connections</p>
+          <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-lg">Manage your CEX API connections</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="group relative px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30"
+          className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl font-bold overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/30 text-white"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <span className="relative z-10 flex items-center space-x-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             <span>Add Connection</span>
@@ -269,9 +271,9 @@ export default function SettingsPage() {
 
       {/* Success Message */}
       {success && (
-        <div className="bg-green-500/10 backdrop-blur-xl border border-green-500/50 rounded-2xl p-4">
-          <p className="text-green-400 font-medium flex items-center space-x-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-green-500/20 dark:bg-green-500/20 light:bg-green-100 backdrop-blur-xl border border-green-400/40 dark:border-green-400/40 light:border-green-300 rounded-2xl p-5 shadow-xl shadow-green-500/10">
+          <p className="text-green-300 dark:text-green-300 light:text-green-700 font-bold text-lg flex items-center space-x-3">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>{success}</span>
@@ -285,26 +287,26 @@ export default function SettingsPage() {
           const info = exchangeInfo[connection.exchange];
           return (
             <div key={connection._id} className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-2xl border border-white/10 p-6 hover:border-white/20 transition-all">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-6 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl"></div>
                 
                 <div className="relative">
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <img src={info.logo} alt={info.name} className="w-12 h-12 object-contain" />
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="flex items-center space-x-4">
+                      <img src={info.logo} alt={info.name} className="w-16 h-16 object-contain" />
                       <div>
-                        <h3 className="text-lg font-bold text-white">{info.name}</h3>
-                        <p className="text-xs text-gray-400">{connection.nickname}</p>
+                        <h3 className="text-xl font-bold text-white dark:text-white light:text-gray-900 mb-1">{info.name}</h3>
+                        <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">{connection.nickname}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => handleToggleActive(connection)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                         connection.isActive
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                          ? 'bg-green-500/30 dark:bg-green-500/30 light:bg-green-100 text-green-300 dark:text-green-300 light:text-green-700 border border-green-400/40 dark:border-green-400/40 light:border-green-300 shadow-lg shadow-green-500/20'
+                          : 'bg-gray-500/30 dark:bg-gray-500/30 light:bg-gray-100 text-gray-300 dark:text-gray-300 light:text-gray-600 border border-gray-400/30 dark:border-gray-400/30 light:border-gray-300'
                       }`}
                     >
                       {connection.isActive ? 'Active' : 'Inactive'}
@@ -313,42 +315,42 @@ export default function SettingsPage() {
 
                   {/* Testnet Badge */}
                   {connection.testnet && (
-                    <div className="mb-3">
-                      <span className="inline-block px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-semibold border border-yellow-500/30">
-                        Testnet
+                    <div className="mb-4">
+                      <span className="inline-block px-4 py-2 bg-yellow-500/30 dark:bg-yellow-500/30 light:bg-yellow-100 text-yellow-300 dark:text-yellow-300 light:text-yellow-700 rounded-xl text-sm font-bold border border-yellow-400/40 dark:border-yellow-400/40 light:border-yellow-300">
+                        🧪 Testnet Mode
                       </span>
                     </div>
                   )}
 
                   {/* Permissions */}
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">Permissions:</p>
+                  <div className="mb-5 bg-black/30 dark:bg-black/30 light:bg-blue-50 backdrop-blur-sm rounded-xl p-4 border border-white/10 dark:border-white/10 light:border-blue-200">
+                    <p className="text-xs text-gray-300 dark:text-gray-300 light:text-gray-700 mb-3 font-semibold uppercase tracking-wide">Permissions:</p>
                     <div className="flex flex-wrap gap-2">
                       {connection.permissions.spot && (
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs">Spot</span>
+                        <span className="px-3 py-2 bg-blue-500/30 dark:bg-blue-500/30 light:bg-blue-100 text-blue-300 dark:text-blue-300 light:text-blue-700 rounded-lg text-sm font-bold border border-blue-400/30 dark:border-blue-400/30 light:border-blue-300">📊 Spot</span>
                       )}
                       {connection.permissions.futures && (
-                        <span className="px-2 py-1 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs">Futures</span>
+                        <span className="px-3 py-2 bg-cyan-500/30 dark:bg-cyan-500/30 light:bg-cyan-100 text-cyan-300 dark:text-cyan-300 light:text-cyan-700 rounded-lg text-sm font-bold border border-cyan-400/30 dark:border-cyan-400/30 light:border-cyan-300">📈 Futures</span>
                       )}
                       {!connection.permissions.spot && !connection.permissions.futures && (
-                        <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded-lg text-xs">Not configured</span>
+                        <span className="px-3 py-2 bg-gray-500/30 dark:bg-gray-500/30 light:bg-gray-100 text-gray-300 dark:text-gray-300 light:text-gray-600 rounded-lg text-sm font-bold border border-gray-400/30 dark:border-gray-400/30 light:border-gray-300">❌ Not configured</span>
                       )}
                     </div>
                   </div>
 
                   {/* Balances */}
                   {connection.isActive && connection.exchange === 'binance' && (
-                    <div className="mb-4 bg-white/5 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs text-gray-500">Account Balance:</p>
+                    <div className="mb-5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-xl p-4 border border-blue-400/30 dark:border-blue-400/30 light:border-blue-300">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm text-gray-200 dark:text-gray-200 light:text-gray-700 font-bold uppercase tracking-wide">💰 Account Balance:</p>
                         <button
                           onClick={() => refreshBalance(connection._id)}
                           disabled={loadingBalances[connection._id]}
-                          className="text-xs text-blue-400 hover:text-blue-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center gap-1"
+                          className="text-sm text-blue-300 dark:text-blue-300 light:text-blue-600 hover:text-blue-200 dark:hover:text-blue-200 light:hover:text-blue-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
                         >
                           {loadingBalances[connection._id] ? (
                             <>
-                              <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
@@ -356,7 +358,7 @@ export default function SettingsPage() {
                             </>
                           ) : (
                             <>
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
                               Refresh
@@ -365,37 +367,37 @@ export default function SettingsPage() {
                         </button>
                       </div>
                       {connection.balances !== undefined && connection.balances !== null ? (
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-3">
                           {connection.permissions.spot && (
-                            <div>
-                              <p className="text-xs text-gray-400">Spot</p>
-                              <p className="text-sm font-semibold text-white">${(connection.balances.spot || 0).toFixed(2)}</p>
+                            <div className="bg-black/30 dark:bg-black/30 light:bg-white backdrop-blur-sm rounded-lg p-3 border border-white/10 dark:border-white/10 light:border-blue-200">
+                              <p className="text-xs text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1 font-semibold uppercase tracking-wide">Spot</p>
+                              <p className="text-lg font-bold text-white dark:text-white light:text-gray-900">${(connection.balances.spot || 0).toFixed(2)}</p>
                             </div>
                           )}
                           {connection.permissions.futures && (
-                            <div>
-                              <p className="text-xs text-gray-400">Futures</p>
-                              <p className="text-sm font-semibold text-white">${(connection.balances.futures || 0).toFixed(2)}</p>
+                            <div className="bg-black/30 dark:bg-black/30 light:bg-white backdrop-blur-sm rounded-lg p-3 border border-white/10 dark:border-white/10 light:border-blue-200">
+                              <p className="text-xs text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1 font-semibold uppercase tracking-wide">Futures</p>
+                              <p className="text-lg font-bold text-white dark:text-white light:text-gray-900">${(connection.balances.futures || 0).toFixed(2)}</p>
                             </div>
                           )}
                         </div>
                       ) : loadingBalances[connection._id] ? (
-                        <div className="text-center py-3">
-                          <div className="flex items-center justify-center gap-2 text-blue-400">
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <div className="text-center py-4">
+                          <div className="flex items-center justify-center gap-2 text-blue-300 dark:text-blue-300 light:text-blue-600">
+                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span className="text-xs">Fetching balance...</span>
+                            <span className="text-sm font-semibold">Fetching balance...</span>
                           </div>
                         </div>
                       ) : (
-                        <div className="text-center py-2">
-                          <p className="text-xs text-gray-400 mb-2">No balance data yet</p>
+                        <div className="text-center py-3">
+                          <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 mb-3 font-medium">No balance data yet</p>
                           <button
                             onClick={() => refreshBalance(connection._id)}
                             disabled={loadingBalances[connection._id]}
-                            className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-blue-400 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-blue-500/30 dark:bg-blue-500/30 light:bg-blue-100 hover:bg-blue-500/40 dark:hover:bg-blue-500/40 light:hover:bg-blue-200 border border-blue-400/40 dark:border-blue-400/40 light:border-blue-300 rounded-lg text-blue-300 dark:text-blue-300 light:text-blue-700 text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-blue-500/20"
                           >
                             {loadingBalances[connection._id] ? 'Fetching...' : 'Fetch Balance'}
                           </button>
@@ -406,18 +408,18 @@ export default function SettingsPage() {
 
                   {/* Last Connected */}
                   {connection.lastConnected && (
-                    <p className="text-xs text-gray-500 mb-4">
-                      Last used: {new Date(connection.lastConnected).toLocaleDateString()}
+                    <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 mb-5 font-medium">
+                      🕒 Last used: {new Date(connection.lastConnected).toLocaleDateString()}
                     </p>
                   )}
 
                   {/* Actions */}
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3">
                     <button
                       onClick={() => handleDeleteConnection(connection._id)}
-                      className="flex-1 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 text-sm font-semibold transition-all"
+                      className="flex-1 px-5 py-3 bg-red-500/30 dark:bg-red-500/30 light:bg-red-100 hover:bg-red-500/40 dark:hover:bg-red-500/40 light:hover:bg-red-200 border border-red-400/40 dark:border-red-400/40 light:border-red-300 hover:border-red-400/60 rounded-xl text-red-300 dark:text-red-300 light:text-red-700 text-sm font-bold transition-all hover:shadow-lg hover:shadow-red-500/20"
                     >
-                      Remove
+                      🗑️ Remove Connection
                     </button>
                   </div>
                 </div>
@@ -429,22 +431,22 @@ export default function SettingsPage() {
         {/* Empty State */}
         {connections.length === 0 && (
           <div className="col-span-full">
-            <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl border border-white/10 p-12 text-center">
-              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="relative bg-gradient-to-br from-black/60 to-blue-900/20 backdrop-blur-md rounded-3xl border border-white/20 p-16 text-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-400/30">
+                <svg className="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">No Exchanges Connected</h3>
-              <p className="text-gray-400 mb-6">Add your first exchange connection to start trading</p>
+              <h3 className="text-3xl font-bold text-white mb-3">No Exchanges Connected</h3>
+              <p className="text-gray-300 text-lg mb-8 max-w-md mx-auto">Add your first exchange connection to start trading</p>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold hover:scale-105 transition-all"
+                className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl font-bold hover:scale-105 transition-all hover:shadow-xl hover:shadow-blue-500/30 text-white"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span>Add Connection</span>
+                <span>Add Your First Connection</span>
               </button>
             </div>
           </div>

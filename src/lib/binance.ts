@@ -181,6 +181,246 @@ export class BinanceClient {
       throw error;
     }
   }
+
+  /**
+   * Get futures candlestick data
+   */
+  async futuresCandles(params: {
+    symbol: string;
+    interval: string;
+    limit?: number;
+  }): Promise<any[]> {
+    try {
+      const queryParams = new URLSearchParams({
+        symbol: params.symbol,
+        interval: params.interval,
+        limit: (params.limit || 100).toString(),
+      });
+
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v1/klines?${queryParams}`,
+        {
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      return data.map((candle: any[]) => ({
+        openTime: candle[0],
+        open: candle[1],
+        high: candle[2],
+        low: candle[3],
+        close: candle[4],
+        volume: candle[5],
+        closeTime: candle[6],
+      }));
+    } catch (error) {
+      console.error('Error fetching futures candles:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get futures position risk
+   */
+  async futuresPositionRisk(): Promise<any[]> {
+    try {
+      const timestamp = Date.now();
+      const queryString = `timestamp=${timestamp}`;
+      const signature = this.generateSignature(queryString);
+
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v2/positionRisk?${queryString}&signature=${signature}`,
+        {
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching position risk:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get futures account balance
+   */
+  async futuresAccountBalance(): Promise<any[]> {
+    try {
+      const timestamp = Date.now();
+      const queryString = `timestamp=${timestamp}`;
+      const signature = this.generateSignature(queryString);
+
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v2/balance?${queryString}&signature=${signature}`,
+        {
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching futures balance:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set futures leverage
+   */
+  async futuresLeverage(params: { symbol: string; leverage: string }): Promise<any> {
+    try {
+      const timestamp = Date.now();
+      const queryString = `symbol=${params.symbol}&leverage=${params.leverage}&timestamp=${timestamp}`;
+      const signature = this.generateSignature(queryString);
+
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v1/leverage?${queryString}&signature=${signature}`,
+        {
+          method: 'POST',
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error setting leverage:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Place futures order
+   */
+  async futuresOrder(params: {
+    symbol: string;
+    side: string;
+    type: string;
+    quantity?: string;
+    stopPrice?: string;
+    closePosition?: string;
+    reduceOnly?: string;
+  }): Promise<any> {
+    try {
+      const timestamp = Date.now();
+      const queryParams: any = {
+        symbol: params.symbol,
+        side: params.side,
+        type: params.type,
+        timestamp: timestamp.toString(),
+      };
+
+      if (params.quantity) queryParams.quantity = params.quantity;
+      if (params.stopPrice) queryParams.stopPrice = params.stopPrice;
+      if (params.closePosition) queryParams.closePosition = params.closePosition;
+      if (params.reduceOnly) queryParams.reduceOnly = params.reduceOnly;
+
+      const queryString = Object.keys(queryParams)
+        .map((key) => `${key}=${queryParams[key]}`)
+        .join('&');
+
+      const signature = this.generateSignature(queryString);
+
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v1/order?${queryString}&signature=${signature}`,
+        {
+          method: 'POST',
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error placing futures order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel all open orders for a symbol
+   */
+  async futuresCancelAllOpenOrders(params: { symbol: string }): Promise<any> {
+    try {
+      const timestamp = Date.now();
+      const queryString = `symbol=${params.symbol}&timestamp=${timestamp}`;
+      const signature = this.generateSignature(queryString);
+
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v1/allOpenOrders?${queryString}&signature=${signature}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error canceling orders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get futures mark price
+   */
+  async futuresMarkPrice(params: { symbol: string }): Promise<any> {
+    try {
+      const response = await fetch(
+        `${this.futuresBaseUrl}/v1/premiumIndex?symbol=${params.symbol}`,
+        {
+          headers: {
+            'X-MBX-APIKEY': this.apiKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching mark price:', error);
+      throw error;
+    }
+  }
 }
 
 /**

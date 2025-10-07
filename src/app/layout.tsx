@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
-import { Rajdhani } from 'next/font/google'
+import { Roboto } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/AuthProvider'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
-const rajdhani = Rajdhani({ 
+const roboto = Roboto({ 
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-rajdhani',
+  weight: ['300', '400', '500', '700', '900'],
+  variable: '--font-roboto',
 })
 
 export const metadata: Metadata = {
@@ -23,9 +24,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={rajdhani.className}>
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" className="dark">
+      <body className={roboto.className}>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

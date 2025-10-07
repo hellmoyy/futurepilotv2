@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import { Trade } from '@/models/Trade';
 import mongoose from 'mongoose';
@@ -6,24 +8,26 @@ import mongoose from 'mongoose';
 // GET all trades
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     const status = searchParams.get('status');
     const symbol = searchParams.get('symbol');
 
-    // Build query
-    const query: any = {};
-    if (userId) query.userId = new mongoose.Types.ObjectId(userId);
+    // Build query - always filter by current user
+    const query: any = { userId: new mongoose.Types.ObjectId(session.user.id) };
     if (status) query.status = status;
     if (symbol) query.symbol = symbol.toUpperCase();
 
     const trades = await Trade.find(query)
-      .populate('userId', 'name email')
-      .populate('strategyId', 'name')
       .sort({ entryTime: -1 })
-      .limit(100);
+      .limit(100)
+      .lean();
 
     // Calculate statistics
     const stats = {
@@ -35,11 +39,7 @@ export async function GET(request: NextRequest) {
         .reduce((sum, t) => sum + (t.pnl || 0), 0),
     };
 
-    return NextResponse.json({
-      success: true,
-      stats,
-      data: trades,
-    });
+    return NextResponse.json(trades);
   } catch (error: any) {
     console.error('Get Trades Error:', error);
     return NextResponse.json(

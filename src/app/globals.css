@@ -4,15 +4,25 @@
 
 @layer base {
   :root {
-    --font-rajdhani: 'Rajdhani', sans-serif;
+    --font-roboto: 'Roboto', sans-serif;
   }
   
-  body {
-    @apply bg-black text-white font-rajdhani;
+  /* Dark Mode (Default) */
+  .dark body {
+    @apply bg-black text-white font-roboto;
   }
   
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-rajdhani font-bold;
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply font-roboto font-bold;
+  }
+
+  /* Light Mode */
+  .light body {
+    @apply bg-gray-50 text-gray-900 font-roboto;
+  }
+  
+  .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+    @apply font-roboto font-bold text-gray-900;
   }
 }
 
@@ -56,6 +66,11 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.5s ease-in-out forwards;
+    opacity: 0;
+  }
 }
 
 @keyframes blob {
@@ -70,5 +85,16 @@
   }
   75% {
     transform: translate(50px, 50px) scale(1.05);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

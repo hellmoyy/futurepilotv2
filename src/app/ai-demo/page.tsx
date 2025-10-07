@@ -1,7 +1,12 @@
+'use client';
+
 import AIChat from '@/components/AIChat';
 import MarketAnalyzer from '@/components/MarketAnalyzer';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AIDemo() {
+  const { theme } = useTheme();
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black">
       {/* Navigation */}
@@ -10,7 +15,7 @@ export default function AIDemo() {
           <div className="flex items-center justify-between">
             <a href="/" className="flex items-center">
               <img 
-                src="/images/logos/logo-dark.png" 
+                src={theme === 'light' ? '/images/logos/logo-light.png' : '/images/logos/logo-dark.png'}
                 alt="FuturePilot" 
                 className="h-10 w-auto"
               />
