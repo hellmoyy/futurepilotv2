@@ -163,7 +163,13 @@ export default function TopUpPage() {
                 : 'text-gray-400 hover:text-white hover:bg-white/10 light:text-gray-600 light:hover:text-gray-800 light:hover:bg-blue-200'
             }`}
           >
-            <span>{network === 'ERC20' ? '🔷' : '🟡'}</span>
+            <Image
+              src={network === 'ERC20' ? '/images/icon-coin/etehreum.webp' : '/images/icon-coin/bnb.png'}
+              alt={network === 'ERC20' ? 'Ethereum' : 'BNB'}
+              width={20}
+              height={20}
+              className="w-5 h-5"
+            />
             <span>
               {network === 'ERC20' ? 'Ethereum (ERC-20)' : 'Binance Smart Chain (BEP-20)'}
             </span>
@@ -229,7 +235,13 @@ export default function TopUpPage() {
               <div className="relative">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white light:text-gray-900 flex items-center space-x-2">
-                    <span>{activeNetwork === 'ERC20' ? '🔷' : '🟡'}</span>
+                    <Image
+                      src={activeNetwork === 'ERC20' ? '/images/icon-coin/etehreum.webp' : '/images/icon-coin/bnb.png'}
+                      alt={activeNetwork === 'ERC20' ? 'Ethereum' : 'BNB'}
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
                     <span>Deposit Address</span>
                   </h3>
                   <div className="flex items-center space-x-2 text-xs">
@@ -402,7 +414,13 @@ export default function TopUpPage() {
                         <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-gray-100 light:hover:bg-gray-50">
                           <td className="py-4 px-4">
                             <div className="flex items-center space-x-2">
-                              <span>{tx.network === 'ERC20' ? '🔷' : '🟡'}</span>
+                              <Image
+                                src={tx.network === 'ERC20' ? '/images/icon-coin/etehreum.webp' : '/images/icon-coin/bnb.png'}
+                                alt={tx.network === 'ERC20' ? 'Ethereum' : 'BNB'}
+                                width={20}
+                                height={20}
+                                className="w-5 h-5"
+                              />
                               <span className="text-white font-medium light:text-gray-900">{tx.network}</span>
                             </div>
                           </td>

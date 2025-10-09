@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import Image from 'next/image';
 
 interface WalletData {
   erc20Address: string;
@@ -147,7 +148,13 @@ export default function TestTopUpPage() {
                   }`}
                 >
                   <div className="flex items-center space-x-2">
-                    <span>🔷</span>
+                    <Image
+                      src="/images/icon-coin/etehreum.webp"
+                      alt="Ethereum"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
                     <span>ERC20 (Ethereum)</span>
                   </div>
                 </button>
@@ -160,7 +167,13 @@ export default function TestTopUpPage() {
                   }`}
                 >
                   <div className="flex items-center space-x-2">
-                    <span>🟡</span>
+                    <Image
+                      src="/images/icon-coin/bnb.png"
+                      alt="BNB"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
+                    />
                     <span>BEP20 (BSC)</span>
                   </div>
                 </button>
