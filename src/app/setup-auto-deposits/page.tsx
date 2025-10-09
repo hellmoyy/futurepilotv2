@@ -132,18 +132,18 @@ export default function SetupAutoDeposits() {
               <div className="bg-black/30 rounded-lg p-4 font-mono text-sm">
                 <div className="text-yellow-400"># Method A - GET with query:</div>
                 <div className="text-white break-all mb-2">
-                  curl &quot;http://localhost:3000/api/cron/monitor-deposits?token=YOUR_CRON_SECRET&quot;
+                  curl &quot;https://futurepilot.pro/api/cron/monitor-deposits?token=YOUR_CRON_SECRET&quot;
                 </div>
                 
                 <div className="text-yellow-400 mt-3"># Method B - POST with header:</div>
                 <div className="text-white break-all mb-2">
-                  curl -X POST http://localhost:3000/api/cron/monitor-deposits \
+                  curl -X POST https://futurepilot.pro/api/cron/monitor-deposits \
                   -H &quot;Authorization: Bearer YOUR_CRON_SECRET&quot;
                 </div>
                 
-                <div className="text-yellow-400 mt-3"># Production URLs:</div>
+                <div className="text-yellow-400 mt-3"># Local Testing (Development):</div>
                 <div className="text-white break-all text-xs">
-                  Replace localhost:3000 with futurepilot.pro
+                  Replace https://futurepilot.pro with http://localhost:3000 for local testing
                 </div>
               </div>
             </div>
