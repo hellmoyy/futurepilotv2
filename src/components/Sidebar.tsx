@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -98,10 +98,6 @@ export default function Sidebar() {
     },
   ];
 
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
-  };
-
   return (
     <div className="w-64 bg-black/50 dark:bg-black/50 light:bg-white/90 backdrop-blur-xl border-r border-white/10 dark:border-white/10 light:border-gray-200 flex flex-col h-screen fixed left-0 top-0 light:shadow-xl">
       {/* Logo */}
@@ -166,18 +162,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Sign Out Button */}
-      <div className="px-4 pb-4 border-t border-white/10 dark:border-white/10 light:border-gray-200 pt-4">
-        <button
-          onClick={handleSignOut}
-          className="flex items-center space-x-3 px-4 py-3 w-full text-red-400 dark:text-red-400 light:text-red-600 hover:bg-red-500/10 rounded-lg transition-all"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span className="font-medium">Sign Out</span>
-        </button>
-      </div>
     </div>
   );
 }
