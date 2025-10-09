@@ -4,9 +4,27 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const themeContext = useTheme();
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-xl">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+  
+  const { theme } = themeContext;
   
   return (
     <div className="min-h-screen bg-gray-900 dark:bg-gray-900 light:bg-gradient-to-br light:from-gray-50 light:via-blue-50 light:to-gray-100 text-white dark:text-white light:text-gray-900 relative overflow-hidden">
