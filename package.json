@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@types/crypto-js": "^4.2.2",
+    "@types/qrcode": "^1.5.5",
     "bcryptjs": "^3.0.2",
     "crypto-js": "^4.2.0",
     "ethers": "^6.15.0",
@@ -19,6 +20,7 @@
     "next": "14.2.18",
     "next-auth": "^4.24.11",
     "openai": "^6.1.0",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "resend": "^6.1.2"

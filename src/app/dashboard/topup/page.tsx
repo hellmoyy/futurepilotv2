@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import QRCode from 'qrcode';
 
 interface WalletData {
   erc20Address: string;
@@ -29,6 +30,7 @@ export default function TopUpPage() {
   const [generating, setGenerating] = useState(false);
   const [activeNetwork, setActiveNetwork] = useState<'ERC20' | 'BEP20'>('ERC20');
   const [copied, setCopied] = useState<string>('');
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -42,6 +44,16 @@ export default function TopUpPage() {
       fetchTransactions();
     }
   }, [status]);
+
+  // Generate QR code when wallet data or network changes
+  useEffect(() => {
+    if (walletData) {
+      const address = activeNetwork === 'ERC20' ? walletData.erc20Address : walletData.bep20Address;
+      if (address) {
+        generateQRCode(address);
+      }
+    }
+  }, [walletData, activeNetwork]);
 
   const fetchWalletData = async () => {
     try {
@@ -90,6 +102,22 @@ export default function TopUpPage() {
     navigator.clipboard.writeText(text);
     setCopied(type);
     setTimeout(() => setCopied(''), 2000);
+  };
+
+  const generateQRCode = async (address: string) => {
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(address, {
+        width: 128,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeUrl(qrCodeDataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
   };
 
   if (status === 'loading' || loading) {
@@ -239,10 +267,18 @@ export default function TopUpPage() {
                     </div>
                   </div>
 
-                  {/* QR Code Placeholder */}
+                  {/* QR Code */}
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 text-center light:bg-blue-50 light:border-blue-200">
-                    <div className="w-32 h-32 bg-white rounded-lg mx-auto mb-3 flex items-center justify-center">
-                      <div className="text-xs text-gray-500">QR Code</div>
+                    <div className="w-32 h-32 bg-white rounded-lg mx-auto mb-3 flex items-center justify-center overflow-hidden">
+                      {qrCodeUrl ? (
+                        <img 
+                          src={qrCodeUrl} 
+                          alt="Wallet Address QR Code"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-500">Generating QR...</div>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 light:text-gray-600">Scan to get address</p>
                   </div>
