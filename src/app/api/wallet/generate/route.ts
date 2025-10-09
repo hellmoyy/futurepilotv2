@@ -9,9 +9,12 @@ import { ethers } from 'ethers';
 // Encryption functions
 const ENCRYPTION_KEY = process.env.ENCRYPTION_SECRET_KEY || 'your-secret-key-32-chars-long!!';
 
+// Create a 32-byte key from the provided key
+const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+
 function encrypt(text: string): string {
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher('aes-256-cbc', ENCRYPTION_KEY);
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
@@ -21,7 +24,7 @@ function decrypt(text: string): string {
   const parts = text.split(':');
   const iv = Buffer.from(parts.shift()!, 'hex');
   const encryptedData = parts.join(':');
-  const decipher = crypto.createDecipher('aes-256-cbc', ENCRYPTION_KEY);
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
   let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
