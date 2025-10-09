@@ -1,3 +1,4 @@
+# Alternative Dockerfile (simpler version)
 # Use Node.js 18 Alpine for smaller image size
 FROM node:18-alpine AS base
 
@@ -19,11 +20,8 @@ COPY . .
 # Set environment variables for build
 ENV NODE_ENV=production
 
-# Install bash for our build script
-RUN apk add --no-cache bash
-
-# Build the application using our custom script
-RUN bash scripts/build.sh
+# Build the application directly with npm (simpler than custom script)
+RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -40,7 +38,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-# Verify .next directory exists before starting (as root before switching user)
+# Verify .next directory exists before starting
 RUN ls -la .next/prerender-manifest.json
 
 USER nextjs
