@@ -38,6 +38,7 @@ export default function ReferralPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [activeTab, setActiveTab] = useState('network');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -381,59 +382,190 @@ export default function ReferralPage() {
         </div>
       </div>
 
-      {/* Referral List */}
+      {/* Tabbed Section */}
       <div className="relative">
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 blur-xl light:from-blue-200/30 light:to-cyan-200/30"></div>
-        <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl border border-white/10 p-6 light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200">
+        <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl border border-white/10 light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-3xl light:from-blue-100/50 light:to-cyan-100/50"></div>
           
           <div className="relative">
-            <h3 className="text-xl font-semibold text-white mb-6 light:text-gray-900">Your Referral Network</h3>
-            
-            {stats.referrals.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-white/5 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:bg-blue-100">
-                  <svg className="w-10 h-10 text-gray-500 light:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+            {/* Tab Navigation */}
+            <div className="flex items-center justify-between p-6 border-b border-white/10 light:border-blue-200">
+              <h3 className="text-xl font-semibold text-white light:text-gray-900">Referral Dashboard</h3>
+              <div className="flex bg-white/5 backdrop-blur-xl rounded-xl p-1 light:bg-blue-100">
+                {[
+                  { id: 'network', label: 'Network', icon: '👥' },
+                  { id: 'history', label: 'History', icon: '📊' },
+                  { id: 'transaction', label: 'Transaction', icon: '💳' },
+                  { id: 'withdraw', label: 'Withdraw', icon: '💰' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                      activeTab === tab.id
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+                        : 'text-gray-400 hover:text-white hover:bg-white/10 light:text-gray-600 light:hover:text-gray-800 light:hover:bg-blue-200'
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
+              {/* Network Tab */}
+              {activeTab === 'network' && (
+                <div className="animate-fadeIn">
+                  {stats.referrals.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-white/5 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:bg-blue-100">
+                        <svg className="w-10 h-10 text-gray-500 light:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-400 mb-2 light:text-gray-600">No referrals yet</p>
+                      <p className="text-gray-500 text-sm light:text-gray-600">Share your referral link to start earning commissions!</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-white/10 light:border-blue-200">
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Level</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">User</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Email</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Earnings</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Joined</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stats.referrals.map((referral, index) => (
+                            <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-blue-100 light:hover:bg-blue-50">
+                              <td className="py-4 px-4">
+                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                                  referral.level === 1 ? 'bg-blue-500/20 text-blue-300 light:bg-blue-100 light:text-blue-700' :
+                                  referral.level === 2 ? 'bg-cyan-500/20 text-cyan-300 light:bg-cyan-100 light:text-cyan-700' :
+                                  'bg-purple-500/20 text-purple-300 light:bg-purple-100 light:text-purple-700'
+                                }`}>
+                                  Level {referral.level}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-white font-medium light:text-gray-900">{referral.name}</td>
+                              <td className="py-4 px-4 text-gray-400 light:text-gray-700">{referral.email}</td>
+                              <td className="py-4 px-4 text-green-400 font-semibold light:text-green-600">${referral.earnings.toFixed(2)}</td>
+                              <td className="py-4 px-4 text-gray-400 light:text-gray-700">{new Date(referral.joinedAt).toLocaleDateString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-                <p className="text-gray-400 mb-2 light:text-gray-600">No referrals yet</p>
-                <p className="text-gray-500 text-sm light:text-gray-600">Share your referral link to start earning commissions!</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10 light:border-blue-200">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Level</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">User</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Email</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Earnings</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Joined</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.referrals.map((referral, index) => (
-                      <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-blue-100 light:hover:bg-blue-50">
-                        <td className="py-4 px-4">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                            referral.level === 1 ? 'bg-blue-500/20 text-blue-300 light:bg-blue-100 light:text-blue-700' :
-                            referral.level === 2 ? 'bg-cyan-500/20 text-cyan-300 light:bg-cyan-100 light:text-cyan-700' :
-                            'bg-purple-500/20 text-purple-300 light:bg-purple-100 light:text-purple-700'
-                          }`}>
-                            Level {referral.level}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-white font-medium light:text-gray-900">{referral.name}</td>
-                        <td className="py-4 px-4 text-gray-400 light:text-gray-700">{referral.email}</td>
-                        <td className="py-4 px-4 text-green-400 font-semibold light:text-green-600">${referral.earnings.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-gray-400 light:text-gray-700">{new Date(referral.joinedAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              )}
+
+              {/* History Tab */}
+              {activeTab === 'history' && (
+                <div className="animate-fadeIn">
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-blue-500/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:from-green-200 light:to-blue-200">
+                      <span className="text-3xl">📊</span>
+                    </div>
+                    <p className="text-gray-400 mb-2 light:text-gray-600">Referral History</p>
+                    <p className="text-gray-500 text-sm light:text-gray-600">Track your referral performance over time</p>
+                    
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 light:bg-blue-50">
+                        <p className="text-sm text-gray-400 light:text-gray-600">This Week</p>
+                        <p className="text-2xl font-bold text-white light:text-gray-900">0</p>
+                        <p className="text-xs text-gray-500 light:text-gray-600">New referrals</p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 light:bg-blue-50">
+                        <p className="text-sm text-gray-400 light:text-gray-600">This Month</p>
+                        <p className="text-2xl font-bold text-white light:text-gray-900">0</p>
+                        <p className="text-xs text-gray-500 light:text-gray-600">New referrals</p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 light:bg-blue-50">
+                        <p className="text-sm text-gray-400 light:text-gray-600">Total</p>
+                        <p className="text-2xl font-bold text-white light:text-gray-900">{stats.totalReferrals.level1 + stats.totalReferrals.level2 + stats.totalReferrals.level3}</p>
+                        <p className="text-xs text-gray-500 light:text-gray-600">All time</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Transaction Tab */}
+              {activeTab === 'transaction' && (
+                <div className="animate-fadeIn">
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:from-purple-200 light:to-pink-200">
+                      <span className="text-3xl">💳</span>
+                    </div>
+                    <p className="text-gray-400 mb-2 light:text-gray-600">Transaction History</p>
+                    <p className="text-gray-500 text-sm light:text-gray-600">View all commission transactions and payments</p>
+                    
+                    <div className="mt-8">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-6 light:bg-blue-50">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm font-medium text-gray-400 light:text-gray-600">Recent Transactions</span>
+                          <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded light:bg-blue-100 light:text-blue-700">All Time</span>
+                        </div>
+                        <div className="text-center py-8">
+                          <p className="text-gray-500 text-sm light:text-gray-600">No transactions yet</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Withdraw Tab */}
+              {activeTab === 'withdraw' && (
+                <div className="animate-fadeIn">
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:from-yellow-200 light:to-orange-200">
+                      <span className="text-3xl">💰</span>
+                    </div>
+                    <p className="text-gray-400 mb-2 light:text-gray-600">Withdraw Earnings</p>
+                    <p className="text-gray-500 text-sm light:text-gray-600">Request withdrawal of your commission earnings</p>
+                    
+                    <div className="mt-8 max-w-md mx-auto">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-6 light:bg-blue-50">
+                        <div className="mb-6">
+                          <p className="text-sm text-gray-400 mb-2 light:text-gray-600">Available Balance</p>
+                          <p className="text-3xl font-bold text-green-400 light:text-green-600">${stats.totalEarnings.toFixed(2)}</p>
+                        </div>
+                        
+                        <div className="mb-4">
+                          <p className="text-xs text-gray-500 mb-2 light:text-gray-600">Minimum withdrawal: $50.00</p>
+                          <div className="w-full bg-white/10 rounded-full h-2 light:bg-blue-200">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min((stats.totalEarnings / 50) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        <button
+                          disabled={stats.totalEarnings < 50}
+                          className={`w-full px-6 py-3 rounded-xl font-semibold transition-all ${
+                            stats.totalEarnings >= 50
+                              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg hover:shadow-green-500/30'
+                              : 'bg-gray-600 text-gray-400 cursor-not-allowed light:bg-gray-300 light:text-gray-500'
+                          }`}
+                        >
+                          {stats.totalEarnings >= 50 ? 'Request Withdrawal' : 'Insufficient Balance'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
