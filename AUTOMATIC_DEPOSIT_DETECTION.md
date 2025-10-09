@@ -42,26 +42,64 @@ CRON_SECRET=your-super-secret-key
 
 ### Step 2: Upstash Cron Configuration
 
+#### 🎯 **Method A: GET with Query Parameter (Easiest)**
+
 **Destination URL:**
 ```
 https://futurepilot.pro/api/cron/monitor-deposits?token=YOUR_CRON_SECRET
 ```
+
+**Method:** `GET`
+**Headers:** Not required
+**Body:** Not required
+
+#### 🔒 **Method B: POST with Authorization Header (More Secure)**
+
+**Destination URL:**
+```
+https://futurepilot.pro/api/cron/monitor-deposits
+```
+
+**Method:** `POST`
+**Headers:**
+```json
+{
+  "Authorization": "Bearer YOUR_CRON_SECRET"
+}
+```
+**Body:** Not required
+
+#### ⚙️ **Common Settings (Both Methods)**
 
 **Schedule:**
 - **Every 5 minutes:** `*/5 * * * *` (Recommended)
 - **Every 2 minutes:** `*/2 * * * *` (Aggressive)
 - **Every 10 minutes:** `*/10 * * * *` (Conservative)
 
-**Method:** `GET`
 **Timeout:** `300` seconds
 **Retries:** `3`
 
 ## 🧪 Testing
 
-### Manual Test:
+### Method A: GET with Query Parameter
 ```bash
-curl https://futurepilot.pro/api/cron/monitor-deposits \
+curl "https://futurepilot.pro/api/cron/monitor-deposits?token=YOUR_CRON_SECRET"
+```
+
+### Method B: POST with Authorization Header
+```bash
+curl -X POST https://futurepilot.pro/api/cron/monitor-deposits \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
+```
+
+### Local Testing:
+```bash
+# GET method
+curl "http://localhost:3000/api/cron/monitor-deposits?token=amu5KjBHoh31QIB5AyoXKB8wDSEPgJ3U"
+
+# POST method  
+curl -X POST http://localhost:3000/api/cron/monitor-deposits \
+  -H "Authorization: Bearer amu5KjBHoh31QIB5AyoXKB8wDSEPgJ3U"
 ```
 
 ### Expected Response:
@@ -166,3 +204,9 @@ curl https://futurepilot.pro/api/cron/monitor-deposits \
 - 📋 Push notifications
 - 📋 Advanced analytics
 - 📋 Fraud detection
+
+
+URL: https://futurepilot.pro/api/cron/monitor-deposits?token=amu5KjBHoh31QIB5AyoXKB8wDSEPgJ3U
+Schedule: */5 * * * * (every 5 minutes)
+Method: GET
+Timeout: 300 seconds

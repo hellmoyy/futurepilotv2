@@ -75,8 +75,8 @@ export default function SetupAutoDeposits() {
           
           <div className="space-y-6">
             <div className="bg-white/5 rounded-xl p-4">
-              <h3 className="font-semibold mb-3">Step 1: Create Cron Job</h3>
-              <p className="text-sm text-gray-300 mb-3">Go to Upstash Console and create new schedule:</p>
+              <h3 className="font-semibold mb-3">Step 1A: Method GET (Easiest)</h3>
+              <p className="text-sm text-gray-300 mb-3">Token in URL parameter:</p>
               
               <div className="bg-black/30 rounded-lg p-4 font-mono text-sm">
                 <div className="text-green-400">Destination URL:</div>
@@ -84,30 +84,66 @@ export default function SetupAutoDeposits() {
                   https://futurepilot.pro/api/cron/monitor-deposits?token=YOUR_CRON_SECRET
                 </div>
                 
-                <div className="text-green-400 mt-3">Schedule (Every 5 minutes):</div>
-                <div className="text-white">*/5 * * * *</div>
-                
                 <div className="text-green-400 mt-3">Method:</div>
                 <div className="text-white">GET</div>
                 
+                <div className="text-green-400 mt-3">Headers:</div>
+                <div className="text-white">Not required</div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-4">
+              <h3 className="font-semibold mb-3">Step 1B: Method POST (More Secure)</h3>
+              <p className="text-sm text-gray-300 mb-3">Token in Authorization header:</p>
+              
+              <div className="bg-black/30 rounded-lg p-4 font-mono text-sm">
+                <div className="text-green-400">Destination URL:</div>
+                <div className="text-white break-all">
+                  https://futurepilot.pro/api/cron/monitor-deposits
+                </div>
+                
+                <div className="text-green-400 mt-3">Method:</div>
+                <div className="text-white">POST</div>
+                
+                <div className="text-green-400 mt-3">Headers:</div>
+                <div className="text-white">{`{"Authorization": "Bearer YOUR_CRON_SECRET"}`}</div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-4">
+              <h3 className="font-semibold mb-3">Common Settings (Both Methods)</h3>
+              
+              <div className="bg-black/30 rounded-lg p-4 font-mono text-sm">
+                <div className="text-green-400">Schedule (Every 5 minutes):</div>
+                <div className="text-white">*/5 * * * *</div>
+                
                 <div className="text-green-400 mt-3">Timeout:</div>
                 <div className="text-white">300 seconds</div>
+                
+                <div className="text-green-400 mt-3">Retries:</div>
+                <div className="text-white">3</div>
               </div>
             </div>
 
             <div className="bg-white/5 rounded-xl p-4">
               <h3 className="font-semibold mb-3">Step 2: Test Configuration</h3>
-              <p className="text-sm text-gray-300 mb-3">Test the endpoint manually:</p>
+              <p className="text-sm text-gray-300 mb-3">Test both methods:</p>
               
               <div className="bg-black/30 rounded-lg p-4 font-mono text-sm">
-                <div className="text-yellow-400"># Local Test:</div>
+                <div className="text-yellow-400"># Method A - GET with query:</div>
                 <div className="text-white break-all mb-2">
                   curl "http://localhost:3000/api/cron/monitor-deposits?token=YOUR_CRON_SECRET"
                 </div>
                 
-                <div className="text-yellow-400 mt-3"># Production Test:</div>
-                <div className="text-white break-all">
-                  curl "https://futurepilot.pro/api/cron/monitor-deposits?token=YOUR_CRON_SECRET"
+                <div className="text-yellow-400 mt-3"># Method B - POST with header:</div>
+                <div className="text-white break-all mb-2">
+                  curl -X POST http://localhost:3000/api/cron/monitor-deposits \
+                  -H "Authorization: Bearer YOUR_CRON_SECRET"
+                </div>
+                
+                <div className="text-yellow-400 mt-3"># Production URLs:</div>
+                <div className="text-white break-all text-xs">
+                  Replace localhost:3000 with futurepilot.pro
                 </div>
               </div>
             </div>
