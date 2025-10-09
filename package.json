@@ -12,6 +12,7 @@
     "@types/crypto-js": "^4.2.2",
     "bcryptjs": "^3.0.2",
     "crypto-js": "^4.2.0",
+    "ethers": "^6.15.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",
     "mongoose": "^8.19.0",

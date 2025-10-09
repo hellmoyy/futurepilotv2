@@ -18,6 +18,13 @@ export interface IUser extends Document {
   membershipLevel?: 'bronze' | 'silver' | 'gold' | 'platinum';
   totalEarnings?: number;
   gasFeeBalance?: number;
+  walletData?: {
+    erc20Address: string;
+    bep20Address: string;
+    encryptedPrivateKey: string;
+    balance: number;
+    createdAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -90,6 +97,20 @@ const UserSchema = new Schema<IUser>(
       type: Number,
       default: 0,
       min: 0,
+    },
+    walletData: {
+      erc20Address: String,
+      bep20Address: String,
+      encryptedPrivateKey: {
+        type: String,
+        select: false,
+      },
+      balance: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      createdAt: Date,
     },
   },
   {
