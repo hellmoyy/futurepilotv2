@@ -132,13 +132,13 @@ export default function SetupAutoDeposits() {
               <div className="bg-black/30 rounded-lg p-4 font-mono text-sm">
                 <div className="text-yellow-400"># Method A - GET with query:</div>
                 <div className="text-white break-all mb-2">
-                  curl "http://localhost:3000/api/cron/monitor-deposits?token=YOUR_CRON_SECRET"
+                  curl &quot;http://localhost:3000/api/cron/monitor-deposits?token=YOUR_CRON_SECRET&quot;
                 </div>
                 
                 <div className="text-yellow-400 mt-3"># Method B - POST with header:</div>
                 <div className="text-white break-all mb-2">
                   curl -X POST http://localhost:3000/api/cron/monitor-deposits \
-                  -H "Authorization: Bearer YOUR_CRON_SECRET"
+                  -H &quot;Authorization: Bearer YOUR_CRON_SECRET&quot;
                 </div>
                 
                 <div className="text-yellow-400 mt-3"># Production URLs:</div>
