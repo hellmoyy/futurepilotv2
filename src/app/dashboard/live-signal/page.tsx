@@ -294,7 +294,7 @@ export default function LiveSignalPage() {
             <span className="font-semibold text-gray-900 dark:text-white">{signals.length}</span> signals
             {searchTerm && (
               <span className="ml-2">
-                • Searching for "<span className="font-semibold text-blue-600 dark:text-blue-400">{searchTerm}</span>"
+                • Searching for &ldquo;<span className="font-semibold text-blue-600 dark:text-blue-400">{searchTerm}</span>&rdquo;
               </span>
             )}
             {filter !== 'ALL' && (
