@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Helper function to format symbol with slash
@@ -51,7 +51,13 @@ interface SignalsResponse {
 export default function LiveSignalPage() {
   const [signals, setSignals] = useState<TradingSignal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   
   // Filter states
   const [filter, setFilter] = useState<'ALL' | 'LONG' | 'SHORT' | 'HOLD'>('ALL');
@@ -63,33 +69,56 @@ export default function LiveSignalPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const fetchSignals = async () => {
+  const fetchSignals = async (pageNum: number = 1, append: boolean = false) => {
     try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
-      // SERVER-SIDE FILTERS (Heavy database queries)
+      
+      // SERVER-SIDE FILTERS with pagination
       const params = new URLSearchParams({
-        limit: '100', // Fetch more data, filter client-side for instant UX
+        limit: '20', // Load 20 signals per page for better performance
+        page: pageNum.toString(),
         sortBy: 'timestamp',
         sortOrder: 'desc',
-        minConfidence: minConfidence.toString(), // Server filter
-        status: 'active', // Only active signals
+        minConfidence: minConfidence.toString(),
+        status: 'active',
       });
-      
-      // DON'T filter by action on server - do it client-side for instant toggle
-      // This way users can switch between ALL/LONG/SHORT without API calls
       
       const response = await fetch(`/api/signals/latest?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch signals');
       }
       const data: SignalsResponse = await response.json();
-      setSignals(data.data);
+      
+      if (append) {
+        // Append to existing signals (infinite scroll)
+        setSignals(prev => [...prev, ...data.data]);
+      } else {
+        // Replace signals (initial load or refresh)
+        setSignals(data.data);
+      }
+      
+      setTotalCount(data.pagination.totalCount);
+      setHasMore(pageNum < data.pagination.totalPages);
       setLastRefresh(new Date());
     } catch (err: any) {
       console.error('Error fetching signals:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchSignals(nextPage, true);
     }
   };
 
@@ -122,12 +151,29 @@ export default function LiveSignalPage() {
   };
 
   useEffect(() => {
-    fetchSignals();
+    setPage(1);
+    fetchSignals(1, false);
     const interval = setInterval(() => {
-      fetchSignals();
+      setPage(1);
+      fetchSignals(1, false);
     }, refreshInterval * 1000);
     return () => clearInterval(interval);
   }, [minConfidence, refreshInterval]); // Removed 'filter' - client-side only
+
+  // Infinite Scroll Observer
+  const observer = useRef<IntersectionObserver>();
+  const lastSignalRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMore();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loadingMore, hasMore]);
 
   // CLIENT-SIDE FILTERS (Instant UX, no API call)
   const filteredSignals = signals
@@ -187,7 +233,10 @@ export default function LiveSignalPage() {
                 {isGenerating ? 'Generating...' : '⚡ Generate Signals'}
               </button>
               <button
-                onClick={fetchSignals}
+                onClick={() => {
+                  setPage(1);
+                  fetchSignals(1, false);
+                }}
                 className="px-6 py-3 rounded-xl font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
               >
                 🔄 Refresh
@@ -303,7 +352,12 @@ export default function LiveSignalPage() {
         >
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Showing <span className="font-semibold text-gray-900 dark:text-white">{filteredSignals.length}</span> of{' '}
-            <span className="font-semibold text-gray-900 dark:text-white">{signals.length}</span> signals
+            <span className="font-semibold text-gray-900 dark:text-white">{signals.length}</span> loaded
+            {totalCount > signals.length && (
+              <span className="ml-2 text-blue-600 dark:text-blue-400">
+                • <span className="font-semibold">{totalCount - signals.length}</span> more available
+              </span>
+            )}
             {searchTerm && (
               <span className="ml-2">
                 • Searching for &ldquo;<span className="font-semibold text-blue-600 dark:text-blue-400">{searchTerm}</span>&rdquo;
@@ -370,11 +424,48 @@ export default function LiveSignalPage() {
                 </p>
               </motion.div>
             ) : (
-              <div className="space-y-4">
-                {filteredSignals.map((signal, index) => (
-                  <SignalCard key={signal.id} signal={signal} index={index} />
-                ))}
-              </div>
+              <>
+                <div className="space-y-4">
+                  {filteredSignals.map((signal, index) => {
+                    // Attach observer to last signal for auto infinite scroll
+                    const isLastSignal = index === filteredSignals.length - 1;
+                    return (
+                      <div key={signal.id} ref={isLastSignal ? lastSignalRef : null}>
+                        <SignalCard signal={signal} index={index} />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Loading More Indicator */}
+                {loadingMore && (
+                  <div className="flex justify-center mt-8 py-4">
+                    <div className="text-center">
+                      <div className="animate-spin h-8 w-8 mx-auto mb-2 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Loading more signals...</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Load More Button (backup) */}
+                {hasMore && !loadingMore && (
+                  <div className="flex justify-center mt-8">
+                    <button
+                      onClick={loadMore}
+                      className="px-8 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
+                    >
+                      📥 Load More ({totalCount - signals.length} remaining)
+                    </button>
+                  </div>
+                )}
+
+                {/* Pagination Info */}
+                {!hasMore && signals.length > 0 && (
+                  <div className="text-center mt-8 text-gray-500 dark:text-gray-400">
+                    ✅ All {totalCount} signals loaded
+                  </div>
+                )}
+              </>
             )}
           </AnimatePresence>
         )}
