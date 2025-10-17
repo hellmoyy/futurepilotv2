@@ -110,11 +110,8 @@ export default function AIAgentPage() {
       </div>
 
       {/* Main Chat Interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Chat Area */}
-        <div className="lg:col-span-8">
-                    {/* Chat Container */}
-          {/* Chat Container */}
+      <div className="w-full">
+        {/* Chat Container */}
           <div className="bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 flex flex-col h-[700px] shadow-xl">
             {/* Chat Header */}
             <div className="p-4 border-b border-white/10 dark:border-white/10 light:border-blue-200 flex items-center gap-3">
@@ -240,99 +237,6 @@ export default function AIAgentPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Right Sidebar - Stats & Info */}
-        <div className="lg:col-span-4 space-y-4">
-          {/* AI Status */}
-          <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 dark:from-blue-900/40 dark:to-cyan-900/40 light:from-white light:to-blue-50 backdrop-blur-xl rounded-2xl border border-blue-500/30 dark:border-blue-500/30 light:border-blue-300 p-4 shadow-xl">
-            <h3 className="font-bold mb-3 flex items-center gap-2 text-white dark:text-white light:text-gray-900">
-              <svg className="w-5 h-5 text-blue-400 dark:text-blue-400 light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              AI Performance
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Win Rate</span>
-                <span className="text-lg font-bold text-green-400 dark:text-green-400 light:text-green-600">76.5%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Total Trades</span>
-                <span className="text-lg font-bold text-white dark:text-white light:text-gray-900">1,234</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Profit (30d)</span>
-                <span className="text-lg font-bold text-green-400 dark:text-green-400 light:text-green-600">+23.4%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Signals */}
-          <div className="bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-4 shadow-xl">
-            <h3 className="font-bold mb-3 text-white dark:text-white light:text-gray-900">Active Signals</h3>
-            <div className="space-y-2">
-              <div className="p-3 bg-green-500/10 dark:bg-green-500/10 light:bg-green-50 border border-green-500/30 dark:border-green-500/30 light:border-green-300 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-white dark:text-white light:text-gray-900">BTC/USDT</span>
-                  <span className="text-xs px-2 py-0.5 bg-green-500/20 dark:bg-green-500/20 light:bg-green-100 rounded text-green-400 dark:text-green-400 light:text-green-700 font-semibold">LONG</span>
-                </div>
-                <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 font-medium">Entry: $67,000 • TP: $70,000</p>
-              </div>
-              <div className="p-3 bg-green-500/10 dark:bg-green-500/10 light:bg-green-50 border border-green-500/30 dark:border-green-500/30 light:border-green-300 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-white dark:text-white light:text-gray-900">ETH/USDT</span>
-                  <span className="text-xs px-2 py-0.5 bg-green-500/20 dark:bg-green-500/20 light:bg-green-100 rounded text-green-400 dark:text-green-400 light:text-green-700 font-semibold">LONG</span>
-                </div>
-                <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 font-medium">Entry: $3,200 • TP: $3,400</p>
-              </div>
-              <div className="p-3 bg-red-500/10 dark:bg-red-500/10 light:bg-red-50 border border-red-500/30 dark:border-red-500/30 light:border-red-300 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-white dark:text-white light:text-gray-900">SOL/USDT</span>
-                  <span className="text-xs px-2 py-0.5 bg-red-500/20 dark:bg-red-500/20 light:bg-red-100 rounded text-red-400 dark:text-red-400 light:text-red-700 font-semibold">SHORT</span>
-                </div>
-                <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 font-medium">Entry: $145 • TP: $138</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-4 shadow-xl">
-            <h3 className="font-bold mb-3 text-white dark:text-white light:text-gray-900">AI Capabilities</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-400 dark:text-green-400 light:text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Real-time market analysis</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-400 dark:text-green-400 light:text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Automated trade execution</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-400 dark:text-green-400 light:text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Risk management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-400 dark:text-green-400 light:text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">Portfolio optimization</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-400 dark:text-green-400 light:text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-gray-400 dark:text-gray-400 light:text-gray-700 font-medium">24/7 market monitoring</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

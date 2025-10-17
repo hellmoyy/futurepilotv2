@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable static optimization for pages that require session/auth
+  // Enable experimental features
   experimental: {
+    // Disable static optimization for pages that require session/auth
     missingSuspenseWithCSRBailout: false,
+    // Enable instrumentation hook for auto-start background tasks
+    instrumentationHook: true,
   },
   // Remove standalone output for Railway - use standard build
   // output: 'standalone',

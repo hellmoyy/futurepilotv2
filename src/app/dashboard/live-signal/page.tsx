@@ -1,404 +1,550 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface SignalData {
-  _id: string;
-  userId: string;
-  botInstanceId: string;
-  botName: string;
-  logType: 'ANALYSIS';
-  action: string;
-  message: string;
-  data: {
-    signal: 'BUY' | 'SELL' | 'HOLD';
-    confidence: number;
-    trend: string;
-    indicators: {
-      rsi: number;
-      macd: {
-        macd: number;
-        signal: number;
-        histogram: number;
-      };
-      ema20: number;
-      ema50: number;
-      ema200: number;
-    };
-    price: number;
-    symbol: string;
-    aiConfirmation?: {
-      agrees: boolean;
-      confidence: number;
-      reasoning: string;
-    };
+interface TradingSignal {
+  id: string;
+  symbol: string;
+  action: 'LONG' | 'SHORT' | 'HOLD';
+  confidence: number;
+  strength: 'weak' | 'moderate' | 'strong';
+  status: 'active' | 'executed' | 'expired' | 'cancelled';
+  entryPrice: number;
+  currentPrice: number;
+  takeProfitLevels: number[];
+  stopLoss: number;
+  riskRewardRatio: number;
+  maxLeverage: number;
+  recommendedPositionSize: number;
+  reasons: string[];
+  warnings: string[];
+  indicatorSummary: string[];
+  strategy: string;
+  timeframe: string;
+  generatedAt: string;
+  expiresAt: string;
+}
+
+interface SignalsResponse {
+  success: boolean;
+  data: TradingSignal[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
   };
-  createdAt: string;
 }
 
 export default function LiveSignalPage() {
-  const { data: session } = useSession();
-  const [signals, setSignals] = useState<SignalData[]>([]);
+  const [signals, setSignals] = useState<TradingSignal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'ALL' | 'BUY' | 'SELL' | 'HOLD'>('ALL');
+  const [error, setError] = useState<string | null>(null);
+  
+  // Filter states
+  const [filter, setFilter] = useState<'ALL' | 'LONG' | 'SHORT' | 'HOLD'>('ALL');
+  const [minConfidence, setMinConfidence] = useState(80); // Default 80%
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'timestamp' | 'confidence' | 'symbol'>('timestamp');
+  
+  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchSignals = async () => {
     try {
-      const response = await fetch('/api/logs?logType=ANALYSIS&limit=50');
-      if (response.ok) {
-        const data = await response.json();
-        setSignals(data);
+      setError(null);
+      // SERVER-SIDE FILTERS (Heavy database queries)
+      const params = new URLSearchParams({
+        limit: '100', // Fetch more data, filter client-side for instant UX
+        sortBy: 'timestamp',
+        sortOrder: 'desc',
+        minConfidence: minConfidence.toString(), // Server filter
+        status: 'active', // Only active signals
+      });
+      
+      // DON'T filter by action on server - do it client-side for instant toggle
+      // This way users can switch between ALL/LONG/SHORT without API calls
+      
+      const response = await fetch(`/api/signals/latest?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch signals');
       }
-    } catch (error) {
-      console.error('Error fetching signals:', error);
+      const data: SignalsResponse = await response.json();
+      setSignals(data.data);
+      setLastRefresh(new Date());
+    } catch (err: any) {
+      console.error('Error fetching signals:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const generateSignals = async () => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+      const response = await fetch('/api/signals/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          strategy: 'balanced',
+          timeframe: '15m',
+          minConfidence: 80, // Use 80% as default
+          saveToDb: true,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate signals');
+      }
+      const data = await response.json();
+      console.log(`Generated ${data.count} signals`);
+      await fetchSignals();
+    } catch (err: any) {
+      console.error('Error generating signals:', err);
+      setError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   useEffect(() => {
     fetchSignals();
-    
-    // Poll for new signals every 5 seconds
-    const interval = setInterval(fetchSignals, 5000);
-    
+    const interval = setInterval(() => {
+      fetchSignals();
+    }, refreshInterval * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [minConfidence, refreshInterval]); // Removed 'filter' - client-side only
 
-  const filteredSignals = signals.filter(signal => {
-    if (filter === 'ALL') return true;
-    return signal.data?.signal === filter;
-  });
-
-  const getSignalColor = (signal: string) => {
-    switch (signal) {
-      case 'BUY':
-        return 'from-green-500 to-emerald-600';
-      case 'SELL':
-        return 'from-red-500 to-rose-600';
-      case 'HOLD':
-        return 'from-yellow-500 to-orange-500';
-      default:
-        return 'from-gray-500 to-gray-600';
-    }
-  };
-
-  const getSignalTextColor = (signal: string) => {
-    switch (signal) {
-      case 'BUY':
-        return 'text-green-400 dark:text-green-400 light:text-green-600';
-      case 'SELL':
-        return 'text-red-400 dark:text-red-400 light:text-red-600';
-      case 'HOLD':
-        return 'text-yellow-400 dark:text-yellow-400 light:text-yellow-600';
-      default:
-        return 'text-gray-400 dark:text-gray-400 light:text-gray-600';
-    }
-  };
-
-  const getSignalBgColor = (signal: string) => {
-    switch (signal) {
-      case 'BUY':
-        return 'bg-green-500/20 border-green-500/50 dark:bg-green-500/20 dark:border-green-500/50 light:bg-green-100 light:border-green-300';
-      case 'SELL':
-        return 'bg-red-500/20 border-red-500/50 dark:bg-red-500/20 dark:border-red-500/50 light:bg-red-100 light:border-red-300';
-      case 'HOLD':
-        return 'bg-yellow-500/20 border-yellow-500/50 dark:bg-yellow-500/20 dark:border-yellow-500/50 light:bg-yellow-100 light:border-yellow-300';
-      default:
-        return 'bg-gray-500/20 border-gray-500/50 dark:bg-gray-500/20 dark:border-gray-500/50 light:bg-gray-100 light:border-gray-300';
-    }
-  };
-
-  const getTrendColor = (trend: string) => {
-    if (trend?.includes('STRONG_UPTREND')) return 'text-green-500';
-    if (trend?.includes('UPTREND')) return 'text-green-400';
-    if (trend?.includes('STRONG_DOWNTREND')) return 'text-red-500';
-    if (trend?.includes('DOWNTREND')) return 'text-red-400';
-    return 'text-gray-400';
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (seconds < 60) return `${seconds}s ago`;
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return date.toLocaleDateString();
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 dark:text-gray-400 light:text-gray-600">Loading signals...</p>
-        </div>
-      </div>
-    );
-  }
+  // CLIENT-SIDE FILTERS (Instant UX, no API call)
+  const filteredSignals = signals
+    .filter(signal => {
+      // Filter by signal type (LONG/SHORT/HOLD)
+      if (filter !== 'ALL' && signal.action !== filter) {
+        return false;
+      }
+      
+      // Filter by search term (symbol)
+      if (searchTerm && !signal.symbol.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    })
+    .sort((a, b) => {
+      // Client-side sorting for instant UI feedback
+      switch (sortBy) {
+        case 'confidence':
+          return b.confidence - a.confidence;
+        case 'symbol':
+          return a.symbol.localeCompare(b.symbol);
+        case 'timestamp':
+        default:
+          return new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime();
+      }
+    });
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="relative">
-            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
-            <div className="absolute inset-0 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                🚀 Live Trading Signals
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Real-time AI-powered trading signals • Last updated: {lastRefresh.toLocaleTimeString()}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={generateSignals}
+                disabled={isGenerating}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  isGenerating
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl'
+                }`}
+              >
+                {isGenerating ? 'Generating...' : '⚡ Generate Signals'}
+              </button>
+              <button
+                onClick={fetchSignals}
+                className="px-6 py-3 rounded-xl font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+              >
+                🔄 Refresh
+              </button>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold">
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
-              Live Trading Signals
-            </span>
-          </h1>
-        </div>
-        <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-lg">
-          Real-time signals from all active trading bots
-        </p>
-      </div>
+        </motion.div>
 
-      {/* Filter Tabs */}
-      <div className="flex justify-center gap-3 flex-wrap">
-        {['ALL', 'BUY', 'SELL', 'HOLD'].map((filterOption) => (
-          <button
-            key={filterOption}
-            onClick={() => setFilter(filterOption as any)}
-            className={`px-6 py-3 rounded-xl font-bold transition-all ${
-              filter === filterOption
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
-                : 'bg-white/5 dark:bg-white/5 light:bg-white border border-white/10 dark:border-white/10 light:border-gray-200 text-gray-400 dark:text-gray-400 light:text-gray-600 hover:border-blue-400/50'
-            }`}
-          >
-            {filterOption}
-            <span className="ml-2 text-xs opacity-75">
-              ({filterOption === 'ALL' ? signals.length : signals.filter(s => s.data?.signal === filterOption).length})
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
-        <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 dark:from-green-500/20 dark:to-emerald-500/20 light:from-green-100 light:to-emerald-100 border border-green-500/50 dark:border-green-500/50 light:border-green-300 rounded-xl p-4">
-          <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">BUY Signals</p>
-          <p className="text-3xl font-bold text-green-400 dark:text-green-400 light:text-green-600">
-            {signals.filter(s => s.data?.signal === 'BUY').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-red-500/20 to-rose-500/20 dark:from-red-500/20 dark:to-rose-500/20 light:from-red-100 light:to-rose-100 border border-red-500/50 dark:border-red-500/50 light:border-red-300 rounded-xl p-4">
-          <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">SELL Signals</p>
-          <p className="text-3xl font-bold text-red-400 dark:text-red-400 light:text-red-600">
-            {signals.filter(s => s.data?.signal === 'SELL').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 dark:from-yellow-500/20 dark:to-orange-500/20 light:from-yellow-100 light:to-orange-100 border border-yellow-500/50 dark:border-yellow-500/50 light:border-yellow-300 rounded-xl p-4">
-          <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">HOLD Signals</p>
-          <p className="text-3xl font-bold text-yellow-400 dark:text-yellow-400 light:text-yellow-600">
-            {signals.filter(s => s.data?.signal === 'HOLD').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 dark:from-blue-500/20 dark:to-cyan-500/20 light:from-blue-100 light:to-cyan-100 border border-blue-500/50 dark:border-blue-500/50 light:border-blue-300 rounded-xl p-4">
-          <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">Total Signals</p>
-          <p className="text-3xl font-bold text-blue-400 dark:text-blue-400 light:text-blue-600">
-            {signals.length}
-          </p>
-        </div>
-      </div>
-
-      {/* Signals List */}
-      <div className="max-w-6xl mx-auto space-y-4">
-        {filteredSignals.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="w-20 h-20 mx-auto mb-4 text-gray-600 dark:text-gray-600 light:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <p className="text-xl font-semibold text-gray-400 dark:text-gray-400 light:text-gray-600 mb-2">
-              No {filter !== 'ALL' ? filter : ''} Signals Yet
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 light:text-gray-500">
-              Signals will appear here when bots start analyzing the market
-            </p>
-          </div>
-        ) : (
-          filteredSignals.map((signal, index) => (
-            <div
-              key={signal._id}
-              className={`relative group rounded-2xl border-2 transition-all duration-300 ${getSignalBgColor(signal.data?.signal)} hover:shadow-xl backdrop-blur-sm animate-fadeIn`}
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              {/* Signal Header */}
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    {/* Signal Badge */}
-                    <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getSignalColor(signal.data?.signal)} shadow-lg`}>
-                      <p className="text-2xl font-bold text-white">
-                        {signal.data?.signal}
-                      </p>
-                    </div>
-                    
-                    {/* Bot Info */}
-                    <div>
-                      <p className="text-lg font-bold text-white dark:text-white light:text-gray-900">
-                        {signal.botName || 'Trading Bot'}
-                      </p>
-                      <p className="text-sm text-gray-400 dark:text-gray-400 light:text-gray-600">
-                        {signal.data?.symbol || 'BTCUSDT'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 dark:text-gray-500 light:text-gray-500">
-                      {formatTime(signal.createdAt)}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-600 light:text-gray-400">
-                      {new Date(signal.createdAt).toLocaleTimeString()}
-                    </p>
-                  </div>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+        >
+          <div className="space-y-4">
+            {/* Filter Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Signal Type
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['ALL', 'LONG', 'SHORT', 'HOLD'] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFilter(type)}
+                      className={`py-2 px-3 rounded-lg font-medium transition-all ${
+                        filter === type
+                          ? type === 'LONG'
+                            ? 'bg-green-500 text-white shadow-lg'
+                            : type === 'SHORT'
+                            ? 'bg-red-500 text-white shadow-lg'
+                            : type === 'HOLD'
+                            ? 'bg-gray-500 text-white shadow-lg'
+                            : 'bg-blue-500 text-white shadow-lg'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Signal Details Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  {/* Price */}
-                  <div className="bg-white/5 dark:bg-white/5 light:bg-white/50 rounded-xl p-3 border border-white/10 dark:border-white/10 light:border-gray-200">
-                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Price</p>
-                    <p className="text-lg font-bold text-white dark:text-white light:text-gray-900">
-                      ${signal.data?.price?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-
-                  {/* Confidence */}
-                  <div className="bg-white/5 dark:bg-white/5 light:bg-white/50 rounded-xl p-3 border border-white/10 dark:border-white/10 light:border-gray-200">
-                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Confidence</p>
-                    <p className="text-lg font-bold text-blue-400 dark:text-blue-400 light:text-blue-600">
-                      {signal.data?.confidence?.toFixed(1) || '0'}%
-                    </p>
-                  </div>
-
-                  {/* Trend */}
-                  <div className="bg-white/5 dark:bg-white/5 light:bg-white/50 rounded-xl p-3 border border-white/10 dark:border-white/10 light:border-gray-200">
-                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Trend</p>
-                    <p className={`text-sm font-bold ${getTrendColor(signal.data?.trend)}`}>
-                      {signal.data?.trend?.replace('_', ' ') || 'NEUTRAL'}
-                    </p>
-                  </div>
-
-                  {/* RSI */}
-                  <div className="bg-white/5 dark:bg-white/5 light:bg-white/50 rounded-xl p-3 border border-white/10 dark:border-white/10 light:border-gray-200">
-                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">RSI</p>
-                    <p className={`text-lg font-bold ${
-                      (signal.data?.indicators?.rsi || 0) < 30 ? 'text-green-400' :
-                      (signal.data?.indicators?.rsi || 0) > 70 ? 'text-red-400' :
-                      'text-yellow-400'
-                    }`}>
-                      {signal.data?.indicators?.rsi?.toFixed(1) || '0'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Technical Indicators */}
-                <div className="bg-white/5 dark:bg-white/5 light:bg-white/50 rounded-xl p-4 border border-white/10 dark:border-white/10 light:border-gray-200 mb-4">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-500 light:text-gray-600 mb-3">TECHNICAL INDICATORS</p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">MACD</p>
-                      <p className="font-bold text-white dark:text-white light:text-gray-900">
-                        {signal.data?.indicators?.macd?.macd?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Signal Line</p>
-                      <p className="font-bold text-white dark:text-white light:text-gray-900">
-                        {signal.data?.indicators?.macd?.signal?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Histogram</p>
-                      <p className={`font-bold ${
-                        (signal.data?.indicators?.macd?.histogram || 0) > 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {signal.data?.indicators?.macd?.histogram?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">EMA 20</p>
-                      <p className="font-bold text-white dark:text-white light:text-gray-900">
-                        ${signal.data?.indicators?.ema20?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">EMA 50</p>
-                      <p className="font-bold text-white dark:text-white light:text-gray-900">
-                        ${signal.data?.indicators?.ema50?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">EMA 200</p>
-                      <p className="font-bold text-white dark:text-white light:text-gray-900">
-                        ${signal.data?.indicators?.ema200?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* AI Confirmation */}
-                {signal.data?.aiConfirmation && (
-                  <div className={`rounded-xl p-4 border ${
-                    signal.data.aiConfirmation.agrees
-                      ? 'bg-green-500/10 border-green-500/50 dark:bg-green-500/10 dark:border-green-500/50 light:bg-green-50 light:border-green-300'
-                      : 'bg-red-500/10 border-red-500/50 dark:bg-red-500/10 dark:border-red-500/50 light:bg-red-50 light:border-red-300'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        {signal.data.aiConfirmation.agrees ? (
-                          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">
-                          AI CONFIRMATION ({signal.data.aiConfirmation.confidence}% confidence)
-                        </p>
-                        <p className="text-sm text-white dark:text-white light:text-gray-900">
-                          {signal.data.aiConfirmation.reasoning}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Message */}
-                {signal.message && (
-                  <div className="mt-4 p-3 bg-white/5 dark:bg-white/5 light:bg-white/50 rounded-xl border border-white/10 dark:border-white/10 light:border-gray-200">
-                    <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700">
-                      {signal.message}
-                    </p>
-                  </div>
-                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Min Confidence: {minConfidence}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={minConfidence}
+                  onChange={(e) => setMinConfidence(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Auto-refresh: {refreshInterval}s
+                </label>
+                <select
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="15">15 seconds</option>
+                  <option value="30">30 seconds</option>
+                  <option value="60">1 minute</option>
+                  <option value="300">5 minutes</option>
+                </select>
               </div>
             </div>
-          ))
+
+            {/* Search & Sort Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  🔍 Search Symbol
+                </label>
+                <input
+                  type="text"
+                  placeholder="Search BTC, ETH, SOL..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  📊 Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="timestamp">⏰ Newest First</option>
+                  <option value="confidence">📈 Highest Confidence</option>
+                  <option value="symbol">🔤 Symbol (A-Z)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Results Counter */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center justify-between px-4"
+        >
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Showing <span className="font-semibold text-gray-900 dark:text-white">{filteredSignals.length}</span> of{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">{signals.length}</span> signals
+            {searchTerm && (
+              <span className="ml-2">
+                • Searching for "<span className="font-semibold text-blue-600 dark:text-blue-400">{searchTerm}</span>"
+              </span>
+            )}
+            {filter !== 'ALL' && (
+              <span className="ml-2">
+                • Filtered by{' '}
+                <span className={`font-semibold ${
+                  filter === 'LONG' ? 'text-green-600 dark:text-green-400' : 
+                  filter === 'SHORT' ? 'text-red-600 dark:text-red-400' : 
+                  'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {filter}
+                </span>
+              </span>
+            )}
+          </div>
+          {(searchTerm || filter !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilter('ALL');
+              }}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Clear Filters
+            </button>
+          )}
+        </motion.div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded-xl p-4"
+          >
+            <p className="text-red-700 dark:text-red-400 font-medium">
+              ❌ Error: {error}
+            </p>
+          </motion.div>
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin h-12 w-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+              <p className="text-gray-600 dark:text-gray-400 font-medium">Loading signals...</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && (
+          <AnimatePresence mode="popLayout">
+            {filteredSignals.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12 text-center border border-gray-200 dark:border-gray-700"
+              >
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
+                  📭 No signals found. Try adjusting filters or generate new signals.
+                </p>
+              </motion.div>
+            ) : (
+              <div className="space-y-4">
+                {filteredSignals.map((signal, index) => (
+                  <SignalCard key={signal.id} signal={signal} index={index} />
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
         )}
       </div>
-
-      {/* Auto-refresh indicator */}
-      <div className="text-center py-4">
-        <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-500">
-          🔄 Auto-refreshing every 5 seconds
-        </p>
-      </div>
     </div>
+  );
+}
+
+interface SignalCardProps {
+  signal: TradingSignal;
+  index: number;
+}
+
+function SignalCard({ signal, index }: SignalCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  
+  const colors = signal.action === 'LONG'
+    ? {
+        gradient: 'from-green-500 to-emerald-600',
+        bg: 'bg-green-50 dark:bg-green-900/20',
+        border: 'border-green-200 dark:border-green-800',
+        text: 'text-green-600 dark:text-green-400',
+        badge: 'bg-green-500',
+      }
+    : signal.action === 'SHORT'
+    ? {
+        gradient: 'from-red-500 to-rose-600',
+        bg: 'bg-red-50 dark:bg-red-900/20',
+        border: 'border-red-200 dark:border-red-800',
+        text: 'text-red-600 dark:text-red-400',
+        badge: 'bg-red-500',
+      }
+    : {
+        gradient: 'from-gray-500 to-gray-600',
+        bg: 'bg-gray-50 dark:bg-gray-800',
+        border: 'border-gray-200 dark:border-gray-700',
+        text: 'text-gray-600 dark:text-gray-400',
+        badge: 'bg-gray-500',
+      };
+  
+  const isExpired = new Date(signal.expiresAt) < new Date();
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ delay: index * 0.05 }}
+      layout
+      className={`${colors.bg} ${colors.border} border-2 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow ${
+        isExpired ? 'opacity-60' : ''
+      }`}
+    >
+      <div className={`bg-gradient-to-r ${colors.gradient} p-1`}>
+        <div className="bg-white dark:bg-gray-900 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`${colors.badge} text-white px-4 py-2 rounded-lg font-bold text-xl`}>
+                {signal.symbol}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-2xl font-bold ${colors.text}`}>{signal.action}</span>
+                  <span className="text-gray-400 text-sm">•</span>
+                  <span className="text-gray-700 dark:text-gray-300 font-semibold">
+                    {signal.confidence.toFixed(1)}% confidence
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    signal.strength === 'strong'
+                      ? 'bg-purple-500 text-white'
+                      : signal.strength === 'moderate'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-400 text-white'
+                  }`}>
+                    {signal.strength.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                  {signal.strategy} • {signal.timeframe} • R/R: {signal.riskRewardRatio.toFixed(2)}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            >
+              <svg
+                className={`w-6 h-6 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Entry Price</p>
+          <p className="text-gray-900 dark:text-white font-bold text-lg">${signal.entryPrice.toFixed(2)}</p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Take Profit</p>
+          <p className="text-green-600 dark:text-green-400 font-bold text-lg">
+            ${signal.takeProfitLevels[1]?.toFixed(2) || signal.takeProfitLevels[0]?.toFixed(2)}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Stop Loss</p>
+          <p className="text-red-600 dark:text-red-400 font-bold text-lg">${signal.stopLoss.toFixed(2)}</p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">Position Size</p>
+          <p className="text-gray-900 dark:text-white font-bold text-lg">
+            {signal.recommendedPositionSize.toFixed(1)}%
+          </p>
+        </div>
+      </div>
+      
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 space-y-4"
+          >
+            {signal.reasons.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">📊 Analysis Reasons:</h4>
+                <ul className="space-y-1">
+                  {signal.reasons.map((reason, i) => (
+                    <li key={i} className="text-gray-700 dark:text-gray-300 text-sm">{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {signal.warnings.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">⚠️ Warnings:</h4>
+                <ul className="space-y-1">
+                  {signal.warnings.map((warning, i) => (
+                    <li key={i} className="text-orange-600 dark:text-orange-400 text-sm">{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {signal.indicatorSummary.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">📈 Technical Indicators:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {signal.indicatorSummary.map((indicator, i) => (
+                    <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-700 dark:text-gray-300">
+                      {indicator}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">🎯 Take Profit Levels:</h4>
+              <div className="flex gap-2">
+                {signal.takeProfitLevels.map((tp, i) => (
+                  <div key={i} className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg px-4 py-2">
+                    <p className="text-green-700 dark:text-green-400 text-xs font-medium">TP{i + 1}</p>
+                    <p className="text-green-900 dark:text-green-300 font-bold">${tp.toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
+              <span>Generated: {new Date(signal.generatedAt).toLocaleString()}</span>
+              <span>Expires: {new Date(signal.expiresAt).toLocaleString()}</span>
+              <span>Max Leverage: {signal.maxLeverage}x</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
