@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import LiveNews from '@/components/LiveNews';
 
 // Helper function to format symbol with slash
 function formatSymbol(symbol: string): string {
@@ -459,11 +458,6 @@ export default function LiveSignalPage() {
             )}
           </AnimatePresence>
         )}
-
-        {/* Live News Section */}
-        <div className="mt-12">
-          <LiveNews />
-        </div>
       </div>
     </div>
   );
