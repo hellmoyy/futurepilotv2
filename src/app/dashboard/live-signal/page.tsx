@@ -3,6 +3,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Helper function to format symbol with slash
+function formatSymbol(symbol: string): string {
+  // Remove USDT suffix and add slash
+  // BTCUSDT -> BTC/USDT
+  // ETHUSDT -> ETH/USDT
+  if (symbol.endsWith('USDT')) {
+    const base = symbol.slice(0, -4);
+    return `${base}/USDT`;
+  }
+  return symbol;
+}
+
 interface TradingSignal {
   id: string;
   symbol: string;
@@ -379,29 +391,12 @@ interface SignalCardProps {
 function SignalCard({ signal, index }: SignalCardProps) {
   const [expanded, setExpanded] = useState(false);
   
-  const colors = signal.action === 'LONG'
-    ? {
-        gradient: 'from-green-500 to-emerald-600',
-        bg: 'bg-green-50 dark:bg-green-900/20',
-        border: 'border-green-200 dark:border-green-800',
-        text: 'text-green-600 dark:text-green-400',
-        badge: 'bg-green-500',
-      }
+  // Badge colors - hanya untuk label aksi
+  const actionColors = signal.action === 'LONG'
+    ? 'bg-green-500 text-white'
     : signal.action === 'SHORT'
-    ? {
-        gradient: 'from-red-500 to-rose-600',
-        bg: 'bg-red-50 dark:bg-red-900/20',
-        border: 'border-red-200 dark:border-red-800',
-        text: 'text-red-600 dark:text-red-400',
-        badge: 'bg-red-500',
-      }
-    : {
-        gradient: 'from-gray-500 to-gray-600',
-        bg: 'bg-gray-50 dark:bg-gray-800',
-        border: 'border-gray-200 dark:border-gray-700',
-        text: 'text-gray-600 dark:text-gray-400',
-        badge: 'bg-gray-500',
-      };
+    ? 'bg-red-500 text-white'
+    : 'bg-gray-500 text-white';
   
   const isExpired = new Date(signal.expiresAt) < new Date();
   
@@ -412,53 +407,55 @@ function SignalCard({ signal, index }: SignalCardProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ delay: index * 0.05 }}
       layout
-      className={`${colors.bg} ${colors.border} border-2 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow ${
+      className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${
         isExpired ? 'opacity-60' : ''
       }`}
     >
-      <div className={`bg-gradient-to-r ${colors.gradient} p-1`}>
-        <div className="bg-white dark:bg-gray-900 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`${colors.badge} text-white px-4 py-2 rounded-lg font-bold text-xl`}>
-                {signal.symbol}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-2xl font-bold ${colors.text}`}>{signal.action}</span>
-                  <span className="text-gray-400 text-sm">•</span>
-                  <span className="text-gray-700 dark:text-gray-300 font-semibold">
-                    {signal.confidence.toFixed(1)}% confidence
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    signal.strength === 'strong'
-                      ? 'bg-purple-500 text-white'
-                      : signal.strength === 'moderate'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-400 text-white'
-                  }`}>
-                    {signal.strength.toUpperCase()}
-                  </span>
-                </div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                  {signal.strategy} • {signal.timeframe} • R/R: {signal.riskRewardRatio.toFixed(2)}
-                </p>
-              </div>
+      {/* Header - Soft background */}
+      <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Symbol - Neutral color with formatted pair */}
+            <div className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-bold text-xl">
+              {formatSymbol(signal.symbol)}
             </div>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-            >
-              <svg
-                className={`w-6 h-6 transition-transform ${expanded ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Action Badge - Only this has color! */}
+              <span className={`${actionColors} px-4 py-1.5 rounded-lg font-bold text-lg shadow-sm`}>
+                {signal.action}
+              </span>
+              <span className="text-gray-400 text-sm">•</span>
+              <span className="text-gray-700 dark:text-gray-300 font-semibold">
+                {signal.confidence.toFixed(1)}% confidence
+              </span>
+              <span className="text-gray-400 text-sm">•</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">
+                {signal.strategy} • {signal.timeframe} • R/R: {signal.riskRewardRatio.toFixed(2)}
+              </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                signal.strength === 'strong'
+                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                  : signal.strength === 'moderate'
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              }`}>
+                {signal.strength.toUpperCase()}
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <svg
+              className={`w-6 h-6 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
       </div>
       
