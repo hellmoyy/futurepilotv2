@@ -605,9 +605,11 @@ function SignalCard({ signal, index }: SignalCardProps) {
                 </div>
               </div>
             )}
+            
+            {/* Take Profit Levels */}
             <div>
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">🎯 Take Profit Levels:</h4>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {signal.takeProfitLevels.map((tp, i) => (
                   <div key={i} className="bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg px-4 py-2">
                     <p className="text-green-700 dark:text-green-400 text-xs font-medium">TP{i + 1}</p>
@@ -616,6 +618,19 @@ function SignalCard({ signal, index }: SignalCardProps) {
                 ))}
               </div>
             </div>
+            
+            {/* Stop Loss */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">🛑 Stop Loss:</h4>
+              <div className="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg px-4 py-3 inline-block">
+                <p className="text-red-700 dark:text-red-400 text-xs font-medium mb-1">Stop Loss</p>
+                <p className="text-red-900 dark:text-red-300 font-bold text-xl">${signal.stopLoss.toFixed(2)}</p>
+                <p className="text-red-600 dark:text-red-400 text-xs mt-1">
+                  Risk: {((Math.abs(signal.entryPrice - signal.stopLoss) / signal.entryPrice) * 100).toFixed(2)}%
+                </p>
+              </div>
+            </div>
+            
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
               <span>Generated: {new Date(signal.generatedAt).toLocaleString()}</span>
               <span>Expires: {new Date(signal.expiresAt).toLocaleString()}</span>
