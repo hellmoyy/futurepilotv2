@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Helper function to format symbol with slash
@@ -13,6 +13,14 @@ function formatSymbol(symbol: string): string {
     return `${base}/USDT`;
   }
   return symbol;
+}
+
+// Helper function to format time
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 interface TradingSignal {
@@ -80,10 +88,10 @@ export default function LiveSignalPage() {
       
       // SERVER-SIDE FILTERS with pagination
       const params = new URLSearchParams({
-        limit: '20', // Load 20 signals per page for better performance
+        limit: '20', // Load 20 signals per page
         page: pageNum.toString(),
-        sortBy: 'timestamp',
-        sortOrder: 'desc',
+        sortBy: 'timestamp', // Sort by newest first (terbaru paling atas)
+        sortOrder: 'desc', // Descending order (newest to oldest)
         minConfidence: minConfidence.toString(),
         status: 'active',
       });
@@ -159,21 +167,6 @@ export default function LiveSignalPage() {
     }, refreshInterval * 1000);
     return () => clearInterval(interval);
   }, [minConfidence, refreshInterval]); // Removed 'filter' - client-side only
-
-  // Infinite Scroll Observer
-  const observer = useRef<IntersectionObserver>();
-  const lastSignalRef = useCallback((node: HTMLDivElement) => {
-    if (loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMore();
-      }
-    });
-    
-    if (node) observer.current.observe(node);
-  }, [loadingMore, hasMore]);
 
   // CLIENT-SIDE FILTERS (Instant UX, no API call)
   const filteredSignals = signals
@@ -426,15 +419,9 @@ export default function LiveSignalPage() {
             ) : (
               <>
                 <div className="space-y-4">
-                  {filteredSignals.map((signal, index) => {
-                    // Attach observer to last signal for auto infinite scroll
-                    const isLastSignal = index === filteredSignals.length - 1;
-                    return (
-                      <div key={signal.id} ref={isLastSignal ? lastSignalRef : null}>
-                        <SignalCard signal={signal} index={index} />
-                      </div>
-                    );
-                  })}
+                  {filteredSignals.map((signal, index) => (
+                    <SignalCard key={signal.id} signal={signal} index={index} />
+                  ))}
                 </div>
 
                 {/* Loading More Indicator */}
@@ -447,7 +434,7 @@ export default function LiveSignalPage() {
                   </div>
                 )}
 
-                {/* Manual Load More Button (backup) */}
+                {/* Load More Button - Manual Only */}
                 {hasMore && !loadingMore && (
                   <div className="flex justify-center mt-8">
                     <button
@@ -531,6 +518,10 @@ function SignalCard({ signal, index }: SignalCardProps) {
                   : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
               }`}>
                 {signal.strength.toUpperCase()}
+              </span>
+              <span className="text-gray-400 text-sm">•</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
+                🕐 {formatTime(signal.generatedAt)}
               </span>
             </div>
           </div>
