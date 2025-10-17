@@ -295,7 +295,15 @@ export class LiveSignalEngine {
       confidence = 0;
       reasons.push('📊 No clear signals - market consolidating');
     } else {
-      confidence = Math.min((Math.abs(netScore) / totalScore) * 100, 100);
+      // Fixed confidence calculation:
+      // Use the winning score as percentage of total
+      // Higher score difference = higher confidence
+      const winningScore = Math.max(bullishScore, bearishScore);
+      confidence = Math.min((winningScore / totalScore) * 100, 100);
+      
+      // Boost confidence if there's strong consensus (large score difference)
+      const scoreDominance = Math.abs(netScore) / totalScore;
+      confidence = Math.min(confidence * (1 + scoreDominance), 100);
       
       if (netScore > 0 && confidence >= rules.minConfidence) {
         action = 'LONG';
