@@ -4,11 +4,27 @@ A modern Next.js application with Tailwind CSS for beautiful, responsive web dev
 
 ## Features
 
+### Core Framework
 - **Next.js 14+** - React framework with App Router
 - **Tailwind CSS** - Utility-first CSS framework
 - **TypeScript** - Type-safe development
 - **ESLint** - Code linting and formatting
-- **OpenAI Integration** - AI-powered trading assistant and market analysis
+
+### Trading Features
+- **AI-Powered Trading Assistant** - Chat with OpenAI GPT-3.5 for market insights
+- **Live Signal Generation** - Automated technical analysis with confidence scoring
+- **News Validation System** - Combines technical + fundamental analysis using real-time crypto news
+- **Smart Signal Filtering** - Rejects conflicting signals (e.g., bullish technical + bearish news)
+- **Real-Time Market Data** - Live crypto prices from Binance (10s refresh)
+- **Customizable Bot Settings** - Adjust leverage, stop loss, take profit per user
+- **Trading Automation** - Start/stop trading bots with custom strategies
+
+### AI & Analysis
+- **Technical Indicators** - RSI, MACD, EMA, Bollinger Bands, Volume, ATR
+- **News Sentiment Analysis** - AI-powered sentiment from CryptoNews & CryptoPanic APIs
+- **Multi-Source News** - CryptoNews (primary), CryptoPanic (fallback), AI analysis
+- **Confidence Scoring** - Realistic 60-90% scores (never 100%), quality validation
+- **Signal Validation** - Minimum score requirements, indicator agreement, news alignment
 
 ## Getting Started
 
@@ -93,13 +109,85 @@ futurepilotv2/
 - Use Tailwind CSS utility classes for styling
 - Maintain clean, readable code with proper TypeScript types
 
+## Quick Start Guide
+
+### 1. Setup Environment Variables
+```bash
+# Copy example file
+cp .env.example .env
+
+# Required variables:
+MONGODB_URI=mongodb+srv://...
+NEXTAUTH_SECRET=your-secret-key
+OPENAI_API_KEY=sk-xxxxx
+BINANCE_API_KEY=your-key
+BINANCE_API_SECRET=your-secret
+
+# Optional (for news validation):
+CRYPTONEWS_API_KEY=your-token        # Recommended for best quality
+CRYPTOPANIC_API_KEY=your-token       # Fallback option
+```
+
+### 2. Get API Keys
+
+#### CryptoNews API (Recommended)
+1. Visit https://cryptonews-api.com/
+2. Sign up for free account
+3. Get API token
+4. Add to `.env`: `CRYPTONEWS_API_KEY=your-token`
+
+#### OpenAI API
+1. Visit https://platform.openai.com/api-keys
+2. Create API key
+3. Add to `.env`: `OPENAI_API_KEY=sk-xxxxx`
+
+### 3. Test News Validation
+```bash
+# Start dev server
+npm run dev
+
+# Test signal generation
+curl http://localhost:3000/api/signals/generate
+
+# Or visit: http://localhost:3000/dashboard/live-signal
+```
+
+## Documentation
+
+- 📰 **[News Validation System](docs/NEWS_VALIDATION_SYSTEM.md)** - Complete guide on news-based signal filtering
+- 🚀 **[Quick Start: News Validation](docs/QUICKSTART_NEWS_VALIDATION.md)** - 5-minute setup guide
+- 🤖 **[OpenAI Integration](docs/OPENAI_INTEGRATION.md)** - AI chat and analysis features
+- 📊 **[Trading Config](docs/TRADING_CONFIG_QUICKSTART.md)** - Configure trading strategies
+- ⏰ **[Cron Setup](docs/QUICKSTART_CRON.md)** - Automated signal generation
+- 🚂 **[Railway Deployment](docs/RAILWAY_DEPLOYMENT.md)** - Deploy to production
+
+## Key Features Explained
+
+### 🎯 Live Signal Engine
+Generates trading signals using technical indicators (RSI, MACD, EMA, etc.) with realistic confidence scores (60-90%). Includes quality validation and minimum requirements.
+
+### 📰 News Validation System
+**NEW!** Combines technical + fundamental analysis:
+- Fetches real-time crypto news from CryptoNews/CryptoPanic APIs
+- AI-powered sentiment analysis using OpenAI GPT-3.5
+- Validates signal alignment (e.g., LONG signal must have bullish news)
+- Rejects conflicting signals automatically
+- Combined scoring: 60% technical + 40% fundamental
+
+### 🤖 AI Trading Assistant
+Chat with AI for:
+- Market insights and predictions
+- Technical analysis explanations
+- Trading strategy recommendations
+- Risk management advice
+
+### 📊 Real-Time Dashboard
+- Live crypto prices (BTC, ETH, BNB, SOL, XRP, ADA, DOGE, MATIC)
+- 24h price changes with color coding
+- Bot management and monitoring
+- Signal history and performance
+
 ## Learn More
-
-### AI Features
-
-Visit `/ai-demo` to try:
-- **AI Chat Assistant** - Conversational AI for trading insights
-- **Market Analyzer** - AI-powered technical analysis
 
 See [OpenAI Integration Guide](./docs/OPENAI_INTEGRATION.md) for detailed documentation.
 

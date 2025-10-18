@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       symbols,
       strategy = 'balanced',
       timeframe = '15m',
-      minConfidence = 80, // Default 80% confidence threshold
+      minConfidence = 60, // Lowered to 60% for testing
       saveToDb = true,
     } = body;
     
@@ -69,6 +69,45 @@ export async function POST(req: NextRequest) {
       targetSymbols = enabledPairs.map(p => p.symbol);
     }
     
+    // ✅ COOLDOWN CHECK: Prevent duplicate signals
+    const cooldownMinutes = 15; // 15 minutes cooldown per symbol
+    const cooldownTime = new Date(Date.now() - cooldownMinutes * 60 * 1000);
+    
+    if (saveToDb) {
+      // Check for recent signals
+      const recentSignals = await Signal.find({
+        symbol: { $in: targetSymbols },
+        generatedAt: { $gte: cooldownTime },
+        status: 'active',
+      }).select('symbol action generatedAt').lean();
+
+      if (recentSignals.length > 0) {
+        const recentSymbols = recentSignals.map(s => s.symbol);
+        const cooldownInfo = recentSignals.map(s => ({
+          symbol: s.symbol,
+          action: s.action,
+          generatedAt: s.generatedAt,
+          minutesAgo: Math.floor((Date.now() - new Date(s.generatedAt).getTime()) / 60000),
+          remainingCooldown: cooldownMinutes - Math.floor((Date.now() - new Date(s.generatedAt).getTime()) / 60000),
+        }));
+
+        console.log(`⏳ ${recentSymbols.length} symbols in cooldown:`, recentSymbols);
+        
+        // Filter out symbols in cooldown
+        targetSymbols = targetSymbols.filter(s => !recentSymbols.includes(s));
+        
+        if (targetSymbols.length === 0) {
+          return NextResponse.json({
+            success: false,
+            message: 'All symbols are in cooldown period',
+            cooldown: cooldownInfo,
+          });
+        }
+        
+        console.log(`📊 Proceeding with ${targetSymbols.length} symbols (${recentSymbols.length} in cooldown)`);
+      }
+    }
+    
     // Fetch candles for all symbols
     console.log(`📊 Fetching candles for ${targetSymbols.length} pairs...`);
     const candlesMap = await fetchMultipleCandles(targetSymbols, timeframe as any, 100);
@@ -77,12 +116,17 @@ export async function POST(req: NextRequest) {
     console.log(`🚀 Generating signals with ${strategy} strategy...`);
     const engine = new LiveSignalEngine();
     
-    const signals = await engine.generateMultipleSignals(candlesMap, {
+    const allSignals = await engine.generateMultipleSignals(candlesMap, {
       strategy,
       timeframe,
       minConfidence,
       enabledPairsOnly: true,
+      validateWithNews: true, // ✅ Enable news validation
+      requireNewsAlignment: true, // ✅ Reject conflicting signals
     });
+    
+    // Filter out HOLD signals (only show actionable LONG/SHORT)
+    const signals = allSignals.filter(s => s.action !== 'HOLD');
     
     // Save to database if requested
     if (saveToDb && signals.length > 0) {
@@ -95,6 +139,9 @@ export async function POST(req: NextRequest) {
               ...signalData,
               generatedAt: new Date(signalData.timestamp),
               expiresAt: new Date(signalData.expiresAt),
+              status: 'active',
+              isPublic: true,
+              viewCount: 0,
             });
             
             return await signal.save();
@@ -128,6 +175,8 @@ export async function POST(req: NextRequest) {
         reasons: s.reasons,
         warnings: s.warnings,
         indicatorSummary: s.indicatorSummary,
+        newsValidation: s.newsValidation,
+        newsSentiment: s.newsSentiment,
         timestamp: s.timestamp,
         expiresAt: s.expiresAt,
       })),
@@ -201,6 +250,17 @@ export async function GET(req: NextRequest) {
       timeframe,
     });
     
+    // Check if signal was rejected (e.g., due to news conflict)
+    if (!signalData) {
+      return NextResponse.json({
+        success: false,
+        message: 'No valid signal generated',
+        reason: 'Signal rejected due to quality threshold or news conflict',
+        symbol: symbol.toUpperCase(),
+        generatedAt: new Date().toISOString(),
+      });
+    }
+    
     // Save to database if requested
     let savedSignal = null;
     if (saveToDb) {
@@ -237,6 +297,8 @@ export async function GET(req: NextRequest) {
         timeframe: signalData.timeframe,
         timestamp: signalData.timestamp,
         expiresAt: signalData.expiresAt,
+        newsValidation: signalData.newsValidation,
+        newsSentiment: signalData.newsSentiment,
       },
       generatedAt: new Date().toISOString(),
     };

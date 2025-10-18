@@ -8,11 +8,20 @@ export interface IChatHistory extends Document {
     role: 'user' | 'assistant';
     content: string;
     timestamp: Date;
+    hasImage?: boolean;
   }[];
   title?: string;
+  messageCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Configuration
+export const CHAT_HISTORY_CONFIG = {
+  MAX_CHATS_PER_USER: 50, // Maximum number of chat sessions per user
+  MAX_MESSAGES_PER_CHAT: 100, // Maximum messages per chat session
+  AUTO_CLEANUP_ENABLED: true, // Auto delete oldest chats when limit reached
+};
 
 // Chat History Schema
 const ChatHistorySchema = new Schema<IChatHistory>(
@@ -42,11 +51,19 @@ const ChatHistorySchema = new Schema<IChatHistory>(
           type: Date,
           default: Date.now,
         },
+        hasImage: {
+          type: Boolean,
+          default: false,
+        },
       },
     ],
     title: {
       type: String,
       default: 'New Chat',
+    },
+    messageCount: {
+      type: Number,
+      default: 0,
     },
   },
   {

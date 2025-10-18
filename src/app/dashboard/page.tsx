@@ -3,21 +3,60 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
-interface DBStatus {
-  status: string;
-  database?: string;
-  collections?: string[];
+interface CoinPrice {
+  symbol: string;
+  name: string;
+  price: string;
+  priceChangePercent: string;
+  volume: string;
 }
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const [dbStatus, setDbStatus] = useState<DBStatus | null>(null);
+  const [coins, setCoins] = useState<CoinPrice[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/db/test')
-      .then((res) => res.json())
-      .then((data) => setDbStatus(data))
-      .catch((err) => console.error('Failed to fetch DB status:', err));
+    const fetchPrices = async () => {
+      try {
+        const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+        const data = await response.json();
+        
+        // Filter top coins
+        const topCoins = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'MATICUSDT'];
+        const coinNames: { [key: string]: string } = {
+          'BTCUSDT': 'Bitcoin',
+          'ETHUSDT': 'Ethereum',
+          'BNBUSDT': 'BNB',
+          'SOLUSDT': 'Solana',
+          'XRPUSDT': 'Ripple',
+          'ADAUSDT': 'Cardano',
+          'DOGEUSDT': 'Dogecoin',
+          'MATICUSDT': 'Polygon'
+        };
+        
+        const filtered = data
+          .filter((item: any) => topCoins.includes(item.symbol))
+          .map((item: any) => ({
+            symbol: item.symbol,
+            name: coinNames[item.symbol] || item.symbol,
+            price: parseFloat(item.lastPrice).toFixed(2),
+            priceChangePercent: parseFloat(item.priceChangePercent).toFixed(2),
+            volume: (parseFloat(item.volume) / 1000000).toFixed(2) + 'M'
+          }));
+        
+        setCoins(filtered);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching prices:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 10000); // Update every 10 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -91,38 +130,78 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Database Status */}
-            {/* Database Status */}
-      {dbStatus && (
-        <div className="bg-gradient-to-br from-black/60 to-blue-900/30 dark:from-black/60 dark:to-blue-900/30 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-8 shadow-xl">
-          <h3 className="text-2xl font-bold mb-6 text-white dark:text-white light:text-gray-900">Database Status</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-black/30 dark:bg-black/30 light:bg-blue-50 backdrop-blur-sm rounded-xl p-4 border border-white/10 dark:border-white/10 light:border-blue-200">
-              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Status</p>
-              <div className="flex items-center space-x-3">
-                <span
-                  className={`w-4 h-4 rounded-full animate-pulse ${
-                    dbStatus.status === 'connected' ? 'bg-green-400 shadow-lg shadow-green-400/50' : 'bg-red-400 shadow-lg shadow-red-400/50'
-                  }`}
-                ></span>
-                <span className="text-white dark:text-white light:text-gray-900 text-lg font-bold capitalize">{dbStatus.status}</span>
-              </div>
-            </div>
-            {dbStatus.database && (
-              <div className="bg-black/30 dark:bg-black/30 light:bg-blue-50 backdrop-blur-sm rounded-xl p-4 border border-white/10 dark:border-white/10 light:border-blue-200">
-                <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Database</p>
-                <p className="text-white dark:text-white light:text-gray-900 text-lg font-bold">{dbStatus.database}</p>
-              </div>
-            )}
-            {dbStatus.collections && dbStatus.collections.length > 0 && (
-              <div className="bg-black/30 dark:bg-black/30 light:bg-blue-50 backdrop-blur-sm rounded-xl p-4 border border-white/10 dark:border-white/10 light:border-blue-200">
-                <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Collections</p>
-                <p className="text-white dark:text-white light:text-gray-900 text-lg font-bold">{dbStatus.collections.join(', ')}</p>
-              </div>
-            )}
+      {/* Market Overview */}
+      <div className="bg-gradient-to-br from-black/60 to-blue-900/30 dark:from-black/60 dark:to-blue-900/30 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-8 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-white dark:text-white light:text-gray-900">Market Overview</h3>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600">Live</span>
           </div>
         </div>
-      )}
+        
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {coins.map((coin) => (
+              <div
+                key={coin.symbol}
+                className="bg-gradient-to-br from-black/40 to-blue-900/20 dark:from-black/40 dark:to-blue-900/20 light:from-blue-50 light:to-white backdrop-blur-sm rounded-xl p-5 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-blue-400/50 dark:hover:border-blue-400/50 light:hover:border-blue-400 transition-all hover:shadow-xl hover:shadow-blue-500/10 group"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1 uppercase tracking-wide">
+                      {coin.symbol.replace('USDT', '/USDT')}
+                    </p>
+                    <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">
+                      {coin.name}
+                    </h4>
+                  </div>
+                  <div className="w-10 h-10 bg-blue-500/20 dark:bg-blue-500/20 light:bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-blue-400 dark:text-blue-400 light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl font-bold text-white dark:text-white light:text-gray-900">
+                      ${coin.price}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10 dark:border-white/10 light:border-blue-200">
+                    <span className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">24h Change</span>
+                    <span
+                      className={`text-sm font-bold flex items-center ${
+                        parseFloat(coin.priceChangePercent) >= 0
+                          ? 'text-green-400 dark:text-green-400 light:text-green-600'
+                          : 'text-red-400 dark:text-red-400 light:text-red-600'
+                      }`}
+                    >
+                      {parseFloat(coin.priceChangePercent) >= 0 ? (
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17H5m0 0V9m0 8l8-8 4 4 6-6" />
+                        </svg>
+                      )}
+                      {parseFloat(coin.priceChangePercent) >= 0 ? '+' : ''}
+                      {coin.priceChangePercent}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Quick Actions */}
       <div className="bg-gradient-to-br from-black/60 to-blue-900/30 dark:from-black/60 dark:to-blue-900/30 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-8 shadow-xl">

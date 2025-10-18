@@ -103,10 +103,15 @@ async function generateSignalsTask() {
             {
               strategy: 'balanced',
               timeframe: '15m',
-              minConfidence: 80,
+              minConfidence: 60, // Lowered to 60% for testing
               enabledPairsOnly: true,
             }
           );
+
+          // Check if signal was generated
+          if (!signalData) {
+            throw new Error('Signal rejected (below confidence threshold or conflicting indicators)');
+          }
 
           // Save to MongoDB
           const signal = new Signal({

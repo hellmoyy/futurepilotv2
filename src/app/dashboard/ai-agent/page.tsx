@@ -1,26 +1,81 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { getWelcomeMessage, getQuickActions } from '@/config/ai-agent-persona';
 
 interface Message {
   id: number;
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
+  role?: 'user' | 'assistant' | 'system';
+  imageUrl?: string; // For messages with images
+  imagePreview?: string; // For local image preview
 }
 
-export default function AIAgentPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      type: 'ai',
-      content: 'Hello! I&apos;m your AI Trading Agent. I can help you analyze markets, execute trades, and manage your portfolio. What would you like to do today?',
-      timestamp: new Date(),
+interface ChatSession {
+  sessionId: string;
+  title: string;
+  messageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Initialize messages from localStorage or default
+const getInitialMessages = (): Message[] => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('ai-agent-messages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map((msg: any, index: number) => ({
+          id: msg.id || index + 1,
+          type: msg.type,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          role: msg.role,
+          imageUrl: msg.imageUrl,
+          imagePreview: msg.imagePreview,
+        }));
+      } catch (error) {
+        console.error('Failed to restore chat:', error);
+      }
     }
-  ]);
+  }
+  // Default welcome message
+  return [{
+    id: 1,
+    type: 'ai',
+    content: getWelcomeMessage(),
+    timestamp: new Date(),
+    role: 'assistant',
+  }];
+};
+
+// Initialize session ID from localStorage or create new
+const getInitialSessionId = (): string => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('ai-agent-current-session');
+    if (saved) return saved;
+  }
+  return `session_${Date.now()}`;
+};
+
+export default function AIAgentPage() {
+  const [messages, setMessages] = useState<Message[]>(getInitialMessages());
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(getInitialSessionId());
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const quickActionsConfig = getQuickActions();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -30,82 +85,482 @@ export default function AIAgentPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  // Handle image selection
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
 
-    // Add user message
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image size must be less than 10MB');
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      setError(null);
+    }
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Convert image to base64 for API
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Load chat sessions from history
+  const loadChatSessions = async () => {
+    try {
+      const response = await fetch('/api/ai/chat-history');
+      const data = await response.json();
+      
+      if (data.success) {
+        setChatSessions(data.sessions);
+      }
+    } catch (error) {
+      console.error('Error loading chat sessions:', error);
+    }
+  };
+
+  // Load specific chat session
+  const loadChatSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/ai/chat-history/${sessionId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        const loadedMessages: Message[] = data.session.messages.map((msg: any, index: number) => ({
+          id: index + 1,
+          type: msg.role === 'user' ? 'user' : 'ai',
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          role: msg.role,
+        }));
+        
+        setMessages(loadedMessages);
+        setCurrentSessionId(sessionId);
+        localStorage.setItem('ai-agent-current-session', sessionId);
+        setShowHistory(false);
+      }
+    } catch (error) {
+      console.error('Error loading chat session:', error);
+      setError('Failed to load chat session');
+    }
+  };
+
+  // Save current chat session
+  const saveChatSession = async () => {
+    if (messages.length <= 1) {
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const formattedMessages = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map(m => ({
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+          hasImage: !!m.imageUrl,
+        }));
+
+      const response = await fetch('/api/ai/chat-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          messages: formattedMessages,
+          title: messages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat',
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Save to localStorage only after successful DB save
+        localStorage.setItem('ai-agent-current-session', currentSessionId);
+        await loadChatSessions(); // Refresh sessions list
+      } else {
+        console.error('Failed to save chat:', data.error);
+      }
+    } catch (error) {
+      console.error('Error saving chat:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Delete chat session
+  const deleteChatSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/ai/chat-history?sessionId=${sessionId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        await loadChatSessions(); // Refresh sessions list
+        if (sessionId === currentSessionId) {
+          // Start new chat if current chat was deleted
+          startNewChat();
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+    }
+  };
+
+  // Start new chat
+  const startNewChat = () => {
+    const newSessionId = `session_${Date.now()}`;
+    const newMessages = [
+      {
+        id: 1,
+        type: 'ai' as const,
+        content: getWelcomeMessage(),
+        timestamp: new Date(),
+        role: 'assistant' as const,
+      }
+    ];
+    
+    setMessages(newMessages);
+    setCurrentSessionId(newSessionId);
+    
+    // Clear localStorage for fresh start
+    localStorage.removeItem('ai-agent-messages');
+    localStorage.removeItem('ai-agent-current-session');
+    
+    setShowHistory(false);
+  };
+
+  // Load chat sessions list on mount (for sidebar)
+  useEffect(() => {
+    loadChatSessions();
+  }, []);
+
+  // Auto-save to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem('ai-agent-messages', JSON.stringify(messages));
+        localStorage.setItem('ai-agent-current-session', currentSessionId);
+      } catch (error) {
+        console.error('Failed to save chat:', error);
+      }
+    }
+  }, [messages, currentSessionId]);
+
+  // Auto-save every 30 seconds if there are new messages
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (messages.length > 1 && !isLoading) {
+        saveChatSession();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [messages, isLoading]);
+
+  // Save chat before page unload to prevent data loss
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (messages.length > 1 && !isLoading) {
+        // Use synchronous method to ensure save completes before unload
+        const formattedMessages = messages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp,
+            hasImage: !!m.imageUrl,
+          }));
+
+        // Send beacon for guaranteed delivery even during page unload
+        const data = JSON.stringify({
+          sessionId: currentSessionId,
+          messages: formattedMessages,
+          title: messages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat',
+        });
+
+        navigator.sendBeacon('/api/ai/chat-history', data);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [messages, currentSessionId, isLoading]);
+
+  const handleSend = async () => {
+    if ((!inputValue.trim() && !selectedImage) || isLoading) return;
+
+    // More descriptive default message for chart analysis
+    const userMessageContent = inputValue || 'Please provide educational technical analysis of this trading chart. Identify patterns, key levels, and potential trade setups for learning purposes.';
+    const imageData = selectedImage ? imagePreview : null;
+    
+    setInputValue('');
+    setError(null);
+
+    // Add user message with image if available
     const userMessage: Message = {
       id: messages.length + 1,
       type: 'user',
-      content: inputValue,
+      content: userMessageContent,
       timestamp: new Date(),
+      role: 'user',
+      imageUrl: imageData || undefined,
+      imagePreview: imageData || undefined,
     };
 
-    setMessages([...messages, userMessage]);
-    setInputValue('');
+    setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Prepare image for API if available
+      let imageUrlForAPI = null;
+      if (selectedImage) {
+        imageUrlForAPI = await convertImageToBase64(selectedImage);
+      }
+
+      // Build conversation history for API (exclude images from history to save tokens)
+      const conversationHistory = messages
+        .filter(msg => msg.role && !msg.imageUrl)
+        .map(msg => ({
+          role: msg.type === 'ai' ? 'assistant' : 'user',
+          content: msg.content,
+        }));
+
+      // Call AI Agent API
+      const response = await fetch('/api/ai/agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessageContent,
+          conversationHistory,
+          imageUrl: imageUrlForAPI,
+          includeMarketData: true,
+          includeNews: true, // Always include news for comprehensive analysis
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to get AI response');
+      }
+
+      // Add AI response
       const aiMessage: Message = {
         id: messages.length + 2,
         type: 'ai',
-        content: getAIResponse(inputValue),
+        content: data.response,
         timestamp: new Date(),
+        role: 'assistant',
       };
+
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Clear image after successful send
+      handleRemoveImage();
+      
+    } catch (error: any) {
+      console.error('AI Agent Error:', error);
+      setError(error.message || 'Failed to connect to AI Agent');
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: messages.length + 2,
+        type: 'ai',
+        content: `⚠️ I apologize, but I encountered an error: ${error.message}. Please try again or rephrase your question.`,
+        timestamp: new Date(),
+        role: 'assistant',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+      setIsLoading(false);
+    }
   };
 
-  const getAIResponse = (input: string): string => {
-    const lowerInput = input.toLowerCase();
-    
-    if (lowerInput.includes('btc') || lowerInput.includes('bitcoin')) {
-      return '📊 Bitcoin Analysis:\n\nCurrent Price: $67,234\n24h Change: +2.45%\n\nTechnical Indicators:\n• RSI: 58 (Neutral)\n• MACD: Bullish crossover\n• Support: $65,000\n• Resistance: $70,000\n\nRecommendation: Consider LONG position with 2x leverage. Entry: $67,000, TP: $70,000, SL: $65,500';
+  const handleQuickAction = (query: string) => {
+    // Check if it's upload chart trigger
+    if (query === 'upload-chart-trigger') {
+      fileInputRef.current?.click();
+      return;
     }
     
-    if (lowerInput.includes('market') || lowerInput.includes('analysis')) {
-      return '📈 Market Overview:\n\nTop Movers (24h):\n• BTC: +2.45% 🟢\n• ETH: +1.83% 🟢\n• SOL: +5.67% 🟢\n• XRP: -0.52% 🔴\n\nMarket Sentiment: Bullish\nFear & Greed Index: 62 (Greed)\n\nAI Suggestion: Market conditions favor long positions. Consider accumulating major altcoins.';
-    }
-    
-    if (lowerInput.includes('portfolio') || lowerInput.includes('balance')) {
-      return '💼 Portfolio Analysis:\n\nTotal Balance: $10,243.56\nP&L (24h): +$234.12 (+2.34%)\n\nAsset Allocation:\n• USDT: 45% ($4,609)\n• BTC: 30% ($3,073)\n• ETH: 15% ($1,536)\n• Others: 10% ($1,024)\n\nRecommendation: Your portfolio is well-diversified. Consider taking 20% profit on BTC if it reaches $70,000.';
-    }
-    
-    if (lowerInput.includes('risk') || lowerInput.includes('strategy')) {
-      return '⚙️ Risk Management Strategy:\n\nCurrent Settings:\n• Max Position Size: 30% of portfolio\n• Stop Loss: -2%\n• Take Profit: +5%\n• Max Leverage: 3x\n\nAI Recommendation:\n✓ Your risk settings are conservative and safe\n✓ Consider increasing position size to 40% for high-confidence trades\n✓ Always use stop-loss orders';
-    }
-    
-    return '🤖 I understand you want to ' + input + '. Let me analyze the current market conditions and provide you with the best trading strategy. Based on technical indicators and market sentiment, I recommend monitoring BTC and ETH for potential entries. Would you like detailed analysis on any specific asset?';
+    setInputValue(query);
+    // Auto-send after a short delay to show the input
+    setTimeout(() => {
+      const event = new KeyboardEvent('keypress', { key: 'Enter' });
+      handleSend();
+    }, 100);
   };
-
-  const quickActions = [
-    { icon: '📊', label: 'Analyze BTC', query: 'Analyze Bitcoin price' },
-    { icon: '💼', label: 'Check Portfolio', query: 'Show my portfolio' },
-    { icon: '📈', label: 'Market Overview', query: 'Give me market analysis' },
-    { icon: '⚙️', label: 'Risk Settings', query: 'Show risk management strategy' },
-  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-5xl font-bold mb-3">
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
-                AI Trading Agent
-              </span>
-            </h1>
-            <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-lg">Your intelligent trading assistant powered by advanced AI</p>
+    <div className="flex gap-4">
+      {/* History Sidebar */}
+      {showHistory && (
+        <div className="w-80 bg-white/5 dark:bg-white/5 light:bg-white border border-white/10 dark:border-white/10 light:border-gray-200 rounded-2xl p-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white dark:text-white light:text-gray-900">
+              💬 Chat History
+            </h2>
+            <button
+              onClick={() => setShowHistory(false)}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <button
+            onClick={startNewChat}
+            className="w-full mb-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Chat
+          </button>
+
+          <div className="space-y-2">
+            {chatSessions.map((session) => (
+              <div
+                key={session.sessionId}
+                className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                  session.sessionId === currentSessionId
+                    ? 'bg-blue-500/20 border-blue-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div onClick={() => loadChatSession(session.sessionId)}>
+                  <div className="text-sm font-medium text-white truncate">
+                    {session.title}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {session.messageCount} messages • {new Date(session.updatedAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <button
+                  onClick={() => deleteChatSession(session.sessionId)}
+                  className="mt-2 text-xs text-red-400 hover:text-red-300"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+      )}
+
+      {/* Main Chat Area */}
+      <div className="flex-1 space-y-6">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-5xl font-bold mb-3">
+                <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
+                  FuturePilot AI Agent
+                </span>
+              </h1>
+              <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-lg">
+                Your expert cryptocurrency futures trading assistant
+              </p>
+              <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm mt-1">
+                Specialized in BTC, ETH & major altcoin perpetual futures
+              </p>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {/* Manual Save Button (for debugging) */}
+              {messages.length > 1 && (
+                <button
+                  onClick={saveChatSession}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all disabled:opacity-50"
+                  title="Save Chat Now"
+                >
+                  {isSaving ? (
+                    <span className="text-sm text-gray-400">💾 Saving...</span>
+                  ) : (
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                  )}
+                </button>
+              )}
+              
+              {/* History Toggle Button */}
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all"
+                title="Chat History"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg flex items-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm font-semibold text-green-400">AI Active</span>
+            <span className="text-sm font-semibold text-green-400">AI Active • Powered by OpenAI</span>
           </div>
+          
+          {/* Session Info */}
+          <div className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg flex items-center gap-2">
+            <span className="text-xs text-blue-400">
+              💬 {messages.length} messages • Session: {currentSessionId.slice(-8)}
+            </span>
+          </div>
+
+          {/* Save Status */}
+          {localStorage.getItem('ai-agent-messages') && (
+            <div className="px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg flex items-center gap-2">
+              <span className="text-xs text-purple-400">💾 Auto-saved</span>
+            </div>
+          )}
+          
+          {error && (
+            <div className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg flex items-center gap-2">
+              <span className="text-sm font-semibold text-red-400">⚠️ {error}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -133,6 +588,12 @@ export default function AIAgentPage() {
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Debug: Show message count */}
+              {process.env.NODE_ENV === 'development' && messages.length === 0 && (
+                <div className="text-center text-gray-400 p-4 border border-dashed border-gray-600 rounded">
+                  ⚠️ No messages to render (messages.length = 0)
+                </div>
+              )}
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -164,6 +625,16 @@ export default function AIAgentPage() {
                             : 'bg-white/5 dark:bg-white/5 light:bg-blue-50 border border-white/10 dark:border-white/10 light:border-blue-200 text-white dark:text-white light:text-gray-900'
                         }`}
                       >
+                        {/* Display image if present */}
+                        {message.imagePreview && (
+                          <div className="mb-3">
+                            <img 
+                              src={message.imagePreview} 
+                              alt="Chart screenshot" 
+                              className="rounded-lg max-w-full h-auto max-h-96 object-contain border-2 border-white/20"
+                            />
+                          </div>
+                        )}
                         <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mt-1 px-2 font-medium">
@@ -199,14 +670,12 @@ export default function AIAgentPage() {
             <div className="p-4 border-t border-white/10 dark:border-white/10 light:border-blue-200">
               {/* Quick Actions */}
               <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
-                {quickActions.map((action, index) => (
+                {quickActionsConfig.map((action, index) => (
                   <button
                     key={index}
-                    onClick={() => {
-                      setInputValue(action.query);
-                      handleSend();
-                    }}
-                    className="px-3 py-2 bg-white/5 dark:bg-white/5 light:bg-blue-50 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-blue-100 border border-white/10 dark:border-white/10 light:border-blue-200 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-white dark:text-white light:text-gray-900"
+                    onClick={() => handleQuickAction(action.query)}
+                    disabled={isLoading}
+                    className="px-3 py-2 bg-white/5 dark:bg-white/5 light:bg-blue-50 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-blue-100 border border-white/10 dark:border-white/10 light:border-blue-200 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-white dark:text-white light:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span>{action.icon}</span>
                     <span>{action.label}</span>
@@ -214,29 +683,94 @@ export default function AIAgentPage() {
                 ))}
               </div>
 
+              {/* Image Preview - TEMPORARILY HIDDEN */}
+              {false && imagePreview !== null && (
+                <div className="mb-3 relative inline-block">
+                  <img 
+                    src={imagePreview || ''} 
+                    alt="Selected chart" 
+                    className="rounded-lg max-h-32 border-2 border-blue-500/50"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <div className="mt-1 text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">
+                    📸 Chart will be analyzed by AI
+                  </div>
+                </div>
+              )}
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+
               {/* Input */}
               <div className="flex gap-2">
+                {/* Image upload button - TEMPORARILY HIDDEN */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="hidden px-3 py-3 bg-white/5 dark:bg-white/5 light:bg-blue-50 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-blue-100 border border-white/10 dark:border-white/10 light:border-blue-200 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Upload chart screenshot"
+                >
+                  <svg className="w-5 h-5 text-gray-400 dark:text-gray-400 light:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </button>
+
                 <input
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask me anything about trading, market analysis, or your portfolio..."
-                  className="flex-1 bg-white/5 dark:bg-white/5 light:bg-blue-50 border border-white/10 dark:border-white/10 light:border-blue-200 rounded-xl px-4 py-3 text-sm text-white dark:text-white light:text-gray-900 placeholder-gray-500 dark:placeholder-gray-500 light:placeholder-gray-400 focus:outline-none focus:border-blue-500/50 transition-all"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  disabled={isLoading}
+                  placeholder={selectedImage ? "Add optional message about the chart..." : "Ask me anything about futures trading, or upload a chart screenshot..."}
+                  className="flex-1 bg-white/5 dark:bg-white/5 light:bg-blue-50 border border-white/10 dark:border-white/10 light:border-blue-200 rounded-xl px-4 py-3 text-sm text-white dark:text-white light:text-gray-900 placeholder-gray-500 dark:placeholder-gray-500 light:placeholder-gray-400 focus:outline-none focus:border-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!inputValue.trim()}
+                  disabled={(!inputValue.trim() && !selectedImage) || isLoading}
                   className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all flex items-center gap-2"
                 >
-                  <span>Send</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send</span>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           </div>
+        </div>
+        {/* Save Status */}
+        {isSaving && (
+          <div className="text-xs text-gray-400 text-center">
+            💾 Saving chat...
+          </div>
+        )}
       </div>
     </div>
   );

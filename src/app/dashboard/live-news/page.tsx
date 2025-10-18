@@ -22,20 +22,36 @@ export default function LiveNewsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'bullish' | 'bearish' | 'neutral'>('all');
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [nextRefresh, setNextRefresh] = useState(60);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     fetchNews();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchNews, 5 * 60 * 1000);
+    // Auto-refresh every 30 seconds for real-time updates
+    const interval = setInterval(fetchNews, 30 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Countdown timer for next refresh
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (lastUpdate) {
+        const elapsed = Math.floor((Date.now() - lastUpdate.getTime()) / 1000);
+        const remaining = Math.max(0, 30 - elapsed);
+        setNextRefresh(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lastUpdate]);
 
   const fetchNews = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/news');
+      const response = await fetch('/api/news', { cache: 'no-store' });
       const result = await response.json();
 
       if (!result.success) {
@@ -43,6 +59,8 @@ export default function LiveNewsPage() {
       }
 
       setNews(result.data);
+      setLastUpdate(new Date());
+      setNextRefresh(30);
       console.log(`✅ Loaded ${result.data.length} news articles (cached: ${result.cached})`);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -56,6 +74,18 @@ export default function LiveNewsPage() {
     if (filter === 'all') return true;
     return item.sentiment === filter;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedNews = filteredNews.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filter changes
+  const handleFilterChange = (newFilter: typeof filter) => {
+    setFilter(newFilter);
+    setCurrentPage(1);
+  };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -101,12 +131,27 @@ export default function LiveNewsPage() {
               <p className="text-gray-400">
                 Real-time cryptocurrency market news and updates
               </p>
+              {lastUpdate && (
+                <div className="mt-2 flex items-center gap-3 text-sm">
+                  <span className="text-gray-500">
+                    Last update: {lastUpdate.toLocaleTimeString()}
+                  </span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    Next refresh in {nextRefresh}s
+                  </span>
+                </div>
+              )}
             </div>
             <button
               onClick={fetchNews}
-              className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
+              disabled={loading}
+              className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🔄 Refresh
+              {loading ? '⏳ Loading...' : '🔄 Refresh'}
             </button>
           </div>
         </motion.div>
@@ -121,7 +166,7 @@ export default function LiveNewsPage() {
           {['all', 'bullish', 'bearish', 'neutral'].map((filterType) => (
             <button
               key={filterType}
-              onClick={() => setFilter(filterType as any)}
+              onClick={() => handleFilterChange(filterType as any)}
               className={`px-6 py-2 rounded-lg font-semibold transition-all ${
                 filter === filterType
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
@@ -157,7 +202,7 @@ export default function LiveNewsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredNews.map((item, index) => (
+            {paginatedNews.map((item, index) => (
               <motion.a
                 key={item.id}
                 href={item.url}
@@ -244,6 +289,68 @@ export default function LiveNewsPage() {
               📭 No news found for selected filter.
             </p>
           </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && !error && filteredNews.length > itemsPerPage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 p-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-gray-400">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredNews.length)} of {filteredNews.length} news articles
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Previous
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                            : 'bg-white/10 hover:bg-white/20 text-gray-300'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

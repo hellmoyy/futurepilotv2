@@ -23,6 +23,7 @@ export interface ISignal extends Document {
   confidence: number;
   strength: SignalStrength;
   status: SignalStatus;
+  qualityGrade?: 'A' | 'B' | 'C' | 'D'; // Signal quality rating
   
   // Price Levels
   entryPrice: number;
@@ -79,6 +80,36 @@ export interface ISignal extends Document {
   warnings: string[];
   indicatorSummary: string[];
   
+  // Fundamental Analysis (News)
+  newsValidation?: {
+    isValid: boolean;
+    fundamentalScore: number;
+    technicalScore: number;
+    combinedScore: number;
+  };
+  newsSentiment?: {
+    overall: 'bullish' | 'bearish' | 'neutral';
+    score: number;
+    confidence: number;
+    reasons: string[];
+    newsCount: number;
+  };
+  
+  // Market Context (NEW - Phase 1 improvements)
+  marketRegime?: {
+    regime: 'trending_up' | 'trending_down' | 'ranging' | 'volatile' | 'unknown';
+    confidence: number;
+    trendStrength: number;
+    volatilityLevel: number;
+  };
+  supportResistance?: {
+    nearestSupport: number | null;
+    nearestResistance: number | null;
+    distanceToSupport: number;
+    distanceToResistance: number;
+    isNearLevel: boolean;
+  };
+  
   // Strategy & Settings
   strategy: StrategyName;
   timeframe: string;
@@ -120,6 +151,11 @@ export interface ISignal extends Document {
   notes?: string;
   tags?: string[];
   
+  // Tracking
+  viewCount: number;
+  lastViewedAt?: Date;
+  isPublic: boolean; // Share with all users or private
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -159,6 +195,11 @@ const SignalSchema = new Schema<ISignal>(
       type: String,
       enum: ['active', 'executed', 'expired', 'cancelled'],
       default: 'active',
+      index: true,
+    },
+    qualityGrade: {
+      type: String,
+      enum: ['A', 'B', 'C', 'D'],
       index: true,
     },
     
@@ -240,6 +281,42 @@ const SignalSchema = new Schema<ISignal>(
     indicatorSummary: {
       type: [String],
       default: [],
+    },
+    
+    // Fundamental Analysis (News)
+    newsValidation: {
+      isValid: Boolean,
+      fundamentalScore: Number,
+      technicalScore: Number,
+      combinedScore: Number,
+    },
+    newsSentiment: {
+      overall: {
+        type: String,
+        enum: ['bullish', 'bearish', 'neutral'],
+      },
+      score: Number,
+      confidence: Number,
+      reasons: [String],
+      newsCount: Number,
+    },
+    
+    // Market Context (NEW - Phase 1)
+    marketRegime: {
+      regime: {
+        type: String,
+        enum: ['trending_up', 'trending_down', 'ranging', 'volatile', 'unknown'],
+      },
+      confidence: Number,
+      trendStrength: Number,
+      volatilityLevel: Number,
+    },
+    supportResistance: {
+      nearestSupport: Number,
+      nearestResistance: Number,
+      distanceToSupport: Number,
+      distanceToResistance: Number,
+      isNearLevel: Boolean,
     },
     
     // Strategy & Settings
@@ -330,6 +407,17 @@ const SignalSchema = new Schema<ISignal>(
       type: [String],
       default: [],
     },
+    
+    // Tracking
+    viewCount: {
+      type: Number,
+      default: 0,
+    },
+    lastViewedAt: Date,
+    isPublic: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
@@ -347,6 +435,11 @@ SignalSchema.index({ action: 1, confidence: -1 });
 SignalSchema.index({ status: 1, expiresAt: 1 });
 SignalSchema.index({ userId: 1, generatedAt: -1 });
 SignalSchema.index({ strategy: 1, confidence: -1 });
+
+// NEW: Indexes for anti-spam and quick lookups
+SignalSchema.index({ symbol: 1, status: 1, generatedAt: -1 }); // Check recent signals per symbol
+SignalSchema.index({ isPublic: 1, status: 1, confidence: -1 }); // Public active signals
+SignalSchema.index({ status: 1, expiresAt: 1, updatedAt: 1 }); // Auto-expire job
 
 // TTL index - auto-delete signals after 30 days
 SignalSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });

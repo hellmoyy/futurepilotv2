@@ -57,7 +57,9 @@ export async function GET(req: NextRequest) {
     };
     
     // Build MongoDB filter
-    const filter: any = {};
+    const filter: any = {
+      isPublic: true, // Only show public signals
+    };
     
     if (query.symbol) {
       filter.symbol = query.symbol;

@@ -1,0 +1,134 @@
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { connectDB } from '@/lib/mongodb';
+import BotSettings from '@/models/BotSettings';
+import { User } from '@/models/User';
+
+// GET - Fetch bot settings for current user
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    await connectDB();
+
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const settings = await BotSettings.find({ userId: user._id });
+
+    return NextResponse.json({
+      success: true,
+      settings: settings.map(s => ({
+        botId: s.botId,
+        leverage: s.leverage,
+        stopLoss: s.stopLoss,
+        takeProfit: s.takeProfit,
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching bot settings:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch bot settings' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Save or update bot settings
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { botId, leverage, stopLoss, takeProfit } = body;
+
+    if (!botId || leverage === undefined || stopLoss === undefined || takeProfit === undefined) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate ranges
+    if (leverage < 1 || leverage > 50) {
+      return NextResponse.json(
+        { error: 'Leverage must be between 1 and 50' },
+        { status: 400 }
+      );
+    }
+
+    if (stopLoss < 1 || stopLoss > 20) {
+      return NextResponse.json(
+        { error: 'Stop loss must be between 1 and 20' },
+        { status: 400 }
+      );
+    }
+
+    if (takeProfit < 1 || takeProfit > 30) {
+      return NextResponse.json(
+        { error: 'Take profit must be between 1 and 30' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update or create settings
+    const settings = await BotSettings.findOneAndUpdate(
+      { userId: user._id, botId },
+      {
+        userId: user._id,
+        botId,
+        leverage,
+        stopLoss,
+        takeProfit,
+      },
+      { upsert: true, new: true }
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Settings saved successfully',
+      settings: {
+        botId: settings.botId,
+        leverage: settings.leverage,
+        stopLoss: settings.stopLoss,
+        takeProfit: settings.takeProfit,
+      }
+    });
+  } catch (error) {
+    console.error('Error saving bot settings:', error);
+    return NextResponse.json(
+      { error: 'Failed to save bot settings' },
+      { status: 500 }
+    );
+  }
+}

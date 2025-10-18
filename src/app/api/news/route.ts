@@ -1,17 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Parser from 'rss-parser';
-
-// RSS Feed sources
-const RSS_FEEDS = [
-  'https://www.coindesk.com/arc/outboundfeeds/rss/',
-  'https://cointelegraph.com/rss',
-  'https://cryptonews.com/news/feed/',
-  'https://decrypt.co/feed',
-  // Bitcoin Magazine blocked - using alternative
-  'https://www.theblockcrypto.com/rss.xml',
-  'https://cryptopotato.com/feed/',
-  'https://u.today/rss',
-];
 
 // In-memory cache
 let newsCache: {
@@ -19,77 +6,7 @@ let newsCache: {
   timestamp: number;
 } | null = null;
 
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes (longer since RSS is free)
-
-// Simple sentiment analysis based on keywords
-function analyzeSentiment(title: string, body: string): 'bullish' | 'bearish' | 'neutral' {
-  const text = (title + ' ' + body).toLowerCase();
-  
-  const bullishKeywords = [
-    'surge', 'rally', 'bullish', 'pump', 'moon', 'ath', 'all-time high',
-    'breakout', 'soar', 'skyrocket', 'gain', 'rise', 'up', 'growth',
-    'institutional', 'adoption', 'upgrade', 'innovation', 'partnership'
-  ];
-  
-  const bearishKeywords = [
-    'crash', 'dump', 'bearish', 'plunge', 'drop', 'fall', 'decline',
-    'down', 'loss', 'fear', 'concern', 'warning', 'risk', 'regulation',
-    'hack', 'scam', 'fraud', 'investigation', 'lawsuit', 'ban'
-  ];
-  
-  let bullishScore = 0;
-  let bearishScore = 0;
-  
-  bullishKeywords.forEach(keyword => {
-    if (text.includes(keyword)) bullishScore++;
-  });
-  
-  bearishKeywords.forEach(keyword => {
-    if (text.includes(keyword)) bearishScore++;
-  });
-  
-  if (bullishScore > bearishScore && bullishScore > 0) return 'bullish';
-  if (bearishScore > bullishScore && bearishScore > 0) return 'bearish';
-  return 'neutral';
-}
-
-// Extract tags from title and content
-function extractTags(title: string, content: string): string[] {
-  const text = (title + ' ' + content).toLowerCase();
-  const tags: string[] = [];
-  
-  const cryptoKeywords = [
-    'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain',
-    'defi', 'nft', 'altcoin', 'trading', 'market', 'price',
-    'solana', 'sol', 'cardano', 'ada', 'polygon', 'matic'
-  ];
-  
-  cryptoKeywords.forEach(keyword => {
-    if (text.includes(keyword)) {
-      tags.push(keyword.toUpperCase());
-    }
-  });
-  
-  // Remove duplicates and return max 5 tags
-  const uniqueTags = Array.from(new Set(tags));
-  return uniqueTags.slice(0, 5);
-}
-
-// Extract image from RSS item
-function extractImage(item: any): string | undefined {
-  // Try different RSS image formats
-  if (item.enclosure?.url) return item.enclosure.url;
-  if (item['media:content']?.$?.url) return item['media:content'].$.url;
-  if (item['media:thumbnail']?.$?.url) return item['media:thumbnail'].$.url;
-  if (item.image?.url) return item.image.url;
-  
-  // Try to find image in content
-  const content = item.content || item['content:encoded'] || '';
-  const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
-  if (imgMatch) return imgMatch[1];
-  
-  return undefined;
-}
+const CACHE_DURATION = 30 * 1000; // 30 seconds cache for real-time news updates
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,59 +21,62 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log('🔄 Fetching news from RSS feeds...');
+    console.log('🔄 Fetching news from CryptoNews API...');
 
-    const parser = new Parser({
-      timeout: 10000,
-      customFields: {
-        item: [
-          ['media:content', 'media:content'],
-          ['media:thumbnail', 'media:thumbnail'],
-          ['content:encoded', 'content:encoded'],
-        ],
-      },
+    const apiKey = process.env.CRYPTONEWS_API_KEY;
+    if (!apiKey) {
+      throw new Error('CRYPTONEWS_API_KEY not configured');
+    }
+
+    // Fetch all crypto news using category endpoint
+    // Using alltickers section for comprehensive coverage
+    const url = `https://cryptonews-api.com/api/v1/category?section=alltickers&items=50&page=1&token=${apiKey}`;
+    
+    console.log(`📡 Fetching from: ${url.replace(apiKey, '***')}`);
+    
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store', // Ensure fresh data
     });
 
-    const allNews: any[] = [];
-    const feedPromises = RSS_FEEDS.map(async (feedUrl) => {
-      try {
-        console.log(`📡 Fetching from: ${feedUrl}`);
-        const feed = await parser.parseURL(feedUrl);
-        
-        feed.items.forEach((item: any) => {
-          const title = item.title || 'Untitled';
-          const description = item.contentSnippet || item.summary || item.content || '';
-          const cleanDescription = description
-            .replace(/<[^>]*>/g, '') // Remove HTML tags
-            .substring(0, 250) + '...';
-          
-          allNews.push({
-            id: item.guid || item.link || `${feed.title}-${Date.now()}-${Math.random()}`,
-            title: title.trim(),
-            description: cleanDescription.trim(),
-            source: feed.title || 'Crypto News',
-            sourceImage: feed.image?.url || feed.favicon,
-            url: item.link || '#',
-            imageUrl: extractImage(item),
-            publishedAt: item.pubDate || item.isoDate || new Date().toISOString(),
-            sentiment: analyzeSentiment(title, description),
-            tags: extractTags(title, description),
-            categories: item.categories || ['News'],
-          });
-        });
-        
-        console.log(`✅ ${feed.title}: ${feed.items.length} articles`);
-      } catch (error) {
-        console.error(`❌ Error fetching ${feedUrl}:`, error instanceof Error ? error.message : 'Unknown error');
-      }
+    if (!response.ok) {
+      console.error(`❌ CryptoNews API error: ${response.status} ${response.statusText}`);
+      throw new Error(`CryptoNews API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.data || !Array.isArray(data.data)) {
+      console.error('❌ Invalid response structure:', data);
+      throw new Error('Invalid response from CryptoNews API');
+    }
+
+    console.log(`✅ Received ${data.data.length} articles from API`);
+
+    // Transform to our format
+    const allNews = data.data.map((item: any) => {
+      const sentiment = item.sentiment?.toLowerCase() || 'neutral';
+      
+      return {
+        id: item.news_url || `news-${Date.now()}-${Math.random()}`,
+        title: item.title || 'Untitled',
+        description: (item.text || item.title || '').substring(0, 250) + '...',
+        source: item.source_name || 'CryptoNews',
+        sourceImage: undefined,
+        url: item.news_url || '#',
+        imageUrl: item.image_url,
+        publishedAt: item.date || new Date().toISOString(),
+        sentiment: sentiment === 'positive' ? 'bullish' : 
+                   sentiment === 'negative' ? 'bearish' : 'neutral',
+        tags: item.tickers || [],
+        categories: item.topics || ['News'],
+      };
     });
 
-    await Promise.all(feedPromises);
-
-    // Sort by date (newest first) and take top 30
+    // Sort by date (newest first) and take top 50
     const sortedNews = allNews
-      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
-      .slice(0, 30);
+      .sort((a: any, b: any) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+      .slice(0, 50);
 
     // Update cache
     newsCache = {
@@ -164,15 +84,14 @@ export async function GET(request: NextRequest) {
       timestamp: Date.now(),
     };
 
-    console.log(`✅ Fetched ${sortedNews.length} articles from ${RSS_FEEDS.length} sources`);
+    console.log(`✅ Fetched ${sortedNews.length} articles from CryptoNews API`);
 
     return NextResponse.json({
       success: true,
       data: sortedNews,
       cached: false,
       count: sortedNews.length,
-      sources: RSS_FEEDS.length,
-      source: 'rss',
+      source: 'cryptonews-api',
     });
 
   } catch (error) {
