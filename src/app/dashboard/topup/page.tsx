@@ -28,7 +28,6 @@ export default function TopUpPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [activeNetwork, setActiveNetwork] = useState<'ERC20' | 'BEP20'>('ERC20');
   const [copied, setCopied] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
@@ -45,15 +44,12 @@ export default function TopUpPage() {
     }
   }, [status]);
 
-  // Generate QR code when wallet data or network changes
+  // Generate QR code when wallet data loads (using ERC20 address)
   useEffect(() => {
-    if (walletData) {
-      const address = activeNetwork === 'ERC20' ? walletData.erc20Address : walletData.bep20Address;
-      if (address) {
-        generateQRCode(address);
-      }
+    if (walletData && walletData.erc20Address) {
+      generateQRCode(walletData.erc20Address);
     }
-  }, [walletData, activeNetwork]);
+  }, [walletData]);
 
   const fetchWalletData = async () => {
     try {
@@ -151,30 +147,45 @@ export default function TopUpPage() {
         </div>
       </div>
 
-      {/* Network Selection */}
-      <div className="flex bg-white/5 backdrop-blur-xl rounded-lg sm:rounded-xl p-1 light:bg-blue-100 w-full sm:w-fit">
-        {(['ERC20', 'BEP20'] as const).map((network) => (
-          <button
-            key={network}
-            onClick={() => setActiveNetwork(network)}
-            className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-1.5 sm:space-x-2 ${
-              activeNetwork === network
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
-                : 'text-gray-400 hover:text-white hover:bg-white/10 light:text-gray-600 light:hover:text-gray-800 light:hover:bg-blue-200'
-            }`}
-          >
-            <Image
-              src={network === 'ERC20' ? '/images/icon-coin/etehreum.webp' : '/images/icon-coin/bnb.png'}
-              alt={network === 'ERC20' ? 'Ethereum' : 'BNB'}
-              width={20}
-              height={20}
-              className="w-5 h-5"
-            />
-            <span>
-              {network === 'ERC20' ? 'Ethereum (ERC-20)' : 'Binance Smart Chain (BEP-20)'}
-            </span>
-          </button>
-        ))}
+      {/* Network Info Banner */}
+      <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-50 light:to-cyan-50 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-5 border border-blue-400/30 dark:border-blue-400/30 light:border-blue-200">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 dark:bg-blue-500/20 light:bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 dark:text-blue-400 light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm sm:text-base font-bold text-blue-400 dark:text-blue-400 light:text-blue-700 mb-1">
+              Send USDT (ERC-20 & BEP-20 Only)
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-400 light:text-gray-600">
+              This address supports both Ethereum (ERC-20) and Binance Smart Chain (BEP-20) networks. Only send USDT tokens to this address.
+            </p>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="flex items-center gap-1.5">
+                <Image
+                  src="/images/icon-coin/etehreum.webp"
+                  alt="Ethereum"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+                />
+                <span className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">ERC-20</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Image
+                  src="/images/icon-coin/bnb.png"
+                  alt="BNB"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+                />
+                <span className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">BEP-20</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Wallet Section */}
@@ -225,53 +236,65 @@ export default function TopUpPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
           {/* Deposit Address Card */}
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-xl opacity-50 light:from-blue-200/40 light:to-cyan-200/40"></div>
-            <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-3xl border border-white/10 p-6 light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-3xl light:from-blue-100/50 light:to-cyan-100/50"></div>
+            <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-white/10 p-4 sm:p-5 lg:p-6 light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-2xl sm:rounded-3xl light:from-blue-100/50 light:to-cyan-100/50"></div>
               
               <div className="relative">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white light:text-gray-900 flex items-center space-x-2">
-                    <Image
-                      src={activeNetwork === 'ERC20' ? '/images/icon-coin/etehreum.webp' : '/images/icon-coin/bnb.png'}
-                      alt={activeNetwork === 'ERC20' ? 'Ethereum' : 'BNB'}
-                      width={20}
-                      height={20}
-                      className="w-5 h-5"
-                    />
-                    <span>Deposit Address</span>
+                  <h3 className="text-base sm:text-lg font-semibold text-white light:text-gray-900 flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Deposit Addresses</span>
                   </h3>
-                  <div className="flex items-center space-x-2 text-xs">
+                  <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                     <span className="text-green-400 font-medium">Active</span>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 light:bg-blue-50 light:border-blue-200">
-                    <p className="text-xs text-gray-400 mb-2 light:text-gray-600">
-                      {activeNetwork} Address:
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-mono text-gray-300 truncate mr-2 light:text-gray-700">
-                        {activeNetwork === 'ERC20' ? walletData.erc20Address : walletData.bep20Address}
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Unified Address (ERC20 & BEP20) */}
+                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 light:bg-blue-50 light:border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center -space-x-1">
+                        <Image
+                          src="/images/icon-coin/etehreum.webp"
+                          alt="Ethereum"
+                          width={18}
+                          height={18}
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                        />
+                        <Image
+                          src="/images/icon-coin/bnb.png"
+                          alt="BSC"
+                          width={18}
+                          height={18}
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                        />
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-400 font-semibold light:text-gray-600">
+                        ERC-20 & BEP-20 Address
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs sm:text-sm font-mono text-gray-300 truncate light:text-gray-700">
+                        {walletData.erc20Address}
                       </p>
                       <button
-                        onClick={() => copyToClipboard(
-                          activeNetwork === 'ERC20' ? walletData.erc20Address : walletData.bep20Address,
-                          activeNetwork
-                        )}
-                        className="group px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg transition-all light:bg-blue-100 light:border-blue-300 light:hover:bg-blue-200"
+                        onClick={() => copyToClipboard(walletData.erc20Address, 'ADDRESS')}
+                        className="group px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg transition-all flex-shrink-0 light:bg-blue-100 light:border-blue-300 light:hover:bg-blue-200"
                       >
-                        {copied === activeNetwork ? (
-                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {copied === 'ADDRESS' ? (
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         ) : (
-                          <svg className="w-4 h-4 text-blue-400 group-hover:text-blue-300 transition-colors light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 group-hover:text-blue-300 transition-colors light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         )}
@@ -280,8 +303,8 @@ export default function TopUpPage() {
                   </div>
 
                   {/* QR Code */}
-                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 text-center light:bg-blue-50 light:border-blue-200">
-                    <div className="w-32 h-32 bg-white rounded-lg mx-auto mb-3 flex items-center justify-center overflow-hidden">
+                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 text-center light:bg-blue-50 light:border-blue-200">
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-lg mx-auto mb-3 flex items-center justify-center overflow-hidden">
                       {qrCodeUrl ? (
                         <img 
                           src={qrCodeUrl} 
@@ -292,20 +315,20 @@ export default function TopUpPage() {
                         <div className="text-xs text-gray-500">Generating QR...</div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 light:text-gray-600">Scan to get address</p>
+                    <p className="text-xs text-gray-400 light:text-gray-600">Scan to get ERC-20 address</p>
                   </div>
 
                   {/* Network Info */}
-                  <div className="bg-yellow-500/10 backdrop-blur-xl border border-yellow-500/30 rounded-xl p-4 light:bg-yellow-100 light:border-yellow-300">
+                  <div className="bg-yellow-500/10 backdrop-blur-xl border border-yellow-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4 light:bg-yellow-100 light:border-yellow-300">
                     <div className="flex items-start space-x-2">
-                      <svg className="w-5 h-5 text-yellow-400 mt-0.5 light:text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 mt-0.5 light:text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                       </svg>
-                      <div>
-                        <p className="text-sm font-medium text-yellow-400 light:text-yellow-700">Important Notice</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-yellow-400 light:text-yellow-700">Important Notice</p>
                         <p className="text-xs text-yellow-300 mt-1 light:text-yellow-600">
-                          Only send USDT tokens to this address on {activeNetwork === 'ERC20' ? 'Ethereum' : 'Binance Smart Chain'} network. 
-                          Sending other tokens or using wrong network may result in permanent loss.
+                          Only send <strong>USDT tokens</strong> to these addresses. Both addresses support ERC-20 (Ethereum) and BEP-20 (BSC) networks. 
+                          Sending other tokens or incorrect network may result in permanent loss.
                         </p>
                       </div>
                     </div>
