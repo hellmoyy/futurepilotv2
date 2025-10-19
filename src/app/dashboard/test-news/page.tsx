@@ -187,7 +187,7 @@ export default function TestNewsPage() {
           </h3>
           <ol className="list-decimal list-inside space-y-2 text-blue-800 dark:text-blue-200">
             <li>Select a cryptocurrency symbol</li>
-            <li>Click "Test News API" to fetch recent news</li>
+            <li>Click &quot;Test News API&quot; to fetch recent news</li>
             <li>View sentiment breakdown and overall market sentiment</li>
             <li>Read recent headlines with sentiment indicators</li>
             <li>Use this data to validate trading signals</li>
