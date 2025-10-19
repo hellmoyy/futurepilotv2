@@ -6,7 +6,12 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { theme } = useTheme();
@@ -108,9 +113,37 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-black/50 dark:bg-black/50 light:bg-white/90 backdrop-blur-xl border-r border-white/10 dark:border-white/10 light:border-gray-200 flex flex-col h-screen fixed left-0 top-0 light:shadow-xl">
-      {/* Logo */}
-      <div className="p-6 border-b border-white/10 dark:border-white/10 light:border-gray-200">
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        w-64 bg-black/50 dark:bg-black/50 light:bg-white/90 backdrop-blur-xl 
+        border-r border-white/10 dark:border-white/10 light:border-gray-200 
+        flex flex-col h-screen fixed left-0 top-0 light:shadow-xl z-50
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0
+      `}>
+        {/* Close button for mobile */}
+        <button
+          onClick={onClose}
+          className="lg:hidden absolute top-4 right-4 p-2 text-gray-400 hover:text-white dark:hover:text-white light:hover:text-gray-900 transition-colors"
+          aria-label="Close menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10 dark:border-white/10 light:border-gray-200">
         <Link href="/" className="flex items-center">
           <img 
             src={theme === 'light' ? '/images/logos/logo-light.png' : '/images/logos/logo-dark.png'}
@@ -171,6 +204,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-    </div>
+      </div>
+    </>
   );
 }

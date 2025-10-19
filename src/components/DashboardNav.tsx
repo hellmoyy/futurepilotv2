@@ -4,7 +4,11 @@ import { useSession, signOut } from 'next-auth/react';
 import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 
-export default function DashboardNav() {
+interface DashboardNavProps {
+  onMenuClick?: () => void;
+}
+
+export default function DashboardNav({ onMenuClick }: DashboardNavProps) {
   const { data: session } = useSession();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -13,12 +17,23 @@ export default function DashboardNav() {
   };
 
   return (
-    <nav className="fixed top-0 right-0 left-64 z-40 bg-black/50 dark:bg-black/50 light:bg-white/80 backdrop-blur-xl border-b border-white/10 dark:border-white/10 light:border-gray-200">
-      <div className="px-8 py-4">
+    <nav className="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-black/50 dark:bg-black/50 light:bg-white/80 backdrop-blur-xl border-b border-white/10 dark:border-white/10 light:border-gray-200">
+      <div className="px-4 lg:px-8 py-4">
         <div className="flex items-center justify-between">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 text-gray-300 dark:text-gray-300 light:text-gray-700 hover:text-white dark:hover:text-white light:hover:text-gray-900 transition-colors"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
           {/* Left side - Welcome message */}
-          <div>
-            <h2 className="text-xl font-semibold text-white dark:text-white light:text-gray-900">
+          <div className="hidden sm:block">
+            <h2 className="text-lg lg:text-xl font-semibold text-white dark:text-white light:text-gray-900">
               Welcome back, <span className="text-blue-400 dark:text-blue-400 light:text-blue-600">{session?.user?.name}</span>
             </h2>
             <p className="text-sm text-gray-400 dark:text-gray-400 light:text-gray-600">

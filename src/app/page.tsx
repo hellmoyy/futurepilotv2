@@ -39,18 +39,18 @@ export default function Home() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6">
+      <section className="relative pt-20 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center space-y-8">
+          <div className="text-center space-y-6 sm:space-y-8">
             {/* Liquid Glass Badge */}
-            <div className="inline-flex items-center space-x-2 px-5 py-2.5 bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-full border border-white/20 dark:border-white/20 light:border-blue-300 shadow-2xl shadow-blue-500/10">
+            <div className="inline-flex items-center space-x-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-full border border-white/20 dark:border-white/20 light:border-blue-300 shadow-2xl shadow-blue-500/10">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></span>
-              <span className="text-sm text-white/90 dark:text-white/90 light:text-gray-700 font-medium">AI-Powered Trading • Live Now</span>
+              <span className="text-xs sm:text-sm text-white/90 dark:text-white/90 light:text-gray-700 font-medium">AI-Powered Trading • Live Now</span>
             </div>
 
             {/* Main Heading with Liquid Glass Effect */}
             <div className="relative">
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight px-4">
                 <span className="relative inline-block">
                   <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-300 dark:to-cyan-300 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
                     Trade Smarter
@@ -63,56 +63,56 @@ export default function Home() {
             </div>
 
             {/* Subheading */}
-            <p className="text-xl md:text-2xl text-gray-300 dark:text-gray-300 light:text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 dark:text-gray-300 light:text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
               Advanced artificial intelligence meets automated trading. 
               Let FuturePilot navigate the markets while you focus on what matters.
             </p>
 
             {/* Liquid Glass CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-              <button className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-6 sm:pt-8 px-4">
+              <button className="w-full sm:w-auto group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-base sm:text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <span className="relative z-10">Start Trading Now</span>
                 <div className="absolute inset-0 bg-white/20 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
-              <button className="px-8 py-4 bg-white/5 backdrop-blur-2xl border border-white/20 rounded-2xl font-semibold text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 shadow-xl">
+              <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white/5 backdrop-blur-2xl border border-white/20 rounded-2xl font-semibold text-base sm:text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 shadow-xl">
                 Watch Demo
               </button>
               
               {/* Theme Toggle */}
-              <div className="ml-2">
+              <div className="sm:ml-2">
                 <ThemeToggle />
               </div>
             </div>
 
             {/* Liquid Glass Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-16 max-w-5xl mx-auto">
-              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative space-y-2">
-                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-300 dark:to-blue-500 light:from-blue-600 light:to-blue-700 bg-clip-text text-transparent">99.9%</div>
-                  <div className="text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">Uptime</div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 pt-12 sm:pt-16 max-w-5xl mx-auto px-4">
+              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-1 sm:space-y-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-300 dark:to-blue-500 light:from-blue-600 light:to-blue-700 bg-clip-text text-transparent">99.9%</div>
+                  <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">Uptime</div>
                 </div>
               </div>
-              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative space-y-2">
-                  <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 dark:from-cyan-300 dark:to-blue-400 light:from-cyan-600 light:to-blue-700 bg-clip-text text-transparent">$2.5B+</div>
-                  <div className="text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">Volume Traded</div>
+              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-1 sm:space-y-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 dark:from-cyan-300 dark:to-blue-400 light:from-cyan-600 light:to-blue-700 bg-clip-text text-transparent">$2.5B+</div>
+                  <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">Volume Traded</div>
                 </div>
               </div>
-              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative space-y-2">
-                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">50K+</div>
-                  <div className="text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">Active Users</div>
+              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-1 sm:space-y-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">50K+</div>
+                  <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">Active Users</div>
                 </div>
               </div>
-              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-2xl p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative space-y-2">
-                  <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">24/7</div>
-                  <div className="text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">AI Monitoring</div>
+              <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white/80 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative space-y-1 sm:space-y-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">24/7</div>
+                  <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 font-medium">AI Monitoring</div>
                 </div>
               </div>
             </div>
@@ -121,31 +121,31 @@ export default function Home() {
       </section>
 
       {/* Dashboard Preview with Liquid Glass */}
-      <section className="relative py-20 px-6">
+      <section className="relative py-12 sm:py-16 lg:py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="relative">
             {/* Ambient Glow */}
             <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 blur-3xl opacity-50"></div>
             
             {/* Liquid Glass Dashboard Card */}
-            <div className="relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white/90 backdrop-blur-3xl rounded-[2rem] border border-white/10 dark:border-white/10 light:border-blue-200 p-8 overflow-hidden shadow-2xl">
+            <div className="relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white/90 backdrop-blur-3xl rounded-2xl lg:rounded-[2rem] border border-white/10 dark:border-white/10 light:border-blue-200 p-4 sm:p-6 lg:p-8 overflow-hidden shadow-2xl">
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 dark:from-blue-500/5 dark:to-cyan-500/5 light:from-blue-100/30 light:to-cyan-100/30"></div>
               
               {/* Header */}
-              <div className="relative flex items-center justify-between mb-8">
+              <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
                 <div>
-                  <h3 className="text-2xl font-bold text-white dark:text-white light:text-gray-900 mb-2">Trading Dashboard</h3>
-                  <p className="text-gray-300 dark:text-gray-300 light:text-gray-600">Real-time market analysis powered by AI</p>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white dark:text-white light:text-gray-900 mb-2">Trading Dashboard</h3>
+                  <p className="text-sm sm:text-base text-gray-300 dark:text-gray-300 light:text-gray-600">Real-time market analysis powered by AI</p>
                 </div>
-                <div className="flex items-center space-x-2 px-4 py-2 bg-green-500/10 backdrop-blur-xl rounded-full border border-green-500/20">
+                <div className="flex items-center space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/10 backdrop-blur-xl rounded-full border border-green-500/20">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></span>
-                  <span className="text-green-300 text-sm font-semibold">Live</span>
+                  <span className="text-green-300 text-xs sm:text-sm font-semibold">Live</span>
                 </div>
               </div>
 
               {/* Charts with Liquid Glass */}
-              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {/* Portfolio Card */}
                 <div className="group relative bg-white/5 dark:bg-white/5 light:bg-white backdrop-blur-2xl rounded-3xl p-6 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-[1.02]">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -218,18 +218,18 @@ export default function Home() {
       </section>
 
       {/* Features Section with Liquid Glass */}
-      <section id="features" className="relative py-20 px-6">
+      <section id="features" className="relative py-12 sm:py-16 lg:py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl font-bold mb-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4">
               <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-300 dark:to-cyan-300 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
                 Powerful Features
               </span>
             </h2>
-            <p className="text-xl text-gray-300 dark:text-gray-300 light:text-gray-600">Everything you need to dominate the markets</p>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-300 dark:text-gray-300 light:text-gray-600 px-4">Everything you need to dominate the markets</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Feature 1 */}
             <div className="group relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white backdrop-blur-3xl rounded-3xl p-8 border border-white/10 dark:border-white/10 light:border-blue-200 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all duration-300 hover:scale-[1.02] overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -276,28 +276,28 @@ export default function Home() {
       </section>
 
       {/* CTA Section with Liquid Glass */}
-      <section className="relative py-20 px-6">
+      <section className="relative py-12 sm:py-16 lg:py-20 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <div className="relative">
             {/* Ambient Glow */}
             <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/30 via-cyan-500/30 to-blue-500/30 blur-3xl opacity-50"></div>
             
             {/* Liquid Glass Card */}
-            <div className="relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white/90 backdrop-blur-3xl rounded-[2rem] p-12 border border-white/10 dark:border-white/10 light:border-blue-200 text-center overflow-hidden shadow-2xl">
+            <div className="relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white/90 backdrop-blur-3xl rounded-2xl lg:rounded-[2rem] p-8 sm:p-10 lg:p-12 border border-white/10 dark:border-white/10 light:border-blue-200 text-center overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100/50 light:to-cyan-100/50"></div>
               <div className="relative">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white dark:text-white light:text-gray-900">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white dark:text-white light:text-gray-900 px-4">
                   Ready to Start Trading?
                 </h2>
-                <p className="text-xl text-gray-300 dark:text-gray-300 light:text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-base sm:text-lg lg:text-xl text-gray-300 dark:text-gray-300 light:text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-4">
                   Join thousands of traders who trust FuturePilot to maximize their returns with AI-powered automation.
                 </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <button className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
+                  <button className="w-full sm:w-auto group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-base sm:text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <span className="relative z-10">Start Free Trial</span>
                   </button>
-                  <button className="px-8 py-4 bg-white/90 backdrop-blur-xl text-gray-900 rounded-2xl font-semibold text-lg hover:bg-white transition-all duration-300 shadow-xl">
+                  <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white/90 backdrop-blur-xl text-gray-900 rounded-2xl font-semibold text-base sm:text-lg hover:bg-white transition-all duration-300 shadow-xl">
                     Schedule Demo
                   </button>
                 </div>
@@ -308,9 +308,9 @@ export default function Home() {
       </section>
 
       {/* Footer with Liquid Glass */}
-      <footer className="relative border-t border-white/10 dark:border-white/10 light:border-blue-200 py-12 px-6 backdrop-blur-xl">
+      <footer className="relative border-t border-white/10 dark:border-white/10 light:border-blue-200 py-8 sm:py-12 px-4 sm:px-6 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center mb-4 md:mb-0">
               <img 
                 src={theme === 'light' ? '/images/logos/logo-light.png' : '/images/logos/logo-dark.png'}
