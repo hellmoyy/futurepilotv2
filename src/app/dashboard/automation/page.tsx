@@ -288,27 +288,27 @@ export default function AutomationPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold mb-3">
+    <div className="space-y-4 sm:space-y-5 lg:space-y-6 p-4 sm:p-5 lg:p-6">
+      <div className="text-center mb-6 sm:mb-7 lg:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
             Auto Trading Bots
           </span>
         </h1>
-        <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-lg">Choose your bot and start trading instantly</p>
+        <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm sm:text-base lg:text-lg px-4">Choose your bot and start trading instantly</p>
       </div>
 
       {/* Exchange Selection */}
       {exchangeConnections.length > 0 && (
-        <div className="max-w-6xl mx-auto mb-6">
-          <div className="bg-white/5 dark:bg-white/5 light:bg-white border border-white/10 dark:border-white/10 light:border-blue-200 rounded-xl p-4">
-            <label className="block text-sm font-semibold text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2">
+        <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
+          <div className="bg-white/5 dark:bg-white/5 light:bg-white border border-white/10 dark:border-white/10 light:border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1.5 sm:mb-2">
               Trading Account
             </label>
             <select
               value={selectedExchange}
               onChange={(e) => setSelectedExchange(e.target.value)}
-              className="w-full px-4 py-2 bg-white/10 dark:bg-white/10 light:bg-blue-50 border border-white/20 dark:border-white/20 light:border-blue-300 rounded-lg text-white dark:text-white light:text-gray-900 focus:outline-none focus:border-blue-500"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white/10 dark:bg-white/10 light:bg-blue-50 border border-white/20 dark:border-white/20 light:border-blue-300 rounded-lg text-sm sm:text-base text-white dark:text-white light:text-gray-900 focus:outline-none focus:border-blue-500"
             >
               {exchangeConnections.map((conn) => (
                 <option key={conn._id} value={conn._id} className="bg-gray-800 dark:bg-gray-800 light:bg-white">
@@ -322,14 +322,14 @@ export default function AutomationPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="max-w-6xl mx-auto mb-6">
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-            <div className="flex gap-3">
-              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
+            <div className="flex gap-2 sm:gap-3">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-sm font-semibold text-red-400 mb-1">Error</p>
+                <p className="text-xs sm:text-sm font-semibold text-red-400 mb-0.5 sm:mb-1">Error</p>
                 <p className="text-xs text-red-300">{error}</p>
               </div>
             </div>
@@ -339,14 +339,14 @@ export default function AutomationPage() {
 
       {/* No Exchange Connection Warning */}
       {exchangeConnections.length === 0 && (
-        <div className="max-w-6xl mx-auto mb-6">
-          <div className="bg-yellow-500/10 dark:bg-yellow-500/10 light:bg-yellow-50 border border-yellow-500/30 dark:border-yellow-500/30 light:border-yellow-300 rounded-xl p-4">
-            <div className="flex gap-3">
-              <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
+          <div className="bg-yellow-500/10 dark:bg-yellow-500/10 light:bg-yellow-50 border border-yellow-500/30 dark:border-yellow-500/30 light:border-yellow-300 rounded-lg sm:rounded-xl p-3 sm:p-4">
+            <div className="flex gap-2 sm:gap-3">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div>
-                <p className="text-sm font-semibold text-yellow-500 dark:text-yellow-500 light:text-yellow-700 mb-1">No Exchange Connected</p>
+                <p className="text-xs sm:text-sm font-semibold text-yellow-500 dark:text-yellow-500 light:text-yellow-700 mb-0.5 sm:mb-1">No Exchange Connected</p>
                 <p className="text-xs text-yellow-600 dark:text-yellow-400 light:text-yellow-600">
                   Please connect your exchange account in <a href="/dashboard/settings" className="underline font-semibold">Settings</a> to start trading.
                 </p>
@@ -356,57 +356,57 @@ export default function AutomationPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 max-w-6xl mx-auto">
         {tradingBots.map((bot) => {
           const active = isActive(bot.id);
           
           return (
             <div
               key={bot.id}
-              className={`relative group rounded-3xl border-2 transition-all duration-300 ${
+              className={`relative group rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 ${
                 active
                   ? 'border-green-500 bg-gradient-to-br from-green-500/20 to-emerald-500/20 dark:from-green-500/20 dark:to-emerald-500/20 light:from-green-100 light:to-emerald-100 shadow-xl shadow-green-500/20'
                   : 'border-white/10 dark:border-white/10 light:border-blue-200 bg-gradient-to-br from-white/5 to-blue-500/5 dark:from-white/5 dark:to-blue-500/5 light:from-white light:to-blue-50 hover:border-blue-400/50'
               }`}
             >
               {bot.recommended && !active && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold text-white shadow-lg z-10">
+                <div className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold text-white shadow-lg z-10">
                   ⭐ Recommended
                 </div>
               )}
 
               {active && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white shadow-lg z-10 animate-pulse">
+                <div className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs font-bold text-white shadow-lg z-10 animate-pulse">
                   🟢 Trading Active
                 </div>
               )}
 
-              <div className="p-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-16 h-16 flex-shrink-0 transition-all ${active ? 'animate-bounce' : ''}`}>
+              <div className="p-4 sm:p-5 lg:p-6">
+                <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0 transition-all ${active ? 'animate-bounce' : ''}`}>
                     <img 
                       src={bot.icon} 
                       alt={bot.name}
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className="text-2xl font-bold text-white dark:text-white light:text-gray-900">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-1 gap-2">
+                      <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white dark:text-white light:text-gray-900 truncate">
                         {bot.name}
                       </h3>
                       <button
                         onClick={() => openSettingsModal(bot)}
-                        className="p-2 rounded-lg bg-white/5 dark:bg-white/5 light:bg-blue-100 border border-white/10 dark:border-white/10 light:border-blue-300 hover:bg-blue-500/20 dark:hover:bg-blue-500/20 light:hover:bg-blue-200 transition-all group"
+                        className="p-1.5 sm:p-2 rounded-lg bg-white/5 dark:bg-white/5 light:bg-blue-100 border border-white/10 dark:border-white/10 light:border-blue-300 hover:bg-blue-500/20 dark:hover:bg-blue-500/20 light:hover:bg-blue-200 transition-all group flex-shrink-0"
                         title="Bot Settings"
                       >
-                        <svg className="w-5 h-5 text-gray-400 dark:text-gray-400 light:text-gray-600 group-hover:text-blue-400 dark:group-hover:text-blue-400 light:group-hover:text-blue-600 transition-colors group-hover:rotate-90 transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-400 light:text-gray-600 group-hover:text-blue-400 dark:group-hover:text-blue-400 light:group-hover:text-blue-600 transition-colors group-hover:rotate-90 transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                       </button>
                     </div>
-                    <p className="text-sm text-gray-400 dark:text-gray-400 light:text-gray-600 mb-2">
+                    <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1.5 sm:mb-2 line-clamp-2">
                       {bot.description}
                     </p>
                     
@@ -422,7 +422,7 @@ export default function AutomationPage() {
 
                 {/* Live Position Info */}
                 {active && getBotInstance(bot.id)?.currentPosition && (
-                  <div className="mb-4 p-3 bg-blue-500/10 dark:bg-blue-500/10 light:bg-blue-50 border border-blue-500/30 dark:border-blue-500/30 light:border-blue-200 rounded-xl">
+                  <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-blue-500/10 dark:bg-blue-500/10 light:bg-blue-50 border border-blue-500/30 dark:border-blue-500/30 light:border-blue-200 rounded-lg sm:rounded-xl">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-blue-400 dark:text-blue-400 light:text-blue-700">CURRENT POSITION</span>
                       <span className={`text-xs font-bold ${getBotInstance(bot.id)?.currentPosition.side === 'LONG' ? 'text-green-400' : 'text-red-400'}`}>
