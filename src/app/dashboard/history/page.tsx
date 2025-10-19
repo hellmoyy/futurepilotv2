@@ -67,31 +67,31 @@ export default function HistoryPage() {
   const [activeTab, setActiveTab] = useState<'positions' | 'history'>('positions');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
-        <h1 className="text-5xl font-bold mb-3">
+      <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
             Trading Overview
           </span>
         </h1>
-        <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-lg">Monitor your open positions and trading history</p>
+        <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-sm sm:text-base lg:text-lg">Monitor your open positions and trading history</p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-3 bg-black/40 dark:bg-black/40 light:bg-white backdrop-blur-md rounded-2xl p-2 border border-white/10 dark:border-white/10 light:border-gray-200">
+      <div className="flex gap-2 sm:gap-3 bg-black/40 dark:bg-black/40 light:bg-white backdrop-blur-md rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-white/10 dark:border-white/10 light:border-gray-200">
         <button
           onClick={() => setActiveTab('positions')}
-          className={`flex-1 px-6 py-4 font-bold text-base transition-all rounded-xl relative ${
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-bold text-sm sm:text-base transition-all rounded-lg sm:rounded-xl relative ${
             activeTab === 'positions'
               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
               : 'text-gray-400 dark:text-gray-400 light:text-gray-600 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-gray-100'
           }`}
         >
-          <span className="flex items-center justify-center gap-2">
-            My Positions
+          <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+            <span className="hidden sm:inline">My </span>Positions
             {mockPositions.length > 0 && (
-              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+              <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-bold ${
                 activeTab === 'positions' 
                   ? 'bg-white/20 text-white' 
                   : 'bg-blue-500/20 text-blue-400 dark:bg-blue-500/20 dark:text-blue-400 light:bg-blue-100 light:text-blue-600'
@@ -103,21 +103,21 @@ export default function HistoryPage() {
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 px-6 py-4 font-bold text-base transition-all rounded-xl relative ${
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-bold text-sm sm:text-base transition-all rounded-lg sm:rounded-xl relative ${
             activeTab === 'history'
               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
               : 'text-gray-400 dark:text-gray-400 light:text-gray-600 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-gray-100'
           }`}
         >
-          Trading History
+          <span className="hidden sm:inline">Trading </span>History
         </button>
       </div>
 
       {/* My Positions Tab */}
       {activeTab === 'positions' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 lg:space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 dark:from-blue-900/50 dark:to-cyan-900/50 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-blue-400/30 dark:border-blue-400/30 light:border-blue-200 p-6 shadow-xl shadow-blue-500/10">
               <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Total Positions</p>
               <p className="text-3xl font-bold text-white dark:text-white light:text-gray-900">{mockPositions.length}</p>

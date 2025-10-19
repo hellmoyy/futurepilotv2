@@ -122,42 +122,42 @@ export default function TopUpPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen p-4">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 light:text-gray-600">Loading...</p>
+          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400 light:text-gray-600 text-sm sm:text-base">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-5 lg:p-6 space-y-4 sm:space-y-5 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-blue-400 to-cyan-300 bg-clip-text text-transparent light:from-blue-600 light:via-blue-700 light:to-cyan-600">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-300 via-blue-400 to-cyan-300 bg-clip-text text-transparent light:from-blue-600 light:via-blue-700 light:to-cyan-600">
             USDT Top Up
           </h1>
-          <p className="text-gray-400 mt-1 light:text-gray-600">Deposit USDT to add balance for trading</p>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base light:text-gray-600">Deposit USDT to add balance for trading</p>
         </div>
         
         {/* Balance Display */}
-        <div className="bg-white/[0.03] backdrop-blur-3xl rounded-2xl border border-white/10 p-4 light:bg-blue-50 light:border-blue-200">
-          <p className="text-sm text-gray-400 light:text-gray-600">Current Balance</p>
-          <p className="text-2xl font-bold text-white light:text-gray-900">
+        <div className="bg-white/[0.03] backdrop-blur-3xl rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-4 light:bg-blue-50 light:border-blue-200">
+          <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
+          <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">
             ${walletData?.balance.toFixed(2) || '0.00'}
           </p>
         </div>
       </div>
 
       {/* Network Selection */}
-      <div className="flex bg-white/5 backdrop-blur-xl rounded-xl p-1 light:bg-blue-100 w-fit">
+      <div className="flex bg-white/5 backdrop-blur-xl rounded-lg sm:rounded-xl p-1 light:bg-blue-100 w-full sm:w-fit">
         {(['ERC20', 'BEP20'] as const).map((network) => (
           <button
             key={network}
             onClick={() => setActiveNetwork(network)}
-            className={`relative px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+            className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-1.5 sm:space-x-2 ${
               activeNetwork === network
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
                 : 'text-gray-400 hover:text-white hover:bg-white/10 light:text-gray-600 light:hover:text-gray-800 light:hover:bg-blue-200'

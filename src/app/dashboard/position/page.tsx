@@ -187,41 +187,41 @@ export default function PositionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 dark:text-gray-400 light:text-gray-600">Loading positions...</p>
+          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm sm:text-base">Loading positions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
-        <h1 className="text-5xl font-bold mb-3">
+      <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
             Trading Overview
           </span>
         </h1>
-        <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-lg">Monitor your open positions and trading history</p>
+        <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-sm sm:text-base lg:text-lg">Monitor your open positions and trading history</p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-3 bg-black/40 dark:bg-black/40 light:bg-white backdrop-blur-md rounded-2xl p-2 border border-white/10 dark:border-white/10 light:border-gray-200">
+      <div className="flex gap-2 sm:gap-3 bg-black/40 dark:bg-black/40 light:bg-white backdrop-blur-md rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-white/10 dark:border-white/10 light:border-gray-200">
         <button
           onClick={() => setActiveTab('positions')}
-          className={`flex-1 px-6 py-4 font-bold text-base transition-all rounded-xl relative ${
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-bold text-sm sm:text-base transition-all rounded-lg sm:rounded-xl relative ${
             activeTab === 'positions'
               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
               : 'text-gray-400 dark:text-gray-400 light:text-gray-600 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-gray-100'
           }`}
         >
-          <span className="flex items-center justify-center gap-2">
-            My Positions
+          <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+            <span className="hidden sm:inline">My </span>Positions
             {activePositionsCount > 0 && (
-              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+              <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-bold ${
                 activeTab === 'positions' 
                   ? 'bg-white/20 text-white' 
                   : 'bg-blue-500/20 text-blue-400 dark:bg-blue-500/20 dark:text-blue-400 light:bg-blue-100 light:text-blue-600'
@@ -233,16 +233,16 @@ export default function PositionPage() {
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex-1 px-6 py-4 font-bold text-base transition-all rounded-xl relative ${
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 font-bold text-sm sm:text-base transition-all rounded-lg sm:rounded-xl relative ${
             activeTab === 'history'
               ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30'
               : 'text-gray-400 dark:text-gray-400 light:text-gray-600 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-gray-100'
           }`}
         >
-          <span className="flex items-center justify-center gap-2">
-            Trading History
+          <span className="flex items-center justify-center gap-1.5 sm:gap-2">
+            <span className="hidden sm:inline">Trading </span>History
             {trades.length > 0 && (
-              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+              <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-bold ${
                 activeTab === 'history' 
                   ? 'bg-white/20 text-white' 
                   : 'bg-blue-500/20 text-blue-400 dark:bg-blue-500/20 dark:text-blue-400 light:bg-blue-100 light:text-blue-600'
@@ -256,20 +256,20 @@ export default function PositionPage() {
 
       {/* My Positions Tab */}
       {activeTab === 'positions' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 lg:space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 dark:from-blue-900/50 dark:to-cyan-900/50 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-blue-400/30 dark:border-blue-400/30 light:border-blue-200 p-6 shadow-xl shadow-blue-500/10">
-              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Total Positions</p>
-              <p className="text-3xl font-bold text-white dark:text-white light:text-gray-900">{activePositionsCount}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 dark:from-blue-900/50 dark:to-cyan-900/50 light:from-white light:to-blue-50 backdrop-blur-md rounded-xl sm:rounded-2xl border border-blue-400/30 dark:border-blue-400/30 light:border-blue-200 p-4 sm:p-5 lg:p-6 shadow-xl shadow-blue-500/10">
+              <p className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1.5 sm:mb-2 font-semibold uppercase tracking-wide">Total Positions</p>
+              <p className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-gray-900">{activePositionsCount}</p>
             </div>
-            <div className={`bg-gradient-to-br backdrop-blur-md rounded-2xl border p-6 shadow-xl ${
+            <div className={`bg-gradient-to-br backdrop-blur-md rounded-xl sm:rounded-2xl border p-4 sm:p-5 lg:p-6 shadow-xl ${
               totalPnL >= 0 
                 ? 'from-green-900/50 to-emerald-900/50 dark:from-green-900/50 dark:to-emerald-900/50 light:from-white light:to-green-50 border-green-400/30 dark:border-green-400/30 light:border-green-200 shadow-green-500/10'
                 : 'from-red-900/50 to-rose-900/50 dark:from-red-900/50 dark:to-rose-900/50 light:from-white light:to-red-50 border-red-400/30 dark:border-red-400/30 light:border-red-200 shadow-red-500/10'
             }`}>
-              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Total PnL</p>
-              <p className={`text-3xl font-bold ${
+              <p className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1.5 sm:mb-2 font-semibold uppercase tracking-wide">Total PnL</p>
+              <p className={`text-2xl sm:text-3xl font-bold ${
                 totalPnL >= 0 
                   ? 'text-green-400 dark:text-green-400 light:text-green-600'
                   : 'text-red-400 dark:text-red-400 light:text-red-600'
@@ -277,13 +277,13 @@ export default function PositionPage() {
                 {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
               </p>
             </div>
-            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 dark:from-blue-900/50 dark:to-blue-800/50 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-6 shadow-xl">
-              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 font-semibold uppercase tracking-wide">Total Margin</p>
-              <p className="text-3xl font-bold text-white dark:text-white light:text-gray-900">
+            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 dark:from-blue-900/50 dark:to-blue-800/50 light:from-white light:to-blue-50 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-4 sm:p-5 lg:p-6 shadow-xl">
+              <p className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1.5 sm:mb-2 font-semibold uppercase tracking-wide">Total Margin</p>
+              <p className="text-2xl sm:text-3xl font-bold text-white dark:text-white light:text-gray-900">
                 ${totalMargin.toFixed(2)}
               </p>
             </div>
-            <div className={`bg-gradient-to-br backdrop-blur-md rounded-2xl border p-6 shadow-xl ${
+            <div className={`bg-gradient-to-br backdrop-blur-md rounded-xl sm:rounded-2xl border p-4 sm:p-5 lg:p-6 shadow-xl ${
               avgROI >= 0
                 ? 'from-purple-900/50 to-blue-900/50 dark:from-purple-900/50 dark:to-blue-900/50 light:from-white light:to-purple-50 border-purple-400/30 dark:border-purple-400/30 light:border-purple-200 shadow-purple-500/10'
                 : 'from-red-900/50 to-rose-900/50 dark:from-red-900/50 dark:to-rose-900/50 light:from-white light:to-red-50 border-red-400/30 dark:border-red-400/30 light:border-red-200 shadow-red-500/10'
