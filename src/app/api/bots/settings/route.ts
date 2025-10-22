@@ -36,6 +36,11 @@ export async function GET() {
         leverage: s.leverage,
         stopLoss: s.stopLoss,
         takeProfit: s.takeProfit,
+        // Tier 1 features
+        trailingStopLoss: s.trailingStopLoss || { enabled: false, distance: 2 },
+        maxPositionSize: s.maxPositionSize || 100,
+        maxConcurrentPositions: s.maxConcurrentPositions || 3,
+        maxDailyTrades: s.maxDailyTrades || 10,
       }))
     });
   } catch (error) {
@@ -60,7 +65,17 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { botId, leverage, stopLoss, takeProfit } = body;
+    const { 
+      botId, 
+      leverage, 
+      stopLoss, 
+      takeProfit,
+      // Tier 1 features
+      trailingStopLoss,
+      maxPositionSize,
+      maxConcurrentPositions,
+      maxDailyTrades
+    } = body;
 
     if (!botId || leverage === undefined || stopLoss === undefined || takeProfit === undefined) {
       return NextResponse.json(
@@ -91,6 +106,36 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate Tier 1 features
+    if (maxPositionSize && (maxPositionSize < 10 || maxPositionSize > 10000)) {
+      return NextResponse.json(
+        { error: 'Max position size must be between 10 and 10000 USDT' },
+        { status: 400 }
+      );
+    }
+
+    if (maxConcurrentPositions && (maxConcurrentPositions < 1 || maxConcurrentPositions > 20)) {
+      return NextResponse.json(
+        { error: 'Max concurrent positions must be between 1 and 20' },
+        { status: 400 }
+      );
+    }
+
+    if (maxDailyTrades && (maxDailyTrades < 1 || maxDailyTrades > 50)) {
+      return NextResponse.json(
+        { error: 'Max daily trades must be between 1 and 50' },
+        { status: 400 }
+      );
+    }
+
+    if (trailingStopLoss?.enabled && trailingStopLoss.distance && 
+        (trailingStopLoss.distance < 0.5 || trailingStopLoss.distance > 10)) {
+      return NextResponse.json(
+        { error: 'Trailing stop loss distance must be between 0.5 and 10%' },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
     const user = await User.findOne({ email: session.user.email });
@@ -110,6 +155,11 @@ export async function POST(request: Request) {
         leverage,
         stopLoss,
         takeProfit,
+        // Tier 1 features
+        trailingStopLoss: trailingStopLoss || { enabled: false, distance: 2 },
+        maxPositionSize: maxPositionSize || 100,
+        maxConcurrentPositions: maxConcurrentPositions || 3,
+        maxDailyTrades: maxDailyTrades || 10,
       },
       { upsert: true, new: true }
     );
@@ -122,6 +172,10 @@ export async function POST(request: Request) {
         leverage: settings.leverage,
         stopLoss: settings.stopLoss,
         takeProfit: settings.takeProfit,
+        trailingStopLoss: settings.trailingStopLoss,
+        maxPositionSize: settings.maxPositionSize,
+        maxConcurrentPositions: settings.maxConcurrentPositions,
+        maxDailyTrades: settings.maxDailyTrades,
       }
     });
   } catch (error) {

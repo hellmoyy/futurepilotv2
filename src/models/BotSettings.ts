@@ -29,6 +29,37 @@ const botSettingsSchema = new mongoose.Schema(
       min: 1,
       max: 30,
     },
+    // Tier 1 - Critical Features
+    trailingStopLoss: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      distance: {
+        type: Number,
+        default: 2,
+        min: 0.5,
+        max: 10,
+      },
+    },
+    maxPositionSize: {
+      type: Number,
+      default: 100,
+      min: 10,
+      max: 10000,
+    },
+    maxConcurrentPositions: {
+      type: Number,
+      default: 3,
+      min: 1,
+      max: 20,
+    },
+    maxDailyTrades: {
+      type: Number,
+      default: 10,
+      min: 1,
+      max: 50,
+    },
   },
   {
     timestamps: true,
