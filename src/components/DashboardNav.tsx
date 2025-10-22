@@ -87,7 +87,7 @@ export default function DashboardNav({ onMenuClick }: DashboardNavProps) {
                       <button
                         onClick={() => {
                           setShowUserMenu(false);
-                          window.location.href = '/dashboard/settings';
+                          window.location.href = '/settings';
                         }}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-gray-100 transition-colors"
                       >

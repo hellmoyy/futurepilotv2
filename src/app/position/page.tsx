@@ -312,7 +312,7 @@ export default function PositionPage() {
                 Start trading with your bots to see active positions here
               </p>
               <a
-                href="/dashboard/automation"
+                href="/automation"
                 className="inline-block px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl font-bold text-white hover:shadow-xl hover:shadow-blue-500/30 transition-all hover:scale-105"
               >
                 Start Auto Trading
@@ -445,7 +445,7 @@ export default function PositionPage() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <a
-                  href="/dashboard/automation"
+                  href="/automation"
                   className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl font-bold text-white hover:shadow-xl hover:shadow-blue-500/30 transition-all hover:scale-105"
                 >
                   Start Auto Trading

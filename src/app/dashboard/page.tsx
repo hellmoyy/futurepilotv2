@@ -11,11 +11,61 @@ interface CoinPrice {
   volume: string;
 }
 
+interface DashboardStats {
+  totalBalance: number;
+  balanceChangePercent: number;
+  activeTrades: number;
+  totalProfit: number;
+  winRate: number;
+  totalTrades: number;
+  profitableTrades: number;
+  losingTrades: number;
+  avgProfit: number;
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [coins, setCoins] = useState<CoinPrice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalBalance: 0,
+    balanceChangePercent: 0,
+    activeTrades: 0,
+    totalProfit: 0,
+    winRate: 0,
+    totalTrades: 0,
+    profitableTrades: 0,
+    losingTrades: 0,
+    avgProfit: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
+  // Fetch dashboard statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/dashboard/stats');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setStats(result.data);
+        }
+        setStatsLoading(false);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        setStatsLoading(false);
+      }
+    };
+
+    if (session?.user) {
+      fetchStats();
+      // Auto refresh every 15 seconds
+      const interval = setInterval(fetchStats, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
+
+  // Fetch market prices
   useEffect(() => {
     const fetchPrices = async () => {
       try {
@@ -87,8 +137,21 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">$0.00</div>
-          <div className="text-xs sm:text-sm text-green-400 dark:text-green-400 light:text-green-600 font-medium">+0% from last month</div>
+          {statsLoading ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">
+                ${stats.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className={`text-xs sm:text-sm font-medium ${stats.balanceChangePercent >= 0 ? 'text-green-400 dark:text-green-400 light:text-green-600' : 'text-red-400 dark:text-red-400 light:text-red-600'}`}>
+                {stats.balanceChangePercent >= 0 ? '+' : ''}{stats.balanceChangePercent.toFixed(2)}% from last month
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-gradient-to-br from-cyan-900/50 to-blue-900/50 dark:from-cyan-900/50 dark:to-blue-900/50 light:from-white light:to-cyan-50 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-cyan-400/30 dark:border-cyan-400/30 light:border-cyan-200 shadow-xl shadow-cyan-500/10">
@@ -100,8 +163,21 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">0</div>
-          <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">No active positions</div>
+          {statsLoading ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">
+                {stats.activeTrades}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">
+                {stats.activeTrades === 0 ? 'No active positions' : `${stats.activeTrades} position${stats.activeTrades > 1 ? 's' : ''} open`}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 dark:from-blue-900/50 dark:to-blue-800/50 light:from-white light:to-green-50 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-green-400/30 dark:border-green-400/30 light:border-green-200 shadow-xl shadow-green-500/10">
@@ -113,8 +189,21 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">$0.00</div>
-          <div className="text-xs sm:text-sm text-green-400 dark:text-green-400 light:text-green-600 font-medium">All time earnings</div>
+          {statsLoading ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <>
+              <div className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 tracking-tight ${stats.totalProfit >= 0 ? 'text-green-400 dark:text-green-400 light:text-green-600' : 'text-red-400 dark:text-red-400 light:text-red-600'}`}>
+                {stats.totalProfit >= 0 ? '+' : ''}${Math.abs(stats.totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">
+                All time earnings ({stats.totalTrades} trades)
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-gradient-to-br from-blue-800/50 to-purple-900/50 dark:from-blue-800/50 dark:to-purple-900/50 light:from-white light:to-purple-50 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-purple-400/30 dark:border-purple-400/30 light:border-purple-200 shadow-xl shadow-purple-500/10">
@@ -126,8 +215,21 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">0%</div>
-          <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">No trades yet</div>
+          {statsLoading ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-gray-400 text-sm">Loading...</span>
+            </div>
+          ) : (
+            <>
+              <div className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 tracking-tight ${stats.winRate >= 50 ? 'text-green-400 dark:text-green-400 light:text-green-600' : stats.winRate > 0 ? 'text-yellow-400 dark:text-yellow-400 light:text-yellow-600' : 'text-white dark:text-white light:text-gray-900'}`}>
+                {stats.winRate.toFixed(1)}%
+              </div>
+              <div className="text-xs sm:text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">
+                {stats.totalTrades === 0 ? 'No trades yet' : `${stats.profitableTrades}W / ${stats.losingTrades}L`}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -209,7 +311,7 @@ export default function DashboardPage() {
         <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-4 sm:mb-5 lg:mb-6 text-white dark:text-white light:text-gray-900">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
           <a
-            href="/dashboard/settings"
+            href="/settings"
             className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-blue-900/40 to-blue-700/40 dark:from-blue-900/40 dark:to-blue-700/40 light:from-blue-50 light:to-blue-100 backdrop-blur-sm rounded-lg sm:rounded-xl border border-blue-400/30 dark:border-blue-400/30 light:border-blue-300 hover:border-blue-400/60 dark:hover:border-blue-400/60 light:hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/20 transition-all group"
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
@@ -225,7 +327,7 @@ export default function DashboardPage() {
           </a>
 
           <a
-            href="/dashboard/automation"
+            href="/automation"
             className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-cyan-900/40 to-blue-900/40 dark:from-cyan-900/40 dark:to-blue-900/40 light:from-cyan-50 light:to-cyan-100 backdrop-blur-sm rounded-lg sm:rounded-xl border border-cyan-400/30 dark:border-cyan-400/30 light:border-cyan-300 hover:border-cyan-400/60 dark:hover:border-cyan-400/60 light:hover:border-cyan-400 hover:shadow-xl hover:shadow-cyan-500/20 transition-all group"
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-cyan-500/30">
@@ -240,7 +342,7 @@ export default function DashboardPage() {
           </a>
 
           <a
-            href="/dashboard/ai-agent"
+            href="/ai-agent"
             className="flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-purple-900/40 to-blue-900/40 dark:from-purple-900/40 dark:to-blue-900/40 light:from-purple-50 light:to-purple-100 backdrop-blur-sm rounded-lg sm:rounded-xl border border-purple-400/30 dark:border-purple-400/30 light:border-purple-300 hover:border-purple-400/60 dark:hover:border-purple-400/60 light:hover:border-purple-400 hover:shadow-xl hover:shadow-purple-500/20 transition-all group"
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-400 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/30">

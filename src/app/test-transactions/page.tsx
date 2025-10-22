@@ -199,7 +199,7 @@ export default function TestTransactionsPage() {
         {/* Links */}
         <div className="text-center">
           <div className="space-x-4">
-            <a href="/dashboard/topup" className="text-blue-400 hover:text-blue-300">
+            <a href="/topup" className="text-blue-400 hover:text-blue-300">
               Main Topup Page
             </a>
             <a href="/test-topup" className="text-blue-400 hover:text-blue-300">

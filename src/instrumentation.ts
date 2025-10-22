@@ -10,6 +10,13 @@
 export async function register() {
   // Only run on Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Fix SSL certificate issue in development
+    // This allows fetch() to work with Binance API on macOS
+    if (process.env.NODE_ENV === 'development') {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+      console.log('🔧 [INIT] SSL verification disabled for development');
+    }
+    
     console.log('🚀 [INIT] Next.js server starting...');
 
     // Auto-start signal generator if enabled

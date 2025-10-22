@@ -29,13 +29,31 @@ export async function fetchBinanceCandles(
   try {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response.ok) {
-      throw new Error(`Binance API error: ${response.statusText}`);
+      const text = await response.text();
+      throw new Error(`Binance API error (${response.status}): ${text.substring(0, 100)}`);
+    }
+    
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON but got ${contentType}. Response: ${text.substring(0, 200)}`);
     }
     
     const data = await response.json();
+    
+    // Validate response is an array
+    if (!Array.isArray(data)) {
+      throw new Error(`Expected array from Binance API but got: ${typeof data}`);
+    }
     
     // Transform Binance kline format to our Candle format
     const candles: Candle[] = data.map((kline: any[]) => ({

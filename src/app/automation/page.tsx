@@ -348,7 +348,7 @@ export default function AutomationPage() {
               <div>
                 <p className="text-xs sm:text-sm font-semibold text-yellow-500 dark:text-yellow-500 light:text-yellow-700 mb-0.5 sm:mb-1">No Exchange Connected</p>
                 <p className="text-xs text-yellow-600 dark:text-yellow-400 light:text-yellow-600">
-                  Please connect your exchange account in <a href="/dashboard/settings" className="underline font-semibold">Settings</a> to start trading.
+                  Please connect your exchange account in <a href="/settings" className="underline font-semibold">Settings</a> to start trading.
                 </p>
               </div>
             </div>

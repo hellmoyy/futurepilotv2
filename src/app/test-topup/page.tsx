@@ -287,7 +287,7 @@ export default function TestTopUpPage() {
               <a href="/api/wallet/test-get" target="_blank" className="bg-green-600 hover:bg-green-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors">
                 Test Wallet Data
               </a>
-              <a href="/dashboard/topup" className="bg-purple-600 hover:bg-purple-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors">
+              <a href="/topup" className="bg-purple-600 hover:bg-purple-700 text-white text-center py-3 px-4 rounded-lg font-medium transition-colors">
                 Main Topup Page
               </a>
             </div>

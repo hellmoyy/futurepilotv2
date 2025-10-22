@@ -16,6 +16,15 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  // Webpack configuration
+  webpack: (config, { isServer }) => {
+    // Fix for SSL certificate issues in development (server-side only)
+    if (isServer && process.env.NODE_ENV === 'development') {
+      // Disable SSL verification for development only
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig
