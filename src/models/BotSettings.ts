@@ -60,6 +60,57 @@ const botSettingsSchema = new mongoose.Schema(
       min: 1,
       max: 50,
     },
+    // Tier 2 - Important Features
+    breakEvenStop: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      triggerProfit: {
+        type: Number,
+        default: 2,
+        min: 0.5,
+        max: 10,
+      },
+    },
+    partialTakeProfit: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      levels: {
+        type: [{
+          profit: {
+            type: Number,
+            required: true,
+            min: 0.5,
+            max: 30,
+          },
+          closePercent: {
+            type: Number,
+            required: true,
+            min: 10,
+            max: 100,
+          },
+        }],
+        default: [
+          { profit: 3, closePercent: 50 },
+          { profit: 6, closePercent: 50 }
+        ],
+      },
+    },
+    maxDailyLoss: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      amount: {
+        type: Number,
+        default: 100,
+        min: 10,
+        max: 5000,
+      },
+    },
   },
   {
     timestamps: true,

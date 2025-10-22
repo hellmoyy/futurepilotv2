@@ -91,7 +91,23 @@ export default function AutomationPage() {
           },
           maxPositionSize: 100, // USDT
           maxConcurrentPositions: 3,
-          maxDailyTrades: 10
+          maxDailyTrades: 10,
+          // Tier 2 - Important Features
+          breakEvenStop: {
+            enabled: false,
+            triggerProfit: 2 // % profit to trigger break even
+          },
+          partialTakeProfit: {
+            enabled: false,
+            levels: [
+              { profit: 3, closePercent: 50 },
+              { profit: 6, closePercent: 50 }
+            ]
+          },
+          maxDailyLoss: {
+            enabled: false,
+            amount: 100 // USDT
+          }
         };
       });
       setBotSettings(defaultSettings);
@@ -112,7 +128,11 @@ export default function AutomationPage() {
                 trailingStopLoss: setting.trailingStopLoss || defaultSettings[setting.botId].trailingStopLoss,
                 maxPositionSize: setting.maxPositionSize || defaultSettings[setting.botId].maxPositionSize,
                 maxConcurrentPositions: setting.maxConcurrentPositions || defaultSettings[setting.botId].maxConcurrentPositions,
-                maxDailyTrades: setting.maxDailyTrades || defaultSettings[setting.botId].maxDailyTrades
+                maxDailyTrades: setting.maxDailyTrades || defaultSettings[setting.botId].maxDailyTrades,
+                // Tier 2 features from database
+                breakEvenStop: setting.breakEvenStop || defaultSettings[setting.botId].breakEvenStop,
+                partialTakeProfit: setting.partialTakeProfit || defaultSettings[setting.botId].partialTakeProfit,
+                maxDailyLoss: setting.maxDailyLoss || defaultSettings[setting.botId].maxDailyLoss
               };
             });
             setBotSettings(savedSettings);
@@ -298,6 +318,10 @@ export default function AutomationPage() {
           maxPositionSize: settings.maxPositionSize,
           maxConcurrentPositions: settings.maxConcurrentPositions,
           maxDailyTrades: settings.maxDailyTrades,
+          // Tier 2 features
+          breakEvenStop: settings.breakEvenStop,
+          partialTakeProfit: settings.partialTakeProfit,
+          maxDailyLoss: settings.maxDailyLoss,
         }),
       });
 
@@ -580,6 +604,55 @@ export default function AutomationPage() {
                       <span className="text-orange-400 dark:text-orange-400 light:text-orange-600 font-bold">
                         {botSettings[bot.id]?.maxDailyTrades || 10}
                       </span>
+                    </div>
+                    
+                    {/* Tier 2 Features */}
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5 dark:border-white/5 light:border-blue-100">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Break Even</span>
+                      </div>
+                      {botSettings[bot.id]?.breakEvenStop?.enabled ? (
+                        <span className="text-green-400 dark:text-green-400 light:text-green-600 font-bold">
+                          +{botSettings[bot.id]?.breakEvenStop?.triggerProfit}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                        </svg>
+                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Partial TP</span>
+                      </div>
+                      {botSettings[bot.id]?.partialTakeProfit?.enabled ? (
+                        <span className="text-blue-400 dark:text-blue-400 light:text-blue-600 font-bold">
+                          {botSettings[bot.id]?.partialTakeProfit?.levels?.length || 2} Levels
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Loss</span>
+                      </div>
+                      {botSettings[bot.id]?.maxDailyLoss?.enabled ? (
+                        <span className="text-red-400 dark:text-red-400 light:text-red-600 font-bold">
+                          ${botSettings[bot.id]?.maxDailyLoss?.amount}
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -954,6 +1027,258 @@ export default function AutomationPage() {
                 </div>
               </div>
 
+              {/* TIER 2 FEATURES - Profit Protection & Loss Prevention */}
+              <div className="border-t-2 border-cyan-500/30 dark:border-cyan-500/30 light:border-cyan-300 pt-6 mt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <h3 className="text-xl font-bold text-white dark:text-white light:text-gray-900">Profit Protection & Loss Prevention</h3>
+                </div>
+
+                {/* Break Even Stop */}
+                <div className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 dark:from-green-900/20 dark:to-emerald-900/20 light:from-green-50 light:to-emerald-50 rounded-xl p-5 border border-green-500/30 dark:border-green-500/30 light:border-green-300 mb-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Break Even Stop</h4>
+                        <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">SMART</span>
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">
+                        Auto move stop loss to entry price when profit target is reached
+                      </p>
+                      <p className="text-xs text-green-400 dark:text-green-400 light:text-green-600 font-semibold">
+                        Example: Profit hits +{botSettings[selectedBotForSettings.id]?.breakEvenStop?.triggerProfit || 2}% → Stop loss moves to $0 (no loss possible)
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={botSettings[selectedBotForSettings.id]?.breakEvenStop?.enabled || false}
+                        onChange={(e) => updateNestedBotSettings(selectedBotForSettings.id, 'breakEvenStop', 'enabled', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  
+                  {botSettings[selectedBotForSettings.id]?.breakEvenStop?.enabled && (
+                    <div className="mt-4 pt-4 border-t border-green-500/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700">Trigger at Profit</span>
+                        <span className="text-lg font-bold text-green-400 dark:text-green-400 light:text-green-600">
+                          +{botSettings[selectedBotForSettings.id]?.breakEvenStop?.triggerProfit || 2}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="10"
+                        step="0.5"
+                        value={botSettings[selectedBotForSettings.id]?.breakEvenStop?.triggerProfit || 2}
+                        onChange={(e) => updateNestedBotSettings(selectedBotForSettings.id, 'breakEvenStop', 'triggerProfit', parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-700 dark:bg-gray-700 light:bg-green-200 rounded-lg appearance-none cursor-pointer accent-green-500"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mt-1">
+                        <span>0.5% (Quick)</span>
+                        <span>10% (Patient)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Partial Take Profit */}
+                <div className="bg-gradient-to-br from-blue-900/20 to-indigo-900/20 dark:from-blue-900/20 dark:to-indigo-900/20 light:from-blue-50 light:to-indigo-50 rounded-xl p-5 border border-blue-500/30 dark:border-blue-500/30 light:border-blue-300 mb-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Partial Take Profit</h4>
+                        <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">ADVANCED</span>
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">
+                        Close position in stages to lock profits while staying in trend
+                      </p>
+                      <p className="text-xs text-blue-400 dark:text-blue-400 light:text-blue-600 font-semibold">
+                        Example: Close 50% at +3%, keep 50% running to +6%
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={botSettings[selectedBotForSettings.id]?.partialTakeProfit?.enabled || false}
+                        onChange={(e) => updateNestedBotSettings(selectedBotForSettings.id, 'partialTakeProfit', 'enabled', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  
+                  {botSettings[selectedBotForSettings.id]?.partialTakeProfit?.enabled && (
+                    <div className="mt-4 pt-4 border-t border-blue-500/20 space-y-4">
+                      {/* Level 1 */}
+                      <div className="bg-white/5 dark:bg-white/5 light:bg-blue-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-bold text-blue-400 dark:text-blue-400 light:text-blue-700">Level 1</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">First Exit</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 block mb-1">Profit Target</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="0.5"
+                                max="20"
+                                step="0.5"
+                                value={botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels?.[0]?.profit || 3}
+                                onChange={(e) => {
+                                  const newLevels = [...(botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels || [])];
+                                  newLevels[0] = { ...newLevels[0], profit: parseFloat(e.target.value) || 3 };
+                                  updateNestedBotSettings(selectedBotForSettings.id, 'partialTakeProfit', 'levels', newLevels);
+                                }}
+                                className="flex-1 bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-blue-300 rounded-lg px-3 py-2 text-white dark:text-white light:text-gray-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-bold text-green-400 dark:text-green-400 light:text-green-600">%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 block mb-1">Close Amount</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="10"
+                                max="90"
+                                step="5"
+                                value={botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels?.[0]?.closePercent || 50}
+                                onChange={(e) => {
+                                  const newLevels = [...(botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels || [])];
+                                  newLevels[0] = { ...newLevels[0], closePercent: parseInt(e.target.value) || 50 };
+                                  updateNestedBotSettings(selectedBotForSettings.id, 'partialTakeProfit', 'levels', newLevels);
+                                }}
+                                className="flex-1 bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-blue-300 rounded-lg px-3 py-2 text-white dark:text-white light:text-gray-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-bold text-blue-400 dark:text-blue-400 light:text-blue-600">%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Level 2 */}
+                      <div className="bg-white/5 dark:bg-white/5 light:bg-blue-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-bold text-blue-400 dark:text-blue-400 light:text-blue-700">Level 2</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">Final Exit</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 block mb-1">Profit Target</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="0.5"
+                                max="30"
+                                step="0.5"
+                                value={botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels?.[1]?.profit || 6}
+                                onChange={(e) => {
+                                  const newLevels = [...(botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels || [])];
+                                  newLevels[1] = { ...newLevels[1], profit: parseFloat(e.target.value) || 6 };
+                                  updateNestedBotSettings(selectedBotForSettings.id, 'partialTakeProfit', 'levels', newLevels);
+                                }}
+                                className="flex-1 bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-blue-300 rounded-lg px-3 py-2 text-white dark:text-white light:text-gray-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-bold text-green-400 dark:text-green-400 light:text-green-600">%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 block mb-1">Close Amount</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="10"
+                                max="100"
+                                step="5"
+                                value={botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels?.[1]?.closePercent || 50}
+                                onChange={(e) => {
+                                  const newLevels = [...(botSettings[selectedBotForSettings.id]?.partialTakeProfit?.levels || [])];
+                                  newLevels[1] = { ...newLevels[1], closePercent: parseInt(e.target.value) || 50 };
+                                  updateNestedBotSettings(selectedBotForSettings.id, 'partialTakeProfit', 'levels', newLevels);
+                                }}
+                                className="flex-1 bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-blue-300 rounded-lg px-3 py-2 text-white dark:text-white light:text-gray-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-bold text-blue-400 dark:text-blue-400 light:text-blue-600">%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">
+                        <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Percentages must total 100%. Adjust levels to match your strategy.</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Max Daily Loss */}
+                <div className="bg-gradient-to-br from-red-900/20 to-pink-900/20 dark:from-red-900/20 dark:to-pink-900/20 light:from-red-50 light:to-pink-50 rounded-xl p-5 border border-red-500/30 dark:border-red-500/30 light:border-red-300">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Max Daily Loss Limit</h4>
+                        <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">PROTECTION</span>
+                      </div>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">
+                        Automatically stop all bots when daily loss reaches limit
+                      </p>
+                      <p className="text-xs text-red-400 dark:text-red-400 light:text-red-600 font-semibold">
+                        Protects your account from catastrophic losses on bad days
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={botSettings[selectedBotForSettings.id]?.maxDailyLoss?.enabled || false}
+                        onChange={(e) => updateNestedBotSettings(selectedBotForSettings.id, 'maxDailyLoss', 'enabled', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+                  
+                  {botSettings[selectedBotForSettings.id]?.maxDailyLoss?.enabled && (
+                    <div className="mt-4 pt-4 border-t border-red-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex-1">
+                          <label className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 block mb-1">Maximum Loss Amount</label>
+                          <input
+                            type="number"
+                            min="10"
+                            max="5000"
+                            step="10"
+                            value={botSettings[selectedBotForSettings.id]?.maxDailyLoss?.amount || 100}
+                            onChange={(e) => updateNestedBotSettings(selectedBotForSettings.id, 'maxDailyLoss', 'amount', parseInt(e.target.value) || 100)}
+                            className="w-full bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-red-300 rounded-lg px-4 py-3 text-white dark:text-white light:text-gray-900 font-bold text-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                          />
+                        </div>
+                        <div className="text-center pt-6">
+                          <span className="text-2xl font-bold text-red-400 dark:text-red-400 light:text-red-600">USDT</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-red-500/10 dark:bg-red-500/10 light:bg-red-100 rounded-lg p-3 mt-3">
+                        <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p className="text-xs text-red-400 dark:text-red-400 light:text-red-700 font-semibold">
+                          When triggered, all active bots will stop trading for the rest of the day. Resets at 00:00 UTC.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Warning */}
               <div className="bg-yellow-500/10 dark:bg-yellow-500/10 light:bg-yellow-50 border border-yellow-500/30 dark:border-yellow-500/30 light:border-yellow-300 rounded-xl p-4">
                 <div className="flex gap-3">
@@ -980,20 +1305,37 @@ export default function AutomationPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => {
-                    // Reset to default including Tier 1 features
+                    // Reset to default including Tier 1 & 2 features
                     setBotSettings(prev => ({
                       ...prev,
                       [selectedBotForSettings.id]: {
                         leverage: selectedBotForSettings.leverage,
                         stopLoss: selectedBotForSettings.stopLoss,
                         takeProfit: selectedBotForSettings.takeProfit,
+                        // Tier 1
                         trailingStopLoss: {
                           enabled: false,
                           distance: 2
                         },
                         maxPositionSize: 100,
                         maxConcurrentPositions: 3,
-                        maxDailyTrades: 10
+                        maxDailyTrades: 10,
+                        // Tier 2
+                        breakEvenStop: {
+                          enabled: false,
+                          triggerProfit: 2
+                        },
+                        partialTakeProfit: {
+                          enabled: false,
+                          levels: [
+                            { profit: 3, closePercent: 50 },
+                            { profit: 6, closePercent: 50 }
+                          ]
+                        },
+                        maxDailyLoss: {
+                          enabled: false,
+                          amount: 100
+                        }
                       }
                     }));
                   }}

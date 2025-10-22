@@ -41,6 +41,10 @@ export async function GET() {
         maxPositionSize: s.maxPositionSize || 100,
         maxConcurrentPositions: s.maxConcurrentPositions || 3,
         maxDailyTrades: s.maxDailyTrades || 10,
+        // Tier 2 features
+        breakEvenStop: s.breakEvenStop || { enabled: false, triggerProfit: 2 },
+        partialTakeProfit: s.partialTakeProfit || { enabled: false, levels: [{ profit: 3, closePercent: 50 }, { profit: 6, closePercent: 50 }] },
+        maxDailyLoss: s.maxDailyLoss || { enabled: false, amount: 100 },
       }))
     });
   } catch (error) {
@@ -74,7 +78,11 @@ export async function POST(request: Request) {
       trailingStopLoss,
       maxPositionSize,
       maxConcurrentPositions,
-      maxDailyTrades
+      maxDailyTrades,
+      // Tier 2 features
+      breakEvenStop,
+      partialTakeProfit,
+      maxDailyLoss
     } = body;
 
     if (!botId || leverage === undefined || stopLoss === undefined || takeProfit === undefined) {
@@ -136,6 +144,40 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate Tier 2 features
+    if (breakEvenStop?.enabled && breakEvenStop.triggerProfit && 
+        (breakEvenStop.triggerProfit < 0.5 || breakEvenStop.triggerProfit > 10)) {
+      return NextResponse.json(
+        { error: 'Break even trigger profit must be between 0.5 and 10%' },
+        { status: 400 }
+      );
+    }
+
+    if (maxDailyLoss?.enabled && maxDailyLoss.amount && 
+        (maxDailyLoss.amount < 10 || maxDailyLoss.amount > 5000)) {
+      return NextResponse.json(
+        { error: 'Max daily loss must be between 10 and 5000 USDT' },
+        { status: 400 }
+      );
+    }
+
+    if (partialTakeProfit?.enabled && partialTakeProfit.levels) {
+      for (const level of partialTakeProfit.levels) {
+        if (level.profit < 0.5 || level.profit > 30) {
+          return NextResponse.json(
+            { error: 'Partial TP profit must be between 0.5 and 30%' },
+            { status: 400 }
+          );
+        }
+        if (level.closePercent < 10 || level.closePercent > 100) {
+          return NextResponse.json(
+            { error: 'Partial TP close percent must be between 10 and 100%' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     await connectDB();
 
     const user = await User.findOne({ email: session.user.email });
@@ -160,6 +202,10 @@ export async function POST(request: Request) {
         maxPositionSize: maxPositionSize || 100,
         maxConcurrentPositions: maxConcurrentPositions || 3,
         maxDailyTrades: maxDailyTrades || 10,
+        // Tier 2 features
+        breakEvenStop: breakEvenStop || { enabled: false, triggerProfit: 2 },
+        partialTakeProfit: partialTakeProfit || { enabled: false, levels: [{ profit: 3, closePercent: 50 }, { profit: 6, closePercent: 50 }] },
+        maxDailyLoss: maxDailyLoss || { enabled: false, amount: 100 },
       },
       { upsert: true, new: true }
     );
@@ -176,6 +222,9 @@ export async function POST(request: Request) {
         maxPositionSize: settings.maxPositionSize,
         maxConcurrentPositions: settings.maxConcurrentPositions,
         maxDailyTrades: settings.maxDailyTrades,
+        breakEvenStop: settings.breakEvenStop,
+        partialTakeProfit: settings.partialTakeProfit,
+        maxDailyLoss: settings.maxDailyLoss,
       }
     });
   } catch (error) {
