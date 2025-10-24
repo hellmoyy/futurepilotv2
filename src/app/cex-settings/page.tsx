@@ -1,7 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface ExchangeConnection {
@@ -79,13 +80,7 @@ export default function SettingsPage() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchConnections();
-    }
-  }, [status]);
-
-  const fetchConnections = async () => {
+  const fetchConnections = useCallback(async () => {
     try {
       const response = await fetch('/api/exchange/connections');
       const data = await response.json();
@@ -103,7 +98,13 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchConnections();
+    }
+  }, [status, fetchConnections]);
 
   const refreshBalance = async (connectionId: string) => {
     setLoadingBalances(prev => ({ ...prev, [connectionId]: true }));
@@ -295,6 +296,7 @@ export default function SettingsPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4 sm:mb-5">
                     <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={info.logo} alt={info.name} className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 object-contain flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white dark:text-white light:text-gray-900 mb-1 truncate">{info.name}</h3>

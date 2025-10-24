@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import AIChat from '@/components/AIChat';
@@ -14,6 +15,7 @@ export default function AIDemo() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <a href="/" className="flex items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={theme === 'light' ? '/images/logos/logo-light.png' : '/images/logos/logo-dark.png'}
                 alt="FuturePilot" 

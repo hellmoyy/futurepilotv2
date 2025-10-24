@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -30,11 +30,7 @@ export default function AdminUsersPage() {
     membershipLevel: 'bronze',
   });
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/verify');
       const data = await response.json();
@@ -48,7 +44,11 @@ export default function AdminUsersPage() {
     } catch (error) {
       router.push('/administrator');
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const fetchUsers = async () => {
     try {

@@ -944,7 +944,7 @@ export function searchPairs(query: string): TradingPair[] {
 // 📊 EXPORT DEFAULT
 // ============================================================================
 
-export default {
+const tradingPairsConfig = {
   TRADING_PAIRS,
   ALLOWED_PAIRS,
   ALL_PAIRS,
@@ -967,3 +967,5 @@ export default {
   getAllPairsData,
   searchPairs,
 };
+
+export default tradingPairsConfig;

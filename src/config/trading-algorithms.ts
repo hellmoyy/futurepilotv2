@@ -498,7 +498,7 @@ export function validateSettings(): { valid: boolean; errors: string[] } {
 // 📊 EXPORT ALL
 // ============================================================================
 
-export default {
+const tradingAlgorithmsConfig = {
   INDICATORS,
   STRATEGY_PRESETS,
   ACTIVE_STRATEGY,
@@ -519,3 +519,5 @@ export default {
   isTradingAllowed,
   validateSettings,
 };
+
+export default tradingAlgorithmsConfig;

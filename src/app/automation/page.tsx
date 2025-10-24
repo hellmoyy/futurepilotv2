@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 
 const tradingBots = [
@@ -146,20 +147,7 @@ export default function AutomationPage() {
     initializeSettings();
   }, []);
 
-  // Fetch active bot instances and exchange connections
-  useEffect(() => {
-    fetchBotInstances();
-    fetchExchangeConnections();
-    
-    // Poll for updates every 10 seconds
-    const interval = setInterval(() => {
-      fetchBotInstances();
-    }, 10000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchBotInstances = async () => {
+  const fetchBotInstances = useCallback(async () => {
     try {
       const response = await fetch('/api/bots');
       if (response.ok) {
@@ -176,9 +164,9 @@ export default function AutomationPage() {
     } catch (error) {
       console.error('Error fetching bot instances:', error);
     }
-  };
+  }, []);
 
-  const fetchExchangeConnections = async () => {
+  const fetchExchangeConnections = useCallback(async () => {
     try {
       const response = await fetch('/api/exchange/connections');
       if (response.ok) {
@@ -193,7 +181,20 @@ export default function AutomationPage() {
     } catch (error) {
       console.error('Error fetching exchange connections:', error);
     }
-  };
+  }, [selectedExchange]);
+
+  // Fetch active bot instances and exchange connections
+  useEffect(() => {
+    fetchBotInstances();
+    fetchExchangeConnections();
+    
+    // Poll for updates every 10 seconds
+    const interval = setInterval(() => {
+      fetchBotInstances();
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [fetchBotInstances, fetchExchangeConnections]);
 
   const toggleBot = async (botId: number) => {
     if (loading) return;
@@ -439,6 +440,7 @@ export default function AutomationPage() {
               <div className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0 transition-all ${active ? 'animate-bounce' : ''}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={bot.icon} 
                       alt={bot.name}
@@ -722,6 +724,7 @@ export default function AutomationPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={selectedBotForSettings.icon} 
                       alt={selectedBotForSettings.name}

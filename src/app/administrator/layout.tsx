@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function AdminLayout({
@@ -14,17 +14,7 @@ export default function AdminLayout({
   const [admin, setAdmin] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  useEffect(() => {
-    // Skip auth check for login page
-    if (pathname === '/administrator') {
-      setLoading(false);
-      return;
-    }
-
-    checkAuth();
-  }, [pathname]);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/verify');
       const data = await response.json();
@@ -39,7 +29,17 @@ export default function AdminLayout({
     } catch (error) {
       router.push('/administrator');
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    // Skip auth check for login page
+    if (pathname === '/administrator') {
+      setLoading(false);
+      return;
+    }
+
+    checkAuth();
+  }, [pathname, checkAuth]);
 
   const handleLogout = async () => {
     try {

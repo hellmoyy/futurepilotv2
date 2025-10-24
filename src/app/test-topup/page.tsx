@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import QRCode from 'qrcode';
 import Image from 'next/image';
 
@@ -17,21 +18,7 @@ export default function TestTopUpPage() {
   const [copied, setCopied] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
-  useEffect(() => {
-    fetchWalletData();
-  }, []);
-
-  // Generate QR code when wallet data or network changes
-  useEffect(() => {
-    if (walletData) {
-      const address = activeNetwork === 'ERC20' ? walletData.erc20Address : walletData.bep20Address;
-      if (address) {
-        generateQRCode(address);
-      }
-    }
-  }, [walletData, activeNetwork]);
-
-  const fetchWalletData = async () => {
+  const fetchWalletData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/wallet/test-topup');
@@ -52,9 +39,10 @@ export default function TestTopUpPage() {
     } finally {
       setLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const generateTestWallet = async () => {
+  const generateTestWallet = useCallback(async () => {
     try {
       const response = await fetch('/api/wallet/test-generate', {
         method: 'POST',
@@ -69,7 +57,21 @@ export default function TestTopUpPage() {
     } catch (error) {
       console.error('Error generating test wallet:', error);
     }
-  };
+  }, [fetchWalletData]);
+
+  useEffect(() => {
+    fetchWalletData();
+  }, [fetchWalletData]);
+
+  // Generate QR code when wallet data or network changes
+  useEffect(() => {
+    if (walletData) {
+      const address = activeNetwork === 'ERC20' ? walletData.erc20Address : walletData.bep20Address;
+      if (address) {
+        generateQRCode(address);
+      }
+    }
+  }, [walletData, activeNetwork]);
 
   const generateQRCode = async (address: string) => {
     try {

@@ -159,9 +159,11 @@ export async function get24hStats(symbol: string): Promise<{
   }
 }
 
-export default {
+const CandleFetcher = {
   fetchBinanceCandles,
   fetchMultipleCandles,
   getCurrentPrice,
   get24hStats,
 };
+
+export default CandleFetcher;

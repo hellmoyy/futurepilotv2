@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { getWelcomeMessage, getQuickActions } from '@/config/ai-agent-persona';
 
 interface Message {
@@ -174,7 +175,7 @@ export default function AIAgentPage() {
   };
 
   // Save current chat session
-  const saveChatSession = async () => {
+  const saveChatSession = useCallback(async () => {
     if (messages.length <= 1) {
       return;
     }
@@ -214,7 +215,7 @@ export default function AIAgentPage() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [messages, currentSessionId]);
 
   // Delete chat session
   const deleteChatSession = async (sessionId: string) => {
@@ -286,7 +287,7 @@ export default function AIAgentPage() {
     }, 30000); // 30 seconds
 
     return () => clearInterval(autoSaveInterval);
-  }, [messages, isLoading]);
+  }, [messages, isLoading, saveChatSession]);
 
   // Save chat before page unload to prevent data loss
   useEffect(() => {
@@ -648,6 +649,7 @@ export default function AIAgentPage() {
                         {/* Display image if present */}
                         {message.imagePreview && (
                           <div className="mb-2 sm:mb-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img 
                               src={message.imagePreview} 
                               alt="Chart screenshot" 
@@ -706,6 +708,7 @@ export default function AIAgentPage() {
               {/* Image Preview - TEMPORARILY HIDDEN */}
               {false && imagePreview !== null && (
                 <div className="mb-3 relative inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={imagePreview || ''} 
                     alt="Selected chart" 

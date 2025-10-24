@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface Position {
@@ -60,8 +60,24 @@ export default function PositionPage() {
   const [loading, setLoading] = useState(true);
   const [currentPrices, setCurrentPrices] = useState<{ [key: string]: number }>({});
 
+  // Fetch current price from Binance
+  const fetchCurrentPrice = async (symbol: string) => {
+    try {
+      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentPrices(prev => ({
+          ...prev,
+          [symbol]: parseFloat(data.price)
+        }));
+      }
+    } catch (error) {
+      console.error(`Error fetching price for ${symbol}:`, error);
+    }
+  };
+
   // Fetch active bot positions
-  const fetchPositions = async () => {
+  const fetchPositions = useCallback(async () => {
     try {
       const response = await fetch('/api/bots');
       if (response.ok) {
@@ -81,10 +97,10 @@ export default function PositionPage() {
     } catch (error) {
       console.error('Error fetching positions:', error);
     }
-  };
+  }, []);
 
   // Fetch closed trades history
-  const fetchTrades = async () => {
+  const fetchTrades = useCallback(async () => {
     try {
       const response = await fetch('/api/trades');
       if (response.ok) {
@@ -96,23 +112,7 @@ export default function PositionPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Fetch current price from Binance
-  const fetchCurrentPrice = async (symbol: string) => {
-    try {
-      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentPrices(prev => ({
-          ...prev,
-          [symbol]: parseFloat(data.price)
-        }));
-      }
-    } catch (error) {
-      console.error(`Error fetching price for ${symbol}:`, error);
-    }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPositions();
@@ -124,7 +124,7 @@ export default function PositionPage() {
     }, 10000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchPositions, fetchTrades]);
 
   // Calculate live PnL
   const calculateLivePnL = (position: Position['currentPosition'], currentPrice: number) => {
