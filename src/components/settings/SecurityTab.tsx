@@ -216,7 +216,7 @@ export default function SecurityTab() {
         </div>
 
         <p className="text-sm text-gray-400 light:text-gray-600 mb-4">
-          Add an extra layer of security to your account. You'll need to enter a code from your authenticator app each time you log in.
+          Add an extra layer of security to your account. You&apos;ll need to enter a code from your authenticator app each time you log in.
         </p>
 
         {/* 2FA Setup */}
