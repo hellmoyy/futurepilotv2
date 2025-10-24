@@ -25,6 +25,17 @@ export interface IUser extends Document {
     balance: number;
     createdAt: Date;
   };
+  // Withdrawal wallet addresses
+  withdrawalWallets?: {
+    erc20?: string;
+    bep20?: string;
+    verified?: boolean;
+    addedAt?: Date;
+  };
+  // 2FA fields
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
+  twoFactorBackupCodes?: string[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -111,6 +122,48 @@ const UserSchema = new Schema<IUser>(
         min: 0,
       },
       createdAt: Date,
+    },
+    // Withdrawal wallet addresses
+    withdrawalWallets: {
+      erc20: {
+        type: String,
+        validate: {
+          validator: function(v: string) {
+            if (!v) return true;
+            return /^0x[a-fA-F0-9]{40}$/.test(v);
+          },
+          message: 'Invalid ERC20 wallet address'
+        }
+      },
+      bep20: {
+        type: String,
+        validate: {
+          validator: function(v: string) {
+            if (!v) return true;
+            return /^0x[a-fA-F0-9]{40}$/.test(v);
+          },
+          message: 'Invalid BEP20 wallet address'
+        }
+      },
+      verified: {
+        type: Boolean,
+        default: false,
+      },
+      addedAt: Date,
+    },
+    // 2FA fields
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecret: {
+      type: String,
+      select: false,
+    },
+    twoFactorBackupCodes: {
+      type: [String],
+      select: false,
+      default: [],
     },
   },
   {

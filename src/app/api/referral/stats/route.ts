@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { ReferralCommission } from '@/models/ReferralCommission';
 
 // Mark this route as dynamic
 export const dynamic = 'force-dynamic';
@@ -51,30 +52,39 @@ export async function GET(request: NextRequest) {
     const level2Ids = level2Referrals.map(ref => ref._id);
     const level3Referrals = await User.find({ referredBy: { $in: level2Ids } }).select('name email createdAt referredBy');
 
-    // Build referral list with levels
-    const referralList = [
-      ...level1Referrals.map(ref => ({
+    // Calculate earnings from each referral
+    const calculateEarningsFromReferral = async (referralId: any) => {
+      const commissions = await ReferralCommission.find({
+        userId: user._id,
+        referralUserId: referralId,
+      });
+      return commissions.reduce((sum, comm) => sum + comm.amount, 0);
+    };
+
+    // Build referral list with levels and real earnings
+    const referralList = await Promise.all([
+      ...level1Referrals.map(async (ref: any) => ({
         level: 1,
         name: ref.name,
         email: ref.email,
-        earnings: 0, // TODO: Calculate actual earnings from trading
+        earnings: await calculateEarningsFromReferral(ref._id),
         joinedAt: ref.createdAt,
       })),
-      ...level2Referrals.map(ref => ({
+      ...level2Referrals.map(async (ref: any) => ({
         level: 2,
         name: ref.name,
         email: ref.email,
-        earnings: 0, // TODO: Calculate actual earnings from trading
+        earnings: await calculateEarningsFromReferral(ref._id),
         joinedAt: ref.createdAt,
       })),
-      ...level3Referrals.map(ref => ({
+      ...level3Referrals.map(async (ref: any) => ({
         level: 3,
         name: ref.name,
         email: ref.email,
-        earnings: 0, // TODO: Calculate actual earnings from trading
+        earnings: await calculateEarningsFromReferral(ref._id),
         joinedAt: ref.createdAt,
       })),
-    ];
+    ]);
 
     // Sort by joined date (newest first)
     referralList.sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
