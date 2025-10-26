@@ -1,87 +1,233 @@
-// Email service utility
-// For now, we'll use console logging as placeholder for email sending
-// In production, you should integrate with a proper email service like:
-// - Nodemailer with SMTP
-// - SendGrid
-// - AWS SES
-// - Mailgun
+import { Resend } from 'resend';
+
+// Use the same Resend instance as verification emails
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_placeholder_for_build';
+
+if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('Warning: RESEND_API_KEY is not set. Email functionality will not work.');
+}
+
+export const resend = new Resend(RESEND_API_KEY);
 
 export async function sendPasswordResetEmail(email: string, name: string, resetToken: string) {
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`;
   
-  // For development/demo purposes, log the email content
-  console.log('\n=== PASSWORD RESET EMAIL ===');
-  console.log(`To: ${email}`);
-  console.log(`Subject: Reset Your Password - FuturePilot`);
-  console.log(`Reset URL: ${resetUrl}`);
-  console.log('Content:');
-  console.log(`Hello ${name},`);
-  console.log('We received a request to reset your password for your FuturePilot account.');
-  console.log(`Please click this link to reset your password: ${resetUrl}`);
-  console.log('This link will expire in 10 minutes.');
-  console.log('If you didn\'t request this reset, you can safely ignore this email.');
-  console.log('============================\n');
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'FuturePilot <noreply@mail.futurepilot.pro>',
+      to: email,
+      subject: 'Reset Your Password - FuturePilot',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reset Your Password</title>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; padding: 40px 20px;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), rgba(6, 182, 212, 0.05)); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px;">
+                    <!-- Logo -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <h2 style="margin: 0; font-size: 28px; font-weight: bold; color: #ffffff;">
+                          FuturePilot
+                        </h2>
+                      </td>
+                    </tr>
+                    
+                    <!-- Title -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 16px;">
+                        <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #ffffff;">
+                          Reset Your Password
+                        </h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Message -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #d1d5db;">
+                          Hello ${name},<br/><br/>
+                          We received a request to reset your password for your FuturePilot account.<br/>
+                          Click the button below to reset your password.
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Button -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <a href="${resetUrl}" style="display: inline-block; padding: 16px 32px; background: linear-gradient(to right, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 16px; font-weight: 600; font-size: 16px; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);">
+                          Reset Password
+                        </a>
+                      </td>
+                    </tr>
+                    
+                    <!-- Alternative Link -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 16px;">
+                        <p style="margin: 0; font-size: 14px; color: #9ca3af;">
+                          Or copy and paste this link into your browser:
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280; word-break: break-all;">
+                          ${resetUrl}
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td align="center" style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 24px;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                          This link will expire in 10 minutes. If you didn't request a password reset, you can safely ignore this email.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top: 16px;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                          © 2025 FuturePilot. All rights reserved.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
+    });
 
-  // In production, replace this with actual email sending
-  // Example with nodemailer:
-  /*
-  const transporter = nodemailer.createTransporter({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+    if (error) {
+      console.error('Error sending password reset email:', error);
+      return { success: false, error };
+    }
 
-  const mailOptions = {
-    from: `"FuturePilot" <${process.env.SMTP_FROM}>`,
-    to: email,
-    subject: 'Reset Your Password - FuturePilot',
-    html: emailTemplate,
-    text: textVersion,
-  };
-
-  */
-
-  // Simulate email sending delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return Promise.resolve({
-    messageId: `fake-message-id-${Date.now()}`,
-    envelope: { from: 'noreply@futurepilot.pro', to: [email] },
-    accepted: [email],
-    rejected: [],
-    pending: [],
-    response: '250 OK: Message queued'
-  });
+    console.log('Password reset email sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    return { success: false, error };
+  }
 }
 
 export async function sendVerificationEmail(email: string, name: string, verificationToken: string) {
   const verificationUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${verificationToken}`;
   
-  // For development/demo purposes, log the email content
-  console.log('\n=== EMAIL VERIFICATION EMAIL ===');
-  console.log(`To: ${email}`);
-  console.log(`Subject: Verify Your Email - FuturePilot`);
-  console.log(`Verification URL: ${verificationUrl}`);
-  console.log('Content:');
-  console.log(`Hello ${name},`);
-  console.log('Welcome to FuturePilot! Please verify your email address.');
-  console.log(`Please click this link to verify: ${verificationUrl}`);
-  console.log('This link will expire in 24 hours.');
-  console.log('================================\n');
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'FuturePilot <noreply@mail.futurepilot.pro>',
+      to: email,
+      subject: 'Verify Your Email - FuturePilot',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verify your email</title>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #000000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; padding: 40px 20px;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), rgba(6, 182, 212, 0.05)); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px;">
+                    <!-- Logo -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <h2 style="margin: 0; font-size: 28px; font-weight: bold; color: #ffffff;">
+                          FuturePilot
+                        </h2>
+                      </td>
+                    </tr>
+                    
+                    <!-- Title -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 16px;">
+                        <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #ffffff;">
+                          Verify Your Email
+                        </h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Message -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <p style="margin: 0; font-size: 16px; line-height: 24px; color: #d1d5db;">
+                          Hello ${name},<br/><br/>
+                          Welcome to FuturePilot! Please verify your email address to get started.
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Button -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <a href="${verificationUrl}" style="display: inline-block; padding: 16px 32px; background: linear-gradient(to right, #3b82f6, #2563eb); color: white; text-decoration: none; border-radius: 16px; font-weight: 600; font-size: 16px; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);">
+                          Verify Email Address
+                        </a>
+                      </td>
+                    </tr>
+                    
+                    <!-- Alternative Link -->
+                    <tr>
+                      <td align="center" style="padding-bottom: 16px;">
+                        <p style="margin: 0; font-size: 14px; color: #9ca3af;">
+                          Or copy and paste this link into your browser:
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-bottom: 32px;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280; word-break: break-all;">
+                          ${verificationUrl}
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td align="center" style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 24px;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                          This link will expire in 24 hours. If you didn't create an account, you can safely ignore this email.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top: 16px;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                          © 2025 FuturePilot. All rights reserved.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `,
+    });
 
-  // Simulate email sending delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return Promise.resolve({
-    messageId: `fake-message-id-${Date.now()}`,
-    envelope: { from: 'noreply@futurepilot.pro', to: [email] },
-    accepted: [email],
-    rejected: [],
-    pending: [],
-    response: '250 OK: Message queued'
-  });
+    if (error) {
+      console.error('Error sending verification email:', error);
+      return { success: false, error };
+    }
+
+    console.log('Verification email sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to send verification email:', error);
+    return { success: false, error };
+  }
 }

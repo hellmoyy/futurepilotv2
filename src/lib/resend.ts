@@ -33,7 +33,9 @@ export async function sendVerificationEmail(email: string, token: string) {
                     <!-- Logo -->
                     <tr>
                       <td align="center" style="padding-bottom: 32px;">
-                        <img src="https://futurepilot.pro/images/logos/logo-dark.png" alt="FuturePilot" style="height: 40px; width: auto;" />
+                        <h2 style="margin: 0; font-size: 28px; font-weight: bold; color: #ffffff;">
+                          FuturePilot
+                        </h2>
                       </td>
                     </tr>
                     
@@ -91,7 +93,7 @@ export async function sendVerificationEmail(email: string, token: string) {
                     <tr>
                       <td align="center" style="padding-top: 16px;">
                         <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                          © 2024 FuturePilot. All rights reserved.
+                          © 2025 FuturePilot. All rights reserved.
                         </p>
                       </td>
                     </tr>
