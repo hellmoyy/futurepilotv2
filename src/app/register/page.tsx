@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -216,12 +218,21 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="relative mt-6 text-center">
+          <div className="relative mt-6 text-center space-y-2">
             <p className="text-gray-300 dark:text-gray-300 light:text-gray-600">
               Already have an account?{' '}
               <Link href="/login" className="text-blue-400 dark:text-blue-400 light:text-blue-600 hover:text-cyan-300 dark:hover:text-cyan-300 light:hover:text-blue-700 font-semibold transition-colors">
                 Sign in
               </Link>
+            </p>
+            <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm">
+              Forgot your password?{' '}
+              <button
+                onClick={() => setShowForgotPassword(true)}
+                className="text-blue-400 dark:text-blue-400 light:text-blue-600 hover:text-blue-300 dark:hover:text-blue-300 light:hover:text-blue-700 font-semibold hover:underline transition-colors"
+              >
+                Reset it here
+              </button>
             </p>
           </div>
         </div>
@@ -311,6 +322,12 @@ export default function RegisterPage() {
           </div>
         </div>
       )}
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={showForgotPassword} 
+        onClose={() => setShowForgotPassword(false)} 
+      />
     </div>
   );
 }
