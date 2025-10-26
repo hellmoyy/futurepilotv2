@@ -22,6 +22,15 @@ function decrypt(text: string): string {
 }
 
 export async function GET(req: NextRequest) {
+  // 🔒 PRODUCTION PROTECTION: Disable test endpoints in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({
+      success: false,
+      error: 'Test endpoints are disabled in production',
+      message: 'This endpoint is only available in development mode'
+    }, { status: 403 });
+  }
+
   try {
     await connectDB();
 

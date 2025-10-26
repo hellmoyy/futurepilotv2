@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { botId, exchangeConnectionId } = body;
+    const { botId, exchangeConnectionId, settings } = body;
 
     if (!botId || !exchangeConnectionId) {
       return NextResponse.json(
@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    console.log('📥 Received bot start request:', { botId, exchangeConnectionId, settings });
 
     await connectDB();
 
@@ -85,13 +87,13 @@ export async function POST(request: NextRequest) {
     // Get bot configuration based on botId
     let botName = '';
     let symbol = '';
-    let config: any = {};
+    let defaultConfig: any = {};
 
     switch (botId) {
       case 1: // Bitcoin Pro
         botName = 'Bitcoin Pro';
         symbol = 'BTCUSDT';
-        config = {
+        defaultConfig = {
           leverage: 10,
           stopLossPercent: 3,
           takeProfitPercent: 6,
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
       case 2: // Ethereum Master
         botName = 'Ethereum Master';
         symbol = 'ETHUSDT';
-        config = {
+        defaultConfig = {
           leverage: 10,
           stopLossPercent: 3,
           takeProfitPercent: 6,
@@ -113,7 +115,7 @@ export async function POST(request: NextRequest) {
       case 3: // Safe Trader
         botName = 'Safe Trader';
         symbol = 'BTCUSDT'; // Multi-currency in future
-        config = {
+        defaultConfig = {
           leverage: 5,
           stopLossPercent: 2,
           takeProfitPercent: 3,
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
       case 4: // Aggressive Trader
         botName = 'Aggressive Trader';
         symbol = 'BTCUSDT'; // Multi-currency in future
-        config = {
+        defaultConfig = {
           leverage: 20,
           stopLossPercent: 5,
           takeProfitPercent: 10,
@@ -138,6 +140,36 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
+
+    // Merge default config with user settings (including Tier 1 & 2 features)
+    const config = {
+      ...defaultConfig,
+      // Override with user settings if provided
+      ...(settings && {
+        leverage: settings.leverage ?? defaultConfig.leverage,
+        stopLossPercent: settings.stopLoss ?? defaultConfig.stopLossPercent,
+        takeProfitPercent: settings.takeProfit ?? defaultConfig.takeProfitPercent,
+        positionSizePercent: settings.positionSize ?? defaultConfig.positionSizePercent,
+        maxDailyLoss: settings.maxDailyLoss ?? defaultConfig.maxDailyLoss,
+        // Tier 1 features
+        trailingStopLoss: settings.trailingStopLoss ?? { enabled: false, distance: 2 },
+        maxPositionSize: settings.maxPositionSize ?? 100,
+        maxConcurrentPositions: settings.maxConcurrentPositions ?? 3,
+        maxDailyTrades: settings.maxDailyTrades ?? 10,
+        // Tier 2 features
+        breakEvenStop: settings.breakEvenStop ?? { enabled: false, triggerProfit: 2 },
+        partialTakeProfit: settings.partialTakeProfit ?? {
+          enabled: false,
+          levels: [
+            { profit: 3, closePercent: 50 },
+            { profit: 6, closePercent: 50 }
+          ]
+        },
+      }),
+      symbol: settings?.currency || symbol, // Use selected currency if provided
+    };
+
+    console.log('⚙️ Bot configuration (with advanced features):', config);
 
     // Create bot instance
     const botInstance = await BotInstance.create({

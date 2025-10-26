@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import { Trade } from '@/models/Trade';
 import { User } from '@/models/User';
-import { Transaction } from '@/models/Transaction';
+import { ExchangeConnection } from '@/models/ExchangeConnection';
 import mongoose from 'mongoose';
 
 // GET dashboard statistics
@@ -20,29 +20,36 @@ export async function GET(request: NextRequest) {
     const userId = new mongoose.Types.ObjectId(session.user.id);
 
     // Parallel fetch for better performance
-    const [user, trades, confirmedTransactions] = await Promise.all([
-      // Get user data for balance
-      User.findById(userId).select('gasFeeBalance walletData totalEarnings').lean(),
+    const [user, trades, exchangeConnections] = await Promise.all([
+      // Get user data
+      User.findById(userId).select('name email').lean(),
       
       // Get all trades for statistics
       Trade.find({ userId }).lean(),
       
-      // Get confirmed transactions for total deposits
-      Transaction.find({ 
-        userId, 
-        status: 'confirmed' 
-      }).lean(),
+      // Get exchange connections for balance
+      ExchangeConnection.find({ 
+        userId,
+        isActive: true 
+      }).select('exchange balances nickname').lean(),
     ]);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Calculate Total Balance
-    const gasFeeBalance = user.gasFeeBalance || 0;
-    const walletBalance = user.walletData?.balance || 0;
-    const totalDeposits = confirmedTransactions.reduce((sum, tx) => sum + tx.amount, 0);
-    const totalBalance = gasFeeBalance + walletBalance + totalDeposits;
+    // Calculate Total Balance from Exchange Connections
+    let spotBalance = 0;
+    let futuresBalance = 0;
+    
+    exchangeConnections.forEach(conn => {
+      if (conn.balances) {
+        spotBalance += conn.balances.spot || 0;
+        futuresBalance += conn.balances.futures || 0;
+      }
+    });
+    
+    const totalBalance = spotBalance + futuresBalance;
 
     // Calculate Active Trades
     const activeTrades = trades.filter(t => t.status === 'open').length;
@@ -100,11 +107,11 @@ export async function GET(request: NextRequest) {
       profitableTrades,
       losingTrades,
       avgProfit: parseFloat(avgProfit.toFixed(2)),
-      // Breakdown for transparency
+      // Breakdown for transparency - Exchange balances
       breakdown: {
-        gasFeeBalance: parseFloat(gasFeeBalance.toFixed(2)),
-        walletBalance: parseFloat(walletBalance.toFixed(2)),
-        totalDeposits: parseFloat(totalDeposits.toFixed(2)),
+        spotBalance: parseFloat(spotBalance.toFixed(2)),
+        futuresBalance: parseFloat(futuresBalance.toFixed(2)),
+        connectedExchanges: exchangeConnections.length,
       },
     };
 

@@ -1,0 +1,855 @@
+{
+  "config": {
+    "startDate": "2025-07-28",
+    "endDate": "2025-10-26",
+    "interval": "15m",
+    "initialCapital": 10000,
+    "positionSize": 10,
+    "leverage": 10
+  },
+  "original": {
+    "metrics": {
+      "totalTrades": 16,
+      "wins": 4,
+      "losses": 12,
+      "winRate": "25.00",
+      "initialCapital": 10000,
+      "finalCapital": "8613.93",
+      "totalProfit": "-1386.07",
+      "roi": "-13.86",
+      "avgWin": "465.50",
+      "avgLoss": "-270.67",
+      "avgTrade": "-86.63",
+      "bestTrade": "531.18",
+      "worstTrade": "-300.00",
+      "stopLossHits": 12,
+      "takeProfitHits": 3,
+      "maxDrawdown": "24.84",
+      "sharpeRatio": "-0.91",
+      "profitFactor": "0.57",
+      "longTrades": 8,
+      "shortTrades": 8,
+      "longWinRate": "25.00",
+      "shortWinRate": "25.00",
+      "regimeStats": {
+        "TRENDING_UP": {
+          "count": 8,
+          "wins": 2,
+          "winRate": "25.00",
+          "avgProfit": "-96.92"
+        },
+        "TRENDING_DOWN": {
+          "count": 8,
+          "wins": 2,
+          "winRate": "25.00",
+          "avgProfit": "-76.34"
+        }
+      }
+    },
+    "trades": [
+      {
+        "side": "SHORT",
+        "entryPrice": 117254.8,
+        "exitPrice": 120772.444,
+        "entryTime": 1753913700000,
+        "exitTime": 1754877600000,
+        "duration": 963900000,
+        "pnl": -30.000000000000004,
+        "dollarPnL": -300.00000000000006,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "SELL: RSI 67.4, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 67.36936132201893,
+          "macd": {
+            "macd": -159.88918916792318,
+            "signal": -143.90027025113088,
+            "histogram": -15.9889189167923
+          },
+          "ema20": 117183.7780162848,
+          "ema50": 117490.65325274343,
+          "ema200": 117800.842228847,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 121715,
+        "exitPrice": 118063.55,
+        "entryTime": 1754900100000,
+        "exitTime": 1754948700000,
+        "duration": 48600000,
+        "pnl": -29.99999999999997,
+        "dollarPnL": -290.9999999999997,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 41.3, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 41.29485102832176,
+          "macd": {
+            "macd": 57.15978045499651,
+            "signal": 51.44380240949686,
+            "histogram": 5.7159780454996465
+          },
+          "ema20": 121831.61916312776,
+          "ema50": 120750.03316641663,
+          "ema200": 118740.96199152114,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 118671.3,
+        "exitPrice": 122231.43900000001,
+        "entryTime": 1754948700000,
+        "exitTime": 1755112500000,
+        "duration": 163800000,
+        "pnl": -30.000000000000085,
+        "dollarPnL": -282.27000000000083,
+        "exitReason": "STOP_LOSS",
+        "confidence": 65,
+        "stopLossPercent": 3,
+        "reason": "Moderate SELL: MACD bearish, DOWNTREND",
+        "indicators": {
+          "rsi": 31.314550111542488,
+          "macd": {
+            "macd": -384.35561657045037,
+            "signal": -345.92005491340535,
+            "histogram": -38.435561657045014
+          },
+          "ema20": 119159.43995693489,
+          "ema50": 119811.9938730717,
+          "ema200": 119206.78300038454,
+          "trend": "DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 123560.1,
+        "exitPrice": 119853.297,
+        "entryTime": 1755142200000,
+        "exitTime": 1755174600000,
+        "duration": 32400000,
+        "pnl": -30,
+        "dollarPnL": -273.80189999999993,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 43.2, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 43.161195902153516,
+          "macd": {
+            "macd": 221.7894927332236,
+            "signal": 199.61054345990124,
+            "histogram": 22.17894927332236
+          },
+          "ema20": 123506.1817790867,
+          "ema50": 122762.93758855588,
+          "ema200": 120828.03276420833,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 118809.9,
+        "exitPrice": 111681.30599999998,
+        "entryTime": 1755180900000,
+        "exitTime": 1755865800000,
+        "duration": 684900000,
+        "pnl": 60.0000000000001,
+        "dollarPnL": 531.1756860000008,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 65,
+        "stopLossPercent": 3,
+        "reason": "Moderate SELL: MACD bearish, DOWNTREND",
+        "indicators": {
+          "rsi": 31.323642194798808,
+          "macd": {
+            "macd": -946.2116329785058,
+            "signal": -851.5904696806552,
+            "histogram": -94.62116329785056
+          },
+          "ema20": 119765.78940115184,
+          "ema50": 121118.09469040652,
+          "ema200": 120953.61566147342,
+          "trend": "DOWNTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 116985.6,
+        "exitPrice": 113476.032,
+        "entryTime": 1755898200000,
+        "exitTime": 1756063800000,
+        "duration": 165600000,
+        "pnl": -29.999999999999993,
+        "dollarPnL": -281.5231135799999,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 39.9, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 39.88972595261501,
+          "macd": {
+            "macd": 66.14646942655963,
+            "signal": 59.531822483903674,
+            "histogram": 6.614646942655959
+          },
+          "ema20": 116770.13487535538,
+          "ema50": 115525.31941388872,
+          "ema200": 114099.57187396774,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 113406,
+        "exitPrice": 116808.18000000001,
+        "entryTime": 1756076400000,
+        "exitTime": 1758043800000,
+        "duration": 1967400000,
+        "pnl": -30.000000000000068,
+        "dollarPnL": -273.07742017260057,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "SELL: RSI 55.2, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 55.2351217374634,
+          "macd": {
+            "macd": -383.6964028553339,
+            "signal": -345.3267625698005,
+            "histogram": -38.369640285533364
+          },
+          "ema20": 113345.6818686831,
+          "ema50": 113839.2838394356,
+          "ema200": 114972.7910945537,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 116645.8,
+        "exitPrice": 113146.426,
+        "entryTime": 1758065400000,
+        "exitTime": 1758520800000,
+        "duration": 455400000,
+        "pnl": -29.999999999999968,
+        "dollarPnL": -264.88509756742167,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 43.0, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 42.993121100624165,
+          "macd": {
+            "macd": 51.26950809750997,
+            "signal": 46.142557287758976,
+            "histogram": 5.126950809750994
+          },
+          "ema20": 116666.5122522327,
+          "ema50": 116210.01987572171,
+          "ema200": 115726.09626487437,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 112725.4,
+        "exitPrice": 116107.162,
+        "entryTime": 1758539700000,
+        "exitTime": 1759308300000,
+        "duration": 768600000,
+        "pnl": -30.00000000000002,
+        "dollarPnL": -256.9385446403995,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "SELL: RSI 59.1, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 59.058697686856426,
+          "macd": {
+            "macd": -309.68550342590606,
+            "signal": -278.71695308331545,
+            "histogram": -30.968550342590618
+          },
+          "ema20": 112618.1462919435,
+          "ema50": 113473.18617068643,
+          "ema200": 114777.4962822899,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 116734.2,
+        "exitPrice": 123738.25200000001,
+        "entryTime": 1759340700000,
+        "exitTime": 1759508100000,
+        "duration": 167400000,
+        "pnl": 60.0000000000001,
+        "dollarPnL": 498.4607766023756,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 42.5, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 42.52344416027279,
+          "macd": {
+            "macd": 181.37521110368834,
+            "signal": 163.23768999331952,
+            "histogram": 18.137521110368823
+          },
+          "ema20": 117164.99904426518,
+          "ema50": 116433.19529210063,
+          "ema200": 114854.77571039736,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 122609.3,
+        "exitPrice": 118931.021,
+        "entryTime": 1759520700000,
+        "exitTime": 1760110200000,
+        "duration": 589500000,
+        "pnl": -30.000000000000078,
+        "dollarPnL": -264.1842115992593,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 37.7, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 37.74567444985715,
+          "macd": {
+            "macd": 554.1276572915522,
+            "signal": 498.714891562397,
+            "histogram": 55.41276572915518
+          },
+          "ema20": 122298.28499241866,
+          "ema50": 121406.65505894757,
+          "ema200": 119854.78669646561,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 112463.3,
+        "exitPrice": 115837.19900000001,
+        "entryTime": 1760143500000,
+        "exitTime": 1760314500000,
+        "duration": 171000000,
+        "pnl": -30.000000000000043,
+        "dollarPnL": -256.2586852512813,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "SELL: RSI 63.9, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 63.856714400371764,
+          "macd": {
+            "macd": -991.997465022112,
+            "signal": -892.7977185199009,
+            "histogram": -99.19974650221116
+          },
+          "ema20": 113519.73699117925,
+          "ema50": 115992.6845767631,
+          "ema200": 119701.55194448483,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 114811.3,
+        "exitPrice": 111366.961,
+        "entryTime": 1760326200000,
+        "exitTime": 1760424300000,
+        "duration": 98100000,
+        "pnl": -30.000000000000064,
+        "dollarPnL": -248.570924693743,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 42.3, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 42.283687306362665,
+          "macd": {
+            "macd": 61.70791140993242,
+            "signal": 55.537120268939184,
+            "histogram": 6.170791140993238
+          },
+          "ema20": 115198.9970471303,
+          "ema50": 114686.24589941287,
+          "ema200": 112679.77004211133,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 110961.4,
+        "exitPrice": 104303.71599999999,
+        "entryTime": 1760449500000,
+        "exitTime": 1760695200000,
+        "duration": 245700000,
+        "pnl": 60.00000000000008,
+        "dollarPnL": 482.22759390586094,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "SELL: RSI 64.2, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 64.19997361825594,
+          "macd": {
+            "macd": -158.81081999401795,
+            "signal": -142.92973799461615,
+            "histogram": -15.8810819994018
+          },
+          "ema20": 111038.48425651598,
+          "ema50": 111948.23845414813,
+          "ema200": 113292.98347640787,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 106183.9,
+        "exitPrice": 109369.417,
+        "entryTime": 1760699700000,
+        "exitTime": 1760894100000,
+        "duration": 194400000,
+        "pnl": -30.000000000000068,
+        "dollarPnL": -255.58062477010654,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "SELL: RSI 56.3, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 56.31148907787216,
+          "macd": {
+            "macd": -852.5835658276483,
+            "signal": -767.3252092448835,
+            "histogram": -85.2583565827648
+          },
+          "ema20": 105403.98756118797,
+          "ema50": 106662.48774035127,
+          "ema200": 109246.6453390805,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 108845.8,
+        "exitPrice": 113457.8,
+        "entryTime": 1760905800000,
+        "exitTime": 1761502500000,
+        "duration": 596700000,
+        "pnl": 42.37186919476911,
+        "dollarPnL": 350.1515312477336,
+        "exitReason": "END_OF_BACKTEST",
+        "confidence": 85,
+        "stopLossPercent": 3,
+        "reason": "BUY: RSI 41.1, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 41.069578385271505,
+          "macd": {
+            "macd": 155.85739042976638,
+            "signal": 140.27165138678976,
+            "histogram": 15.585739042976627
+          },
+          "ema20": 108869.50362589082,
+          "ema50": 108242.17091619632,
+          "ema200": 107361.75504359388,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": true
+      }
+    ]
+  },
+  "improved": {
+    "metrics": {
+      "totalTrades": 12,
+      "wins": 5,
+      "losses": 7,
+      "winRate": "41.67",
+      "initialCapital": 10000,
+      "finalCapital": "11367.63",
+      "totalProfit": "1367.63",
+      "roi": "13.68",
+      "avgWin": "579.81",
+      "avgLoss": "-218.77",
+      "avgTrade": "113.97",
+      "bestTrade": "647.46",
+      "worstTrade": "-228.77",
+      "stopLossHits": 7,
+      "takeProfitHits": 4,
+      "maxDrawdown": "9.19",
+      "sharpeRatio": "1.39",
+      "profitFactor": "1.89",
+      "longTrades": 7,
+      "shortTrades": 5,
+      "longWinRate": "42.86",
+      "shortWinRate": "40.00",
+      "regimeStats": {
+        "TRENDING_UP": {
+          "count": 7,
+          "wins": 3,
+          "winRate": "42.86",
+          "avgProfit": "112.04"
+        },
+        "TRENDING_DOWN": {
+          "count": 5,
+          "wins": 2,
+          "winRate": "40.00",
+          "avgProfit": "116.67"
+        }
+      }
+    },
+    "trades": [
+      {
+        "side": "LONG",
+        "entryPrice": 114549.6,
+        "exitPrice": 121422.57600000002,
+        "entryTime": 1754280900000,
+        "exitTime": 1754878500000,
+        "duration": 597600000,
+        "pnl": 60.00000000000008,
+        "dollarPnL": 600.0000000000008,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 39.8, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 39.75300400534065,
+          "macd": {
+            "macd": 108.92832102210377,
+            "signal": 98.0354889198934,
+            "histogram": 10.892832102210377
+          },
+          "ema20": 114527.73723114934,
+          "ema50": 114347.07359319627,
+          "ema200": 113816.10977210052,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 118688.5,
+        "exitPrice": 121062.27,
+        "entryTime": 1755005400000,
+        "exitTime": 1755092700000,
+        "duration": 87300000,
+        "pnl": -20.000000000000036,
+        "dollarPnL": -212.00000000000037,
+        "exitReason": "STOP_LOSS",
+        "confidence": 95,
+        "stopLossPercent": 2,
+        "reason": "SELL: RSI 58.2, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 58.17068378307562,
+          "macd": {
+            "macd": -0.09901390025333967,
+            "signal": -0.0891125102280057,
+            "histogram": -0.009901390025333967
+          },
+          "ema20": 118691.31452496239,
+          "ema50": 118755.81612464569,
+          "ema200": 119168.20129263068,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 121552.1,
+        "exitPrice": 119121.058,
+        "entryTime": 1755106200000,
+        "exitTime": 1755174600000,
+        "duration": 68400000,
+        "pnl": -20.000000000000007,
+        "dollarPnL": -207.76000000000005,
+        "exitReason": "STOP_LOSS",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 44.2, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 44.157905633900086,
+          "macd": {
+            "macd": 186.7816564093373,
+            "signal": 168.1034907684036,
+            "histogram": 18.678165640933713
+          },
+          "ema20": 121193.03885357546,
+          "ema50": 120659.25644672122,
+          "ema200": 119923.19860518252,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 117889.5,
+        "exitPrice": 110816.12999999999,
+        "entryTime": 1755200700000,
+        "exitTime": 1756063800000,
+        "duration": 863100000,
+        "pnl": 60.00000000000008,
+        "dollarPnL": 610.8144000000007,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 85,
+        "stopLossPercent": 2,
+        "reason": "SELL: RSI 55.5, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 55.45421110702475,
+          "macd": {
+            "macd": -87.00264394236729,
+            "signal": -78.30237954813056,
+            "histogram": -8.700264394236726
+          },
+          "ema20": 118010.84258541671,
+          "ema50": 119142.90896624129,
+          "ema200": 120455.25660025132,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 109136.9,
+        "exitPrice": 115685.114,
+        "entryTime": 1756731600000,
+        "exitTime": 1757636100000,
+        "duration": 904500000,
+        "pnl": 60.00000000000007,
+        "dollarPnL": 647.4632640000009,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 85,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 38.0, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 37.966664152650885,
+          "macd": {
+            "macd": 28.4275784381025,
+            "signal": 25.58482059429225,
+            "histogram": 2.8427578438102508
+          },
+          "ema20": 109004.24921735145,
+          "ema50": 108584.71928366006,
+          "ema200": 108576.49703673208,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 115333.1,
+        "exitPrice": 117639.762,
+        "entryTime": 1757875500000,
+        "exitTime": 1758165300000,
+        "duration": 289800000,
+        "pnl": -19.999999999999968,
+        "dollarPnL": -228.77035327999965,
+        "exitReason": "STOP_LOSS",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "SELL: RSI 55.7, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 55.66117194080166,
+          "macd": {
+            "macd": -36.33836621984665,
+            "signal": -32.704529597861985,
+            "histogram": -3.6338366219846634
+          },
+          "ema20": 115425.64767377792,
+          "ema50": 115542.43535570448,
+          "ema200": 115682.31800509126,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 117103.4,
+        "exitPrice": 114761.332,
+        "entryTime": 1758178800000,
+        "exitTime": 1758501000000,
+        "duration": 322200000,
+        "pnl": -19.999999999999993,
+        "dollarPnL": -224.1949462144,
+        "exitReason": "STOP_LOSS",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 33.8, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 33.82762377436117,
+          "macd": {
+            "macd": 130.28101986397814,
+            "signal": 117.25291787758033,
+            "histogram": 13.028101986397814
+          },
+          "ema20": 117082.20425523704,
+          "ema50": 116623.49673615633,
+          "ema200": 116283.1356256933,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 111718.1,
+        "exitPrice": 113952.46200000001,
+        "entryTime": 1758795300000,
+        "exitTime": 1759156200000,
+        "duration": 360900000,
+        "pnl": -20.00000000000007,
+        "dollarPnL": -219.71104729011282,
+        "exitReason": "STOP_LOSS",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "SELL: RSI 55.9, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 55.87597048753452,
+          "macd": {
+            "macd": -62.28686174977338,
+            "signal": -56.058175574796046,
+            "histogram": -6.228686174977334
+          },
+          "ema20": 111729.92044229299,
+          "ema50": 112245.82786107926,
+          "ema200": 112632.68162244053,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 120431.9,
+        "exitPrice": 118023.26199999999,
+        "entryTime": 1759446000000,
+        "exitTime": 1760115600000,
+        "duration": 669600000,
+        "pnl": -20.000000000000053,
+        "dollarPnL": -215.31682634431036,
+        "exitReason": "STOP_LOSS",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 44.6, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 44.5633960156394,
+          "macd": {
+            "macd": 94.09264236156014,
+            "signal": 84.68337812540413,
+            "histogram": 9.409264236156005
+          },
+          "ema20": 120345.23636464856,
+          "ema50": 119863.08058519277,
+          "ema200": 117910.4225351458,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "SHORT",
+        "entryPrice": 112300,
+        "exitPrice": 105562,
+        "entryTime": 1760512500000,
+        "exitTime": 1760687100000,
+        "duration": 174600000,
+        "pnl": 60,
+        "dollarPnL": 633.0314694522707,
+        "exitReason": "TAKE_PROFIT",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "SELL: RSI 57.4, MACD bearish, STRONG_DOWNTREND",
+        "indicators": {
+          "rsi": 57.36352385754226,
+          "macd": {
+            "macd": -100.3141169034061,
+            "signal": -90.2827052130655,
+            "histogram": -10.031411690340605
+          },
+          "ema20": 112379.75190441891,
+          "ema50": 112593.85995681318,
+          "ema200": 113108.37307639002,
+          "trend": "STRONG_DOWNTREND"
+        },
+        "win": true
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 109004.2,
+        "exitPrice": 106824.116,
+        "entryTime": 1760911200000,
+        "exitTime": 1761130800000,
+        "duration": 219600000,
+        "pnl": -20.00000000000003,
+        "dollarPnL": -223.67111920646934,
+        "exitReason": "STOP_LOSS",
+        "confidence": 85,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 41.5, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 41.482504604051535,
+          "macd": {
+            "macd": 34.831741350892116,
+            "signal": 31.348567215802905,
+            "histogram": 3.483174135089211
+          },
+          "ema20": 108882.48878428403,
+          "ema50": 108449.63041333717,
+          "ema200": 107493.79412085243,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": false
+      },
+      {
+        "side": "LONG",
+        "entryPrice": 109388.2,
+        "exitPrice": 113457.8,
+        "entryTime": 1761212700000,
+        "exitTime": 1761502500000,
+        "duration": 289800000,
+        "pnl": 37.20328152396699,
+        "dollarPnL": 407.7436812143333,
+        "exitReason": "END_OF_BACKTEST",
+        "confidence": 70,
+        "stopLossPercent": 2,
+        "reason": "BUY: RSI 42.4, MACD bullish, STRONG_UPTREND",
+        "indicators": {
+          "rsi": 42.36943568173833,
+          "macd": {
+            "macd": 255.22807911323616,
+            "signal": 229.70527120191255,
+            "histogram": 25.52280791132361
+          },
+          "ema20": 109327.38062423067,
+          "ema50": 108644.44950490035,
+          "ema200": 108483.34056152818,
+          "trend": "STRONG_UPTREND"
+        },
+        "win": true
+      }
+    ]
+  },
+  "improvement": {
+    "winRate": "+16.67%",
+    "profit": "+$2753.70",
+    "roi": "+27.54%"
+  }
+}

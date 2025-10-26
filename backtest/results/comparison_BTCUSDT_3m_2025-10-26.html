@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Backtest Report - FuturePilot v2</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; }
+    .header h1 { margin: 0; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .metric-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .metric-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; }
+    .metric-card .value { font-size: 32px; font-weight: bold; color: #333; }
+    .metric-card .value.positive { color: #10b981; }
+    .metric-card .value.negative { color: #ef4444; }
+    .section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .section h2 { margin-top: 0; color: #333; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f9fafb; font-weight: 600; }
+    .win { color: #10b981; }
+    .loss { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎯 Backtest Report - Bitcoin Pro Strategy</h1>
+    <p>Period: 2025-07-28 to 2025-10-26 | Timeframe: 15m</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <h3>Win Rate</h3>
+      <div class="value positive">41.67%</div>
+      <small>5 wins / 7 losses</small>
+    </div>
+    <div class="metric-card">
+      <h3>Total Profit</h3>
+      <div class="value positive">$1367.63</div>
+      <small>ROI: 13.68%</small>
+    </div>
+    <div class="metric-card">
+      <h3>Total Trades</h3>
+      <div class="value">12</div>
+      <small>Avg: $113.97/trade</small>
+    </div>
+    <div class="metric-card">
+      <h3>Max Drawdown</h3>
+      <div class="value negative">9.19%</div>
+      <small>Sharpe: 1.39</small>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 Regime Analysis</h2>
+    <table>
+      <tr>
+        <th>Regime</th>
+        <th>Trades</th>
+        <th>Win Rate</th>
+        <th>Avg Profit</th>
+      </tr>
+      
+        <tr>
+          <td>TRENDING_UP</td>
+          <td>7</td>
+          <td class="">42.86%</td>
+          <td class="win">$112.04</td>
+        </tr>
+      
+        <tr>
+          <td>TRENDING_DOWN</td>
+          <td>5</td>
+          <td class="">40.00%</td>
+          <td class="win">$116.67</td>
+        </tr>
+      
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>💼 Recent Trades (Last 20)</h2>
+    <table>
+      <tr>
+        <th>Time</th>
+        <th>Side</th>
+        <th>Entry</th>
+        <th>Exit</th>
+        <th>P&L</th>
+        <th>Reason</th>
+      </tr>
+      
+        <tr>
+          <td>10/23/2025, 4:45:00 PM</td>
+          <td>LONG</td>
+          <td>$109388.20</td>
+          <td>$113457.80</td>
+          <td class="win">$407.74</td>
+          <td>END_OF_BACKTEST</td>
+        </tr>
+      
+        <tr>
+          <td>10/20/2025, 5:00:00 AM</td>
+          <td>LONG</td>
+          <td>$109004.20</td>
+          <td>$106824.12</td>
+          <td class="loss">$-223.67</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>10/15/2025, 2:15:00 PM</td>
+          <td>SHORT</td>
+          <td>$112300.00</td>
+          <td>$105562.00</td>
+          <td class="win">$633.03</td>
+          <td>TAKE_PROFIT</td>
+        </tr>
+      
+        <tr>
+          <td>10/3/2025, 6:00:00 AM</td>
+          <td>LONG</td>
+          <td>$120431.90</td>
+          <td>$118023.26</td>
+          <td class="loss">$-215.32</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>9/25/2025, 5:15:00 PM</td>
+          <td>SHORT</td>
+          <td>$111718.10</td>
+          <td>$113952.46</td>
+          <td class="loss">$-219.71</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>9/18/2025, 2:00:00 PM</td>
+          <td>LONG</td>
+          <td>$117103.40</td>
+          <td>$114761.33</td>
+          <td class="loss">$-224.19</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>9/15/2025, 1:45:00 AM</td>
+          <td>SHORT</td>
+          <td>$115333.10</td>
+          <td>$117639.76</td>
+          <td class="loss">$-228.77</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>9/1/2025, 8:00:00 PM</td>
+          <td>LONG</td>
+          <td>$109136.90</td>
+          <td>$115685.11</td>
+          <td class="win">$647.46</td>
+          <td>TAKE_PROFIT</td>
+        </tr>
+      
+        <tr>
+          <td>8/15/2025, 2:45:00 AM</td>
+          <td>SHORT</td>
+          <td>$117889.50</td>
+          <td>$110816.13</td>
+          <td class="win">$610.81</td>
+          <td>TAKE_PROFIT</td>
+        </tr>
+      
+        <tr>
+          <td>8/14/2025, 12:30:00 AM</td>
+          <td>LONG</td>
+          <td>$121552.10</td>
+          <td>$119121.06</td>
+          <td class="loss">$-207.76</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>8/12/2025, 8:30:00 PM</td>
+          <td>SHORT</td>
+          <td>$118688.50</td>
+          <td>$121062.27</td>
+          <td class="loss">$-212.00</td>
+          <td>STOP_LOSS</td>
+        </tr>
+      
+        <tr>
+          <td>8/4/2025, 11:15:00 AM</td>
+          <td>LONG</td>
+          <td>$114549.60</td>
+          <td>$121422.58</td>
+          <td class="win">$600.00</td>
+          <td>TAKE_PROFIT</td>
+        </tr>
+      
+    </table>
+  </div>
+</body>
+</html>
+    

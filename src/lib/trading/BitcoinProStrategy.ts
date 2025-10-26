@@ -21,9 +21,22 @@ export class BitcoinProStrategy extends TradingEngine {
    */
   async analyze(): Promise<TradeSignal> {
     try {
+      // ⏰ CHECK 1: Time-Based Filter
+      const timeCheck = this.checkTradingHours();
+      if (!timeCheck.shouldTrade) {
+        console.log(`⏰ ${timeCheck.reason}`);
+        return {
+          action: 'HOLD',
+          confidence: 0,
+          reason: timeCheck.reason,
+        };
+      }
+
       // Get market data
       const marketData = await this.getMarketData('BTCUSDT', '15m', 100);
       const prices = marketData.map((candle) => candle.close);
+      const highs = marketData.map((candle) => candle.high);
+      const lows = marketData.map((candle) => candle.low);
 
       // Calculate technical indicators
       const rsi = this.calculateRSI(prices);
@@ -33,6 +46,39 @@ export class BitcoinProStrategy extends TradingEngine {
       const ema200 = this.calculateEMA(prices, 200);
 
       const currentPrice = prices[prices.length - 1];
+
+      // 📊 CHECK 2: Market Regime Filter (MOST IMPORTANT!)
+      const marketRegime = this.detectMarketRegime(
+        prices,
+        highs,
+        lows,
+        ema20,
+        ema50,
+        ema200
+      );
+      console.log(`🎯 ${marketRegime.reason}`);
+      
+      // BLOCK TRADING if market is ranging or choppy
+      if (!marketRegime.shouldTrade) {
+        return {
+          action: 'HOLD',
+          confidence: 0,
+          reason: marketRegime.reason,
+          indicators: {
+            rsi: this.calculateRSI(prices),
+            trend: marketRegime.regime,
+          },
+        };
+      }
+
+      // 📊 CHECK 3: Volume Confirmation
+      const volumeCheck = this.checkVolumeConfirmation(marketData);
+      console.log(`📊 ${volumeCheck.reason}`);
+
+      // 📈 CHECK 3: Calculate ATR for dynamic stop loss
+      const atr = this.calculateATR(highs, lows, prices);
+      const atrPercent = (atr / currentPrice) * 100;
+      console.log(`📊 ATR: ${atr.toFixed(2)} (${atrPercent.toFixed(2)}% of price)`);
 
       // Determine trend
       let trend = 'NEUTRAL';
@@ -105,6 +151,21 @@ export class BitcoinProStrategy extends TradingEngine {
         reason = `HOLD: Mixed signals - RSI: ${rsi.toFixed(2)}, MACD: ${macd.histogram > 0 ? 'Bullish' : 'Bearish'}, Trend: ${trend}`;
       }
 
+      // 🚀 APPLY ACCURACY IMPROVEMENTS
+      
+      // Apply time-based confidence adjustment
+      confidence += timeCheck.confidence;
+      
+      // Apply market regime confidence (MOST IMPORTANT!)
+      confidence += marketRegime.confidence;
+      reason += ` | Market: ${marketRegime.regime} (ADX: ${marketRegime.adx.toFixed(1)})`;
+      
+      // Apply volume confirmation
+      confidence += volumeCheck.confidence;
+      if (volumeCheck.confidence !== 0) {
+        reason += ` | ${volumeCheck.reason}`;
+      }
+
       // Get AI confirmation for high confidence signals
       if (confidence >= 70 && technicalSignal !== 'HOLD') {
         const aiConfirmation = await this.getAIConfirmation(
@@ -135,6 +196,7 @@ export class BitcoinProStrategy extends TradingEngine {
         action: technicalSignal,
         confidence,
         reason,
+        atr, // Include ATR for dynamic stop loss
         indicators: {
           rsi,
           macd,

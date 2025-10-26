@@ -1,0 +1,71 @@
+{
+  "config": {
+    "startDate": "2025-10-19",
+    "endDate": "2025-10-26",
+    "interval": "15m",
+    "initialCapital": 10000,
+    "positionSize": 10,
+    "leverage": 10
+  },
+  "metrics": {
+    "totalTrades": 1,
+    "wins": 1,
+    "losses": 0,
+    "winRate": "100.00",
+    "initialCapital": 10000,
+    "finalCapital": "10381.36",
+    "totalProfit": "381.36",
+    "roi": "3.81",
+    "avgWin": "381.36",
+    "avgLoss": 0,
+    "avgTrade": "381.36",
+    "bestTrade": "381.36",
+    "worstTrade": "381.36",
+    "stopLossHits": 0,
+    "takeProfitHits": 0,
+    "maxDrawdown": "1.58",
+    "sharpeRatio": 0,
+    "profitFactor": "Infinity",
+    "longTrades": 1,
+    "shortTrades": 0,
+    "longWinRate": "100.00",
+    "shortWinRate": "0.00",
+    "regimeStats": {
+      "TRENDING_UP": {
+        "count": 1,
+        "wins": 1,
+        "winRate": "100.00",
+        "avgProfit": "381.36"
+      }
+    }
+  },
+  "trades": [
+    {
+      "side": "LONG",
+      "entryPrice": 109388.2,
+      "exitPrice": 113559.8,
+      "entryTime": 1761212700000,
+      "exitTime": 1761502500000,
+      "duration": 289800000,
+      "pnl": 38.13574041807074,
+      "dollarPnL": 381.3574041807074,
+      "exitReason": "END_OF_BACKTEST",
+      "confidence": 70,
+      "stopLossPercent": 2,
+      "reason": "BUY: RSI 42.4, MACD bullish, STRONG_UPTREND",
+      "indicators": {
+        "rsi": 42.36943568173833,
+        "macd": {
+          "macd": 255.22807911323616,
+          "signal": 229.70527120191255,
+          "histogram": 25.52280791132361
+        },
+        "ema20": 109327.38062423067,
+        "ema50": 108644.44950490035,
+        "ema200": 108483.34056152818,
+        "trend": "STRONG_UPTREND"
+      },
+      "win": true
+    }
+  ]
+}

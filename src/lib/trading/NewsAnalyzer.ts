@@ -200,6 +200,89 @@ export class NewsAnalyzer {
   // 🤖 Analyze News with AI
   // ==========================================================================
 
+  // NEW: Get sentiment without technical signal context
+  async getSentiment(news: NewsItem[], symbol: string): Promise<NewsSentiment> {
+    if (!this.openai || news.length === 0) {
+      return {
+        overall: 'neutral',
+        score: 0,
+        confidence: 0,
+        reasons: ['No news available for analysis'],
+        newsCount: 0,
+        recentNews: [],
+      };
+    }
+
+    try {
+      const baseCurrency = symbol.replace('USDT', '').replace('BUSD', '');
+      
+      // Prepare news context
+      const newsContext = news
+        .slice(0, 5)
+        .map((item, i) => `${i + 1}. ${item.title} (${item.source})`)
+        .join('\n');
+
+      const prompt = `Analyze these recent crypto news about ${baseCurrency} and determine the overall market sentiment:
+
+Recent News:
+${newsContext}
+
+Provide analysis in JSON format:
+{
+  "overall": "bullish|bearish|neutral",
+  "score": -100 to +100 (-100 = very bearish, +100 = very bullish),
+  "confidence": 0-100 (how confident you are in this assessment),
+  "reasons": ["reason 1", "reason 2", ...],
+  "summary": "brief explanation"
+}
+
+Focus on:
+1. Major events (hacks, regulations, partnerships, adoption)
+2. Market-moving news vs noise
+3. Overall sentiment (bullish/bearish/neutral)
+4. Urgency level`;
+
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a crypto fundamental analyst. Analyze news sentiment objectively.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+      });
+
+      const aiResponse = completion.choices[0]?.message?.content;
+      if (!aiResponse) {
+        throw new Error('No response from AI');
+      }
+
+      // Parse AI response
+      const analysis = JSON.parse(aiResponse);
+
+      return {
+        overall: analysis.overall,
+        score: analysis.score,
+        confidence: analysis.confidence,
+        reasons: analysis.reasons || [],
+        newsCount: news.length,
+        recentNews: news.slice(0, 3),
+      };
+      
+    } catch (error) {
+      console.error('Error analyzing news with AI:', error);
+      
+      // Fallback to basic sentiment
+      return this.analyzeNewsBasic(news);
+    }
+  }
+
   async analyzeNewsWithAI(
     symbol: string,
     news: NewsItem[],

@@ -29,6 +29,22 @@ const botSettingsSchema = new mongoose.Schema(
       min: 1,
       max: 30,
     },
+    currency: {
+      type: String,
+      default: 'BTCUSDT',
+    },
+    positionSize: {
+      type: Number,
+      default: 10,
+      min: 1,
+      max: 50,
+    },
+    maxDailyLoss: {
+      type: Number,
+      default: 100,
+      min: 10,
+      max: 500,
+    },
     // Tier 1 - Critical Features
     trailingStopLoss: {
       enabled: {
@@ -97,18 +113,6 @@ const botSettingsSchema = new mongoose.Schema(
           { profit: 3, closePercent: 50 },
           { profit: 6, closePercent: 50 }
         ],
-      },
-    },
-    maxDailyLoss: {
-      enabled: {
-        type: Boolean,
-        default: false,
-      },
-      amount: {
-        type: Number,
-        default: 100,
-        min: 10,
-        max: 5000,
       },
     },
   },

@@ -4,71 +4,31 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 
-const tradingBots = [
-  {
-    id: 1,
-    name: 'Bitcoin Pro',
-    icon: '/images/icon-coin/bitcoin.webp',
-    description: 'AI-powered Bitcoin trading with proven track record',
-    risk: 'Medium',
-    riskColor: 'blue',
-    winRate: '71%',
-    avgProfit: '+3.2%',
-    recommended: true,
-    leverage: 10,
-    stopLoss: 3,
-    takeProfit: 6,
-    supportedCurrencies: ['BTC']
-  },
-  {
-    id: 2,
-    name: 'Ethereum Master',
-    icon: '/images/icon-coin/etehreum.webp',
-    description: 'Smart ETH trading with advanced algorithms',
-    risk: 'Medium',
-    riskColor: 'blue',
-    winRate: '69%',
-    avgProfit: '+2.8%',
-    recommended: false,
-    leverage: 10,
-    stopLoss: 3,
-    takeProfit: 6,
-    supportedCurrencies: ['ETH']
-  },
-  {
-    id: 3,
-    name: 'Safe Trader',
-    icon: '/images/icon-coin/safe.webp',
-    description: 'Multi Currency - Low risk steady gains for beginners',
-    risk: 'Low',
-    riskColor: 'green',
-    winRate: '68%',
-    avgProfit: '+1.5%',
-    recommended: false,
-    leverage: 5,
-    stopLoss: 2,
-    takeProfit: 3,
-    supportedCurrencies: ['BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'XRP']
-  },
-  {
-    id: 4,
-    name: 'Aggressive Trader',
-    icon: '/images/icon-coin/aggresive.webp',
-    description: 'Multi Currency - High risk high reward for experienced traders',
-    risk: 'High',
-    riskColor: 'orange',
-    winRate: '64%',
-    avgProfit: '+5.1%',
-    recommended: false,
-    leverage: 20,
-    stopLoss: 5,
-    takeProfit: 10,
-    supportedCurrencies: ['BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'XRP', 'DOGE', 'MATIC', 'AVAX', 'DOT']
-  },
-];
+// Interface for Trading Bot Configuration from database
+interface TradingBotConfig {
+  botId: number;
+  name: string;
+  icon: string;
+  description: string;
+  risk: string;
+  riskColor: string;
+  winRate: string;
+  avgProfit: string;
+  recommended: boolean;
+  isActive: boolean;
+  defaultSettings: {
+    leverage: number;
+    stopLoss: number;
+    takeProfit: number;
+  };
+  supportedCurrencies: string[];
+  features?: any;
+}
 
 export default function AutomationPage() {
   const { data: session } = useSession();
+  const [tradingBots, setTradingBots] = useState<TradingBotConfig[]>([]);
+  const [loadingBots, setLoadingBots] = useState(true);
   const [activeBots, setActiveBots] = useState<number[]>([]);
   const [botInstances, setBotInstances] = useState<any[]>([]);
   const [exchangeConnections, setExchangeConnections] = useState<any[]>([]);
@@ -80,16 +40,44 @@ export default function AutomationPage() {
   const [botSettings, setBotSettings] = useState<{[key: number]: any}>({});
   const [expandedSettings, setExpandedSettings] = useState<{[key: number]: boolean}>({});
 
+  // Fetch trading bot configurations from database
+  const fetchTradingBots = useCallback(async () => {
+    try {
+      setLoadingBots(true);
+      const response = await fetch('/api/trading-bots?isActive=true');
+      if (response.ok) {
+        const data = await response.json();
+        setTradingBots(data.bots || []);
+      } else {
+        console.error('Failed to fetch trading bots');
+      }
+    } catch (error) {
+      console.error('Error fetching trading bots:', error);
+    } finally {
+      setLoadingBots(false);
+    }
+  }, []);
+
+  // Load trading bots on mount
+  useEffect(() => {
+    fetchTradingBots();
+  }, [fetchTradingBots]);
+
   // Initialize bot settings with default values and fetch from database
   useEffect(() => {
+    if (tradingBots.length === 0) return; // Wait for bots to load
+    
     const initializeSettings = async () => {
       // Set default values first with new Tier 1 features
       const defaultSettings: {[key: number]: any} = {};
       tradingBots.forEach(bot => {
-        defaultSettings[bot.id] = {
-          leverage: bot.leverage,
-          stopLoss: bot.stopLoss,
-          takeProfit: bot.takeProfit,
+        defaultSettings[bot.botId] = {
+          leverage: bot.defaultSettings.leverage,
+          stopLoss: bot.defaultSettings.stopLoss,
+          takeProfit: bot.defaultSettings.takeProfit,
+          currency: bot.supportedCurrencies[0] || 'BTCUSDT', // Default to first currency
+          positionSize: 10, // % of balance per trade
+          maxDailyLoss: 100, // USDT
           // Tier 1 - Critical Features
           trailingStopLoss: {
             enabled: false,
@@ -109,10 +97,6 @@ export default function AutomationPage() {
               { profit: 3, closePercent: 50 },
               { profit: 6, closePercent: 50 }
             ]
-          },
-          maxDailyLoss: {
-            enabled: false,
-            amount: 100 // USDT
           }
         };
       });
@@ -130,6 +114,9 @@ export default function AutomationPage() {
                 leverage: setting.leverage,
                 stopLoss: setting.stopLoss,
                 takeProfit: setting.takeProfit,
+                currency: setting.currency || defaultSettings[setting.botId].currency,
+                positionSize: setting.positionSize || defaultSettings[setting.botId].positionSize,
+                maxDailyLoss: setting.maxDailyLoss || defaultSettings[setting.botId].maxDailyLoss,
                 // Tier 1 features from database
                 trailingStopLoss: setting.trailingStopLoss || defaultSettings[setting.botId].trailingStopLoss,
                 maxPositionSize: setting.maxPositionSize || defaultSettings[setting.botId].maxPositionSize,
@@ -137,8 +124,7 @@ export default function AutomationPage() {
                 maxDailyTrades: setting.maxDailyTrades || defaultSettings[setting.botId].maxDailyTrades,
                 // Tier 2 features from database
                 breakEvenStop: setting.breakEvenStop || defaultSettings[setting.botId].breakEvenStop,
-                partialTakeProfit: setting.partialTakeProfit || defaultSettings[setting.botId].partialTakeProfit,
-                maxDailyLoss: setting.maxDailyLoss || defaultSettings[setting.botId].maxDailyLoss
+                partialTakeProfit: setting.partialTakeProfit || defaultSettings[setting.botId].partialTakeProfit
               };
             });
             setBotSettings(savedSettings);
@@ -150,7 +136,7 @@ export default function AutomationPage() {
     };
 
     initializeSettings();
-  }, []);
+  }, [tradingBots]);
 
   const fetchBotInstances = useCallback(async () => {
     try {
@@ -426,11 +412,11 @@ export default function AutomationPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 max-w-6xl mx-auto">
         {tradingBots.map((bot) => {
-          const active = isActive(bot.id);
+          const active = isActive(bot.botId);
           
           return (
             <div
-              key={bot.id}
+              key={bot.botId}
               className={`relative group rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 ${
                 active
                   ? 'border-green-500 bg-gradient-to-br from-green-500/20 to-emerald-500/20 dark:from-green-500/20 dark:to-emerald-500/20 light:from-green-100 light:to-emerald-100 shadow-xl shadow-green-500/20'
@@ -490,26 +476,26 @@ export default function AutomationPage() {
                 </div>
 
                 {/* Live Position Info */}
-                {active && getBotInstance(bot.id)?.currentPosition && (
+                {active && getBotInstance(bot.botId)?.currentPosition && (
                   <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-blue-500/10 dark:bg-blue-500/10 light:bg-blue-50 border border-blue-500/30 dark:border-blue-500/30 light:border-blue-200 rounded-lg sm:rounded-xl">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-blue-400 dark:text-blue-400 light:text-blue-700">CURRENT POSITION</span>
-                      <span className={`text-xs font-bold ${getBotInstance(bot.id)?.currentPosition.side === 'LONG' ? 'text-green-400' : 'text-red-400'}`}>
-                        {getBotInstance(bot.id)?.currentPosition.side}
+                      <span className={`text-xs font-bold ${getBotInstance(bot.botId)?.currentPosition.side === 'LONG' ? 'text-green-400' : 'text-red-400'}`}>
+                        {getBotInstance(bot.botId)?.currentPosition.side}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <span className="text-gray-500 dark:text-gray-500 light:text-gray-600">Entry</span>
                         <p className="font-bold text-white dark:text-white light:text-gray-900">
-                          ${getBotInstance(bot.id)?.currentPosition.entryPrice?.toFixed(2)}
+                          ${getBotInstance(bot.botId)?.currentPosition.entryPrice?.toFixed(2)}
                         </p>
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-500 light:text-gray-600">P&L</span>
-                        <p className={`font-bold ${(getBotInstance(bot.id)?.currentPosition.pnl || 0) >= 0 ? 'text-green-400 dark:text-green-400 light:text-green-600' : 'text-red-400 dark:text-red-400 light:text-red-600'}`}>
-                          {(getBotInstance(bot.id)?.currentPosition.pnl || 0) >= 0 ? '+' : ''}
-                          ${getBotInstance(bot.id)?.currentPosition.pnl?.toFixed(2)} ({getBotInstance(bot.id)?.currentPosition.pnlPercent?.toFixed(2)}%)
+                        <p className={`font-bold ${(getBotInstance(bot.botId)?.currentPosition.pnl || 0) >= 0 ? 'text-green-400 dark:text-green-400 light:text-green-600' : 'text-red-400 dark:text-red-400 light:text-red-600'}`}>
+                          {(getBotInstance(bot.botId)?.currentPosition.pnl || 0) >= 0 ? '+' : ''}
+                          ${getBotInstance(bot.botId)?.currentPosition.pnl?.toFixed(2)} ({getBotInstance(bot.botId)?.currentPosition.pnlPercent?.toFixed(2)}%)
                         </p>
                       </div>
                     </div>
@@ -520,8 +506,8 @@ export default function AutomationPage() {
                   <div className="p-3 bg-white/5 dark:bg-white/5 light:bg-blue-50 rounded-xl border border-white/10 dark:border-white/10 light:border-blue-200">
                     <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Win Rate</p>
                     <p className="text-xl font-bold text-green-400 dark:text-green-400 light:text-green-600">
-                      {active && getBotInstance(bot.id)?.statistics?.winRate 
-                        ? `${getBotInstance(bot.id)?.statistics.winRate.toFixed(1)}%` 
+                      {active && getBotInstance(bot.botId)?.statistics?.winRate 
+                        ? `${getBotInstance(bot.botId)?.statistics.winRate.toFixed(1)}%` 
                         : bot.winRate}
                     </p>
                   </div>
@@ -530,14 +516,14 @@ export default function AutomationPage() {
                       {active ? 'Total P&L' : 'Avg Profit'}
                     </p>
                     <p className={`text-xl font-bold ${
-                      active && getBotInstance(bot.id)?.statistics 
-                        ? (getBotInstance(bot.id)!.statistics.totalProfit + getBotInstance(bot.id)!.statistics.totalLoss) >= 0 
+                      active && getBotInstance(bot.botId)?.statistics 
+                        ? (getBotInstance(bot.botId)!.statistics.totalProfit + getBotInstance(bot.botId)!.statistics.totalLoss) >= 0 
                           ? 'text-green-400 dark:text-green-400 light:text-green-600' 
                           : 'text-red-400 dark:text-red-400 light:text-red-600'
                         : 'text-blue-400 dark:text-blue-400 light:text-blue-600'
                     }`}>
-                      {active && getBotInstance(bot.id)?.statistics
-                        ? `${(getBotInstance(bot.id)!.statistics.totalProfit + getBotInstance(bot.id)!.statistics.totalLoss) >= 0 ? '+' : ''}$${(getBotInstance(bot.id)!.statistics.totalProfit + getBotInstance(bot.id)!.statistics.totalLoss).toFixed(2)}`
+                      {active && getBotInstance(bot.botId)?.statistics
+                        ? `${(getBotInstance(bot.botId)!.statistics.totalProfit + getBotInstance(bot.botId)!.statistics.totalLoss) >= 0 ? '+' : ''}$${(getBotInstance(bot.botId)!.statistics.totalProfit + getBotInstance(bot.botId)!.statistics.totalLoss).toFixed(2)}`
                         : bot.avgProfit}
                     </p>
                   </div>
@@ -547,12 +533,12 @@ export default function AutomationPage() {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 font-semibold">CURRENT SETTINGS</p>
                     <button
-                      onClick={() => toggleSettingsExpand(bot.id)}
+                      onClick={() => toggleSettingsExpand(bot.botId)}
                       className="text-gray-400 hover:text-white dark:hover:text-white light:hover:text-gray-900 transition-colors"
-                      title={expandedSettings[bot.id] ? "Collapse settings" : "Expand settings"}
+                      title={expandedSettings[bot.botId] ? "Collapse settings" : "Expand settings"}
                     >
                       <svg 
-                        className={`w-5 h-5 transition-transform duration-300 ${expandedSettings[bot.id] ? 'rotate-180' : ''}`}
+                        className={`w-5 h-5 transition-transform duration-300 ${expandedSettings[bot.botId] ? 'rotate-180' : ''}`}
                         fill="none" 
                         stroke="currentColor" 
                         viewBox="0 0 24 24"
@@ -565,25 +551,25 @@ export default function AutomationPage() {
                     <div>
                       <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Leverage</p>
                       <p className="font-bold text-white dark:text-white light:text-gray-900">
-                        {botSettings[bot.id]?.leverage || bot.leverage}x
+                        {botSettings[bot.botId]?.leverage || bot.defaultSettings.leverage}x
                       </p>
                     </div>
                     <div>
                       <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Stop Loss</p>
                       <p className="font-bold text-red-400 dark:text-red-400 light:text-red-600">
-                        -{botSettings[bot.id]?.stopLoss || bot.stopLoss}%
+                        -{botSettings[bot.botId]?.stopLoss || bot.defaultSettings.stopLoss}%
                       </p>
                     </div>
                     <div>
                       <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Take Profit</p>
                       <p className="font-bold text-green-400 dark:text-green-400 light:text-green-600">
-                        +{botSettings[bot.id]?.takeProfit || bot.takeProfit}%
+                        +{botSettings[bot.botId]?.takeProfit || bot.defaultSettings.takeProfit}%
                       </p>
                     </div>
                   </div>
                   
                   {/* Collapsible Advanced Settings */}
-                  <div className={`overflow-hidden transition-all duration-300 ${expandedSettings[bot.id] ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className={`overflow-hidden transition-all duration-300 ${expandedSettings[bot.botId] ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="pt-3 border-t border-white/10 dark:border-white/10 light:border-blue-200 space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1">
@@ -592,9 +578,9 @@ export default function AutomationPage() {
                           </svg>
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Trailing SL</span>
                         </div>
-                        {botSettings[bot.id]?.trailingStopLoss?.enabled ? (
+                        {botSettings[bot.botId]?.trailingStopLoss?.enabled ? (
                           <span className="text-purple-400 dark:text-purple-400 light:text-purple-600 font-bold">
-                            {botSettings[bot.id]?.trailingStopLoss?.distance}%
+                            {botSettings[bot.botId]?.trailingStopLoss?.distance}%
                           </span>
                         ) : (
                           <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
@@ -609,7 +595,7 @@ export default function AutomationPage() {
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Size</span>
                         </div>
                         <span className="text-yellow-400 dark:text-yellow-400 light:text-yellow-600 font-bold">
-                          ${botSettings[bot.id]?.maxPositionSize || 100}
+                          ${botSettings[bot.botId]?.maxPositionSize || 100}
                         </span>
                       </div>
                       
@@ -621,7 +607,7 @@ export default function AutomationPage() {
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Positions</span>
                         </div>
                         <span className="text-cyan-400 dark:text-cyan-400 light:text-cyan-600 font-bold">
-                          {botSettings[bot.id]?.maxConcurrentPositions || 3}
+                          {botSettings[bot.botId]?.maxConcurrentPositions || 3}
                         </span>
                       </div>
                       
@@ -633,7 +619,7 @@ export default function AutomationPage() {
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Daily Trades</span>
                         </div>
                         <span className="text-orange-400 dark:text-orange-400 light:text-orange-600 font-bold">
-                          {botSettings[bot.id]?.maxDailyTrades || 10}
+                          {botSettings[bot.botId]?.maxDailyTrades || 10}
                         </span>
                       </div>
                       
@@ -645,9 +631,9 @@ export default function AutomationPage() {
                           </svg>
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Break Even</span>
                         </div>
-                        {botSettings[bot.id]?.breakEvenStop?.enabled ? (
+                        {botSettings[bot.botId]?.breakEvenStop?.enabled ? (
                           <span className="text-green-400 dark:text-green-400 light:text-green-600 font-bold">
-                            +{botSettings[bot.id]?.breakEvenStop?.triggerProfit}%
+                            +{botSettings[bot.botId]?.breakEvenStop?.triggerProfit}%
                           </span>
                         ) : (
                           <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
@@ -661,9 +647,9 @@ export default function AutomationPage() {
                           </svg>
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Partial TP</span>
                         </div>
-                        {botSettings[bot.id]?.partialTakeProfit?.enabled ? (
+                        {botSettings[bot.botId]?.partialTakeProfit?.enabled ? (
                           <span className="text-blue-400 dark:text-blue-400 light:text-blue-600 font-bold">
-                            {botSettings[bot.id]?.partialTakeProfit?.levels?.length || 2} Levels
+                            {botSettings[bot.botId]?.partialTakeProfit?.levels?.length || 2} Levels
                           </span>
                         ) : (
                           <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
@@ -677,9 +663,9 @@ export default function AutomationPage() {
                           </svg>
                           <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Loss</span>
                         </div>
-                        {botSettings[bot.id]?.maxDailyLoss?.enabled ? (
+                        {botSettings[bot.botId]?.maxDailyLoss?.enabled ? (
                           <span className="text-red-400 dark:text-red-400 light:text-red-600 font-bold">
-                            ${botSettings[bot.id]?.maxDailyLoss?.amount}
+                            ${botSettings[bot.botId]?.maxDailyLoss?.amount}
                           </span>
                         ) : (
                           <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
@@ -717,7 +703,7 @@ export default function AutomationPage() {
                 </div>
 
                 <button
-                  onClick={() => toggleBot(bot.id)}
+                  onClick={() => toggleBot(bot.botId)}
                   disabled={loading || exchangeConnections.length === 0}
                   className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
                     active
@@ -910,6 +896,107 @@ export default function AutomationPage() {
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mt-2">
                   <span>+1% (Conservative)</span>
                   <span>+30% (Aggressive)</span>
+                </div>
+              </div>
+
+              {/* Currency Selection */}
+              <div className="bg-white/5 dark:bg-white/5 light:bg-blue-50 rounded-xl p-5 border border-white/10 dark:border-white/10 light:border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Trading Pair</h4>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">Select cryptocurrency to trade</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-cyan-400 dark:text-cyan-400 light:text-cyan-600">
+                      {botSettings[selectedBotForSettings.id]?.currency || selectedBotForSettings.supportedCurrencies[0]}
+                    </p>
+                  </div>
+                </div>
+                <select
+                  value={botSettings[selectedBotForSettings.id]?.currency || selectedBotForSettings.supportedCurrencies[0]}
+                  onChange={(e) => updateBotSettings(selectedBotForSettings.id, 'currency', e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white border border-gray-700 dark:border-gray-700 light:border-blue-300 rounded-lg text-white dark:text-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  {selectedBotForSettings.supportedCurrencies.map((currency: string) => (
+                    <option key={currency} value={currency} className="bg-gray-800 dark:bg-gray-800 light:bg-white">
+                      {currency}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mt-2">
+                  Bot will trade the selected pair on futures market
+                </p>
+              </div>
+
+              {/* Position Size Setting */}
+              <div className="bg-white/5 dark:bg-white/5 light:bg-blue-50 rounded-xl p-5 border border-white/10 dark:border-white/10 light:border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Position Size</h4>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">% of balance to use per trade</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-yellow-400 dark:text-yellow-400 light:text-yellow-600">
+                      {botSettings[selectedBotForSettings.id]?.positionSize || 10}%
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">
+                      Default: 10%
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  step="1"
+                  value={botSettings[selectedBotForSettings.id]?.positionSize || 10}
+                  onChange={(e) => updateBotSettings(selectedBotForSettings.id, 'positionSize', parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-700 dark:bg-gray-700 light:bg-blue-200 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mt-2">
+                  <span>1% (Very Safe)</span>
+                  <span>50% (Very Risky)</span>
+                </div>
+                <div className="mt-2 p-2 bg-yellow-900/20 dark:bg-yellow-900/20 light:bg-yellow-50 border border-yellow-500/30 dark:border-yellow-500/30 light:border-yellow-300 rounded">
+                  <p className="text-xs text-yellow-400 dark:text-yellow-400 light:text-yellow-700">
+                    ⚠️ Recommended: 5-15% for balanced risk management
+                  </p>
+                </div>
+              </div>
+
+              {/* Max Daily Loss Setting */}
+              <div className="bg-white/5 dark:bg-white/5 light:bg-blue-50 rounded-xl p-5 border border-white/10 dark:border-white/10 light:border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-white dark:text-white light:text-gray-900">Max Daily Loss</h4>
+                    <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">Stop trading if daily loss exceeds</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-orange-400 dark:text-orange-400 light:text-orange-600">
+                      ${botSettings[selectedBotForSettings.id]?.maxDailyLoss || 100}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">
+                      Default: $100
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  step="10"
+                  value={botSettings[selectedBotForSettings.id]?.maxDailyLoss || 100}
+                  onChange={(e) => updateBotSettings(selectedBotForSettings.id, 'maxDailyLoss', parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-700 dark:bg-gray-700 light:bg-blue-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 mt-2">
+                  <span>$10 (Conservative)</span>
+                  <span>$500 (Aggressive)</span>
+                </div>
+                <div className="mt-2 p-2 bg-orange-900/20 dark:bg-orange-900/20 light:bg-orange-50 border border-orange-500/30 dark:border-orange-500/30 light:border-orange-300 rounded">
+                  <p className="text-xs text-orange-400 dark:text-orange-400 light:text-orange-700">
+                    🛡️ Bot will pause trading for the day if this loss limit is reached
+                  </p>
                 </div>
               </div>
 

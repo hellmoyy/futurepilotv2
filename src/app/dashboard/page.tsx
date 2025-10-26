@@ -2,6 +2,8 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { ActiveTradesWidget } from '@/components/dashboard/ActiveTradesWidget';
+import { TradeStatsWidget } from '@/components/dashboard/TradeStatsWidget';
 
 interface CoinPrice {
   symbol: string;
@@ -21,12 +23,18 @@ interface DashboardStats {
   profitableTrades: number;
   losingTrades: number;
   avgProfit: number;
+  breakdown?: {
+    spotBalance: number;
+    futuresBalance: number;
+    connectedExchanges: number;
+  };
 }
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [coins, setCoins] = useState<CoinPrice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string>('');
   const [stats, setStats] = useState<DashboardStats>({
     totalBalance: 0,
     balanceChangePercent: 0,
@@ -39,29 +47,86 @@ export default function DashboardPage() {
     avgProfit: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [refreshingBalance, setRefreshingBalance] = useState(false);
+
+  // Function to refresh exchange balances
+  const refreshExchangeBalances = async () => {
+    try {
+      setRefreshingBalance(true);
+      console.log('🔄 Refreshing exchange balances...');
+      
+      // Get all exchange connections
+      const connectionsRes = await fetch('/api/exchange/connections');
+      const connectionsData = await connectionsRes.json();
+      
+      if (connectionsData.success && connectionsData.connections) {
+        // Refresh balance for each connection
+        const refreshPromises = connectionsData.connections.map((conn: any) => 
+          fetch(`/api/exchange/connections/${conn._id}/balance`)
+            .then(res => res.json())
+            .catch(err => {
+              console.error(`Failed to refresh balance for ${conn.exchange}:`, err);
+              return null;
+            })
+        );
+        
+        await Promise.all(refreshPromises);
+        console.log('✅ Exchange balances refreshed');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing exchange balances:', error);
+    } finally {
+      setRefreshingBalance(false);
+    }
+  };
 
   // Fetch dashboard statistics
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        console.log('🔄 Fetching dashboard stats...');
+        setStatsError('');
         const response = await fetch('/api/dashboard/stats');
         const result = await response.json();
         
+        console.log('📊 Dashboard stats response:', result);
+        
         if (result.success && result.data) {
+          console.log('✅ Stats loaded:', result.data);
           setStats(result.data);
+        } else {
+          const errorMsg = result.error || 'Failed to load stats';
+          console.error('❌ Failed to load stats:', errorMsg);
+          setStatsError(errorMsg);
         }
         setStatsLoading(false);
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Network error';
+        console.error('💥 Error fetching dashboard stats:', error);
+        setStatsError(errorMsg);
         setStatsLoading(false);
       }
     };
 
     if (session?.user) {
-      fetchStats();
-      // Auto refresh every 15 seconds
-      const interval = setInterval(fetchStats, 15000);
+      console.log('👤 User session found, fetching stats...');
+      
+      // Initial fetch with balance refresh
+      refreshExchangeBalances().then(() => {
+        fetchStats();
+      });
+      
+      // Auto refresh balances and stats every 30 seconds
+      const interval = setInterval(() => {
+        refreshExchangeBalances().then(() => {
+          fetchStats();
+        });
+      }, 30000);
+      
       return () => clearInterval(interval);
+    } else {
+      console.log('⚠️ No user session, skipping stats fetch');
+      setStatsLoading(false);
     }
   }, [session]);
 
@@ -131,10 +196,35 @@ export default function DashboardPage() {
         <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 dark:from-blue-900/50 dark:to-cyan-900/50 light:from-white light:to-blue-50 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-blue-400/30 dark:border-blue-400/30 light:border-blue-200 shadow-xl shadow-blue-500/10">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h3 className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-xs sm:text-sm font-semibold uppercase tracking-wide">Total Balance</h3>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/30 dark:bg-blue-500/30 light:bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm border border-blue-400/30 dark:border-blue-400/30 light:border-blue-300">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-300 dark:text-blue-300 light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  await refreshExchangeBalances();
+                  // Refresh stats after balance update
+                  const response = await fetch('/api/dashboard/stats');
+                  const result = await response.json();
+                  if (result.success && result.data) {
+                    setStats(result.data);
+                  }
+                }}
+                disabled={refreshingBalance}
+                className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                title="Refresh balance from exchange"
+              >
+                <svg 
+                  className={`w-4 h-4 text-blue-300 group-hover:text-blue-200 ${refreshingBalance ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/30 dark:bg-blue-500/30 light:bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm border border-blue-400/30 dark:border-blue-400/30 light:border-blue-300">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-300 dark:text-blue-300 light:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
           </div>
           {statsLoading ? (
@@ -142,14 +232,54 @@ export default function DashboardPage() {
               <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-gray-400 text-sm">Loading...</span>
             </div>
+          ) : statsError ? (
+            <div className="space-y-2">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-400 mb-1 sm:mb-2 tracking-tight">
+                Error
+              </div>
+              <div className="text-xs sm:text-sm text-red-400">
+                {statsError}
+              </div>
+            </div>
           ) : (
             <>
               <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white dark:text-white light:text-gray-900 mb-1 sm:mb-2 tracking-tight">
                 ${stats.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              <div className={`text-xs sm:text-sm font-medium ${stats.balanceChangePercent >= 0 ? 'text-green-400 dark:text-green-400 light:text-green-600' : 'text-red-400 dark:text-red-400 light:text-red-600'}`}>
+              <div className={`text-xs sm:text-sm font-medium mb-2 ${stats.balanceChangePercent >= 0 ? 'text-green-400 dark:text-green-400 light:text-green-600' : 'text-red-400 dark:text-red-400 light:text-red-600'}`}>
                 {stats.balanceChangePercent >= 0 ? '+' : ''}{stats.balanceChangePercent.toFixed(2)}% from last month
               </div>
+              {stats.breakdown && (
+                <div className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 space-y-1 mt-2 pt-2 border-t border-white/10 dark:border-white/10 light:border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Spot Balance:
+                    </span>
+                    <span className="font-medium text-white dark:text-white light:text-gray-900">${stats.breakdown.spotBalance.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                      Futures Balance:
+                    </span>
+                    <span className="font-medium text-white dark:text-white light:text-gray-900">${stats.breakdown.futuresBalance.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-white/5 dark:border-white/5 light:border-gray-100">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      Connected Exchanges:
+                    </span>
+                    <span className="font-medium text-blue-400 dark:text-blue-400 light:text-blue-600">{stats.breakdown.connectedExchanges}</span>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -304,6 +434,19 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Trading Performance Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Trade Statistics Widget */}
+        <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 dark:from-blue-900/30 dark:to-purple-900/30 light:from-white light:to-blue-50 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-blue-400/30 dark:border-blue-400/30 light:border-blue-200 shadow-xl">
+          <TradeStatsWidget />
+        </div>
+
+        {/* Active Trades Widget */}
+        <div className="bg-gradient-to-br from-cyan-900/30 to-blue-900/30 dark:from-cyan-900/30 dark:to-blue-900/30 light:from-white light:to-cyan-50 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-cyan-400/30 dark:border-cyan-400/30 light:border-cyan-200 shadow-xl">
+          <ActiveTradesWidget />
+        </div>
       </div>
 
       {/* Quick Actions */}
