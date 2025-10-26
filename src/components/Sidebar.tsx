@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       ),
     },
     {
-      name: 'AI Trading Agent',
+      name: 'AI Agent',
       href: '/ai-agent',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

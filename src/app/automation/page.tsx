@@ -17,7 +17,8 @@ const tradingBots = [
     recommended: true,
     leverage: 10,
     stopLoss: 3,
-    takeProfit: 6
+    takeProfit: 6,
+    supportedCurrencies: ['BTC']
   },
   {
     id: 2,
@@ -31,7 +32,8 @@ const tradingBots = [
     recommended: false,
     leverage: 10,
     stopLoss: 3,
-    takeProfit: 6
+    takeProfit: 6,
+    supportedCurrencies: ['ETH']
   },
   {
     id: 3,
@@ -45,7 +47,8 @@ const tradingBots = [
     recommended: false,
     leverage: 5,
     stopLoss: 2,
-    takeProfit: 3
+    takeProfit: 3,
+    supportedCurrencies: ['BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'XRP']
   },
   {
     id: 4,
@@ -59,7 +62,8 @@ const tradingBots = [
     recommended: false,
     leverage: 20,
     stopLoss: 5,
-    takeProfit: 10
+    takeProfit: 10,
+    supportedCurrencies: ['BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'XRP', 'DOGE', 'MATIC', 'AVAX', 'DOT']
   },
 ];
 
@@ -74,6 +78,7 @@ export default function AutomationPage() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedBotForSettings, setSelectedBotForSettings] = useState<any>(null);
   const [botSettings, setBotSettings] = useState<{[key: number]: any}>({});
+  const [expandedSettings, setExpandedSettings] = useState<{[key: number]: boolean}>({});
 
   // Initialize bot settings with default values and fetch from database
   useEffect(() => {
@@ -294,6 +299,13 @@ export default function AutomationPage() {
           [childField]: value
         }
       }
+    }));
+  };
+
+  const toggleSettingsExpand = (botId: number) => {
+    setExpandedSettings(prev => ({
+      ...prev,
+      [botId]: !prev[botId]
     }));
   };
 
@@ -532,7 +544,23 @@ export default function AutomationPage() {
                 </div>
 
                 <div className="p-4 bg-white/5 dark:bg-white/5 light:bg-blue-50 rounded-xl border border-white/10 dark:border-white/10 light:border-blue-200 mb-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 font-semibold mb-2">CURRENT SETTINGS</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600 font-semibold">CURRENT SETTINGS</p>
+                    <button
+                      onClick={() => toggleSettingsExpand(bot.id)}
+                      className="text-gray-400 hover:text-white dark:hover:text-white light:hover:text-gray-900 transition-colors"
+                      title={expandedSettings[bot.id] ? "Collapse settings" : "Expand settings"}
+                    >
+                      <svg 
+                        className={`w-5 h-5 transition-transform duration-300 ${expandedSettings[bot.id] ? 'rotate-180' : ''}`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-3 gap-2 text-xs mb-3">
                     <div>
                       <p className="text-gray-500 dark:text-gray-500 light:text-gray-600 mb-1">Leverage</p>
@@ -554,106 +582,135 @@ export default function AutomationPage() {
                     </div>
                   </div>
                   
-                  {/* Tier 1 Features Display */}
-                  <div className="pt-3 border-t border-white/10 dark:border-white/10 light:border-blue-200 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Trailing SL</span>
+                  {/* Collapsible Advanced Settings */}
+                  <div className={`overflow-hidden transition-all duration-300 ${expandedSettings[bot.id] ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="pt-3 border-t border-white/10 dark:border-white/10 light:border-blue-200 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Trailing SL</span>
+                        </div>
+                        {botSettings[bot.id]?.trailingStopLoss?.enabled ? (
+                          <span className="text-purple-400 dark:text-purple-400 light:text-purple-600 font-bold">
+                            {botSettings[bot.id]?.trailingStopLoss?.distance}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                        )}
                       </div>
-                      {botSettings[bot.id]?.trailingStopLoss?.enabled ? (
-                        <span className="text-purple-400 dark:text-purple-400 light:text-purple-600 font-bold">
-                          {botSettings[bot.id]?.trailingStopLoss?.distance}%
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Size</span>
+                        </div>
+                        <span className="text-yellow-400 dark:text-yellow-400 light:text-yellow-600 font-bold">
+                          ${botSettings[bot.id]?.maxPositionSize || 100}
                         </span>
-                      ) : (
-                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Size</span>
                       </div>
-                      <span className="text-yellow-400 dark:text-yellow-400 light:text-yellow-600 font-bold">
-                        ${botSettings[bot.id]?.maxPositionSize || 100}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Positions</span>
-                      </div>
-                      <span className="text-cyan-400 dark:text-cyan-400 light:text-cyan-600 font-bold">
-                        {botSettings[bot.id]?.maxConcurrentPositions || 3}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Daily Trades</span>
-                      </div>
-                      <span className="text-orange-400 dark:text-orange-400 light:text-orange-600 font-bold">
-                        {botSettings[bot.id]?.maxDailyTrades || 10}
-                      </span>
-                    </div>
-                    
-                    {/* Tier 2 Features */}
-                    <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5 dark:border-white/5 light:border-blue-100">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Break Even</span>
-                      </div>
-                      {botSettings[bot.id]?.breakEvenStop?.enabled ? (
-                        <span className="text-green-400 dark:text-green-400 light:text-green-600 font-bold">
-                          +{botSettings[bot.id]?.breakEvenStop?.triggerProfit}%
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Positions</span>
+                        </div>
+                        <span className="text-cyan-400 dark:text-cyan-400 light:text-cyan-600 font-bold">
+                          {botSettings[bot.id]?.maxConcurrentPositions || 3}
                         </span>
-                      ) : (
-                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Partial TP</span>
                       </div>
-                      {botSettings[bot.id]?.partialTakeProfit?.enabled ? (
-                        <span className="text-blue-400 dark:text-blue-400 light:text-blue-600 font-bold">
-                          {botSettings[bot.id]?.partialTakeProfit?.levels?.length || 2} Levels
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Daily Trades</span>
+                        </div>
+                        <span className="text-orange-400 dark:text-orange-400 light:text-orange-600 font-bold">
+                          {botSettings[bot.id]?.maxDailyTrades || 10}
                         </span>
-                      ) : (
-                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Loss</span>
                       </div>
-                      {botSettings[bot.id]?.maxDailyLoss?.enabled ? (
-                        <span className="text-red-400 dark:text-red-400 light:text-red-600 font-bold">
-                          ${botSettings[bot.id]?.maxDailyLoss?.amount}
-                        </span>
-                      ) : (
-                        <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                      
+                      {/* Tier 2 Features */}
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5 dark:border-white/5 light:border-blue-100">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Break Even</span>
+                        </div>
+                        {botSettings[bot.id]?.breakEvenStop?.enabled ? (
+                          <span className="text-green-400 dark:text-green-400 light:text-green-600 font-bold">
+                            +{botSettings[bot.id]?.breakEvenStop?.triggerProfit}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Partial TP</span>
+                        </div>
+                        {botSettings[bot.id]?.partialTakeProfit?.enabled ? (
+                          <span className="text-blue-400 dark:text-blue-400 light:text-blue-600 font-bold">
+                            {botSettings[bot.id]?.partialTakeProfit?.levels?.length || 2} Levels
+                          </span>
+                        ) : (
+                          <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span className="text-gray-400 dark:text-gray-400 light:text-gray-600">Max Loss</span>
+                        </div>
+                        {botSettings[bot.id]?.maxDailyLoss?.enabled ? (
+                          <span className="text-red-400 dark:text-red-400 light:text-red-600 font-bold">
+                            ${botSettings[bot.id]?.maxDailyLoss?.amount}
+                          </span>
+                        ) : (
+                          <span className="text-gray-600 dark:text-gray-600 light:text-gray-500">OFF</span>
+                        )}
+                      </div>
+
+                      {/* Support Currency - For all bots */}
+                      {bot.supportedCurrencies && (
+                        <div className="pt-2 mt-2 border-t border-white/5 dark:border-white/5 light:border-blue-100">
+                          <div className="flex items-start gap-2">
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <svg className="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-xs">Support Currency:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 flex-1">
+                              {bot.supportedCurrencies.map((currency: string) => (
+                                <span 
+                                  key={currency}
+                                  className="px-2 py-0.5 bg-indigo-500/20 dark:bg-indigo-500/20 light:bg-indigo-100 text-indigo-400 dark:text-indigo-400 light:text-indigo-700 rounded text-xs font-medium border border-indigo-500/30 dark:border-indigo-500/30 light:border-indigo-300"
+                                >
+                                  {currency}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-500 light:text-gray-500 mt-1.5 ml-4">
+                            These are the currencies that will be used for trading
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

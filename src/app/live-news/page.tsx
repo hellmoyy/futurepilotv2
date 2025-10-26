@@ -116,28 +116,28 @@ export default function LiveNewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 light:from-gray-50 light:via-gray-100 light:to-gray-50 p-3 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 p-4 sm:p-5 lg:p-6"
+          className="bg-white dark:bg-white/10 light:bg-white backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/20 light:border-gray-300 shadow-lg p-4 sm:p-5 lg:p-6"
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white light:text-gray-900 mb-2">
                 📰 Live Crypto News
               </h1>
-              <p className="text-sm sm:text-base text-gray-400">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 light:text-gray-600">
                 Real-time cryptocurrency market news and updates
               </p>
               {lastUpdate && (
                 <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                  <span className="text-gray-500">
+                  <span className="text-gray-600 dark:text-gray-500 light:text-gray-600">
                     Last update: {lastUpdate.toLocaleTimeString()}
                   </span>
-                  <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 w-fit">
+                  <span className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-blue-500/20 dark:bg-blue-500/20 light:bg-blue-100 text-blue-600 dark:text-blue-400 light:text-blue-700 w-fit">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
@@ -172,7 +172,7 @@ export default function LiveNewsPage() {
               className={`px-3 sm:px-4 lg:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex-1 sm:flex-initial min-w-[70px] ${
                 filter === filterType
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/10 dark:bg-white/5 text-gray-400 hover:bg-white/20 dark:hover:bg-white/10'
+                  : 'bg-white dark:bg-white/10 light:bg-white text-gray-700 dark:text-gray-400 light:text-gray-700 hover:bg-gray-100 dark:hover:bg-white/20 light:hover:bg-gray-200 border border-gray-200 dark:border-transparent light:border-gray-300'
               }`}
             >
               <span className="hidden sm:inline">
@@ -196,13 +196,13 @@ export default function LiveNewsPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin h-12 w-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-              <p className="text-gray-400 font-medium">Loading latest crypto news...</p>
+              <p className="text-gray-600 dark:text-gray-400 light:text-gray-600 font-medium">Loading latest crypto news...</p>
             </div>
           </div>
         ) : error ? (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-2xl p-6 text-center">
-            <p className="text-red-400 font-medium mb-2">⚠️ Failed to load news</p>
-            <p className="text-gray-400 text-sm">{error}</p>
+          <div className="bg-red-500/10 dark:bg-red-500/10 light:bg-red-50 border border-red-500/50 dark:border-red-500/50 light:border-red-300 rounded-2xl p-6 text-center">
+            <p className="text-red-600 dark:text-red-400 light:text-red-700 font-medium mb-2">⚠️ Failed to load news</p>
+            <p className="text-gray-600 dark:text-gray-400 light:text-gray-600 text-sm">{error}</p>
             <button
               onClick={fetchNews}
               className="mt-4 px-6 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold transition-all"
@@ -221,12 +221,12 @@ export default function LiveNewsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="block bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 p-4 sm:p-5 lg:p-6 hover:shadow-xl transition-all duration-300 hover:border-blue-500"
+                className="block bg-white dark:bg-gray-800 light:bg-white rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 light:border-gray-300 shadow-sm hover:shadow-xl p-4 sm:p-5 lg:p-6 transition-all duration-300 hover:border-blue-500"
               >
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   {/* News Image */}
                   {item.imageUrl && (
-                    <div className="flex-shrink-0 w-full sm:w-24 md:w-28 lg:w-32 h-40 sm:h-24 md:h-28 lg:h-32 rounded-lg sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700">
+                    <div className="flex-shrink-0 w-full sm:w-24 md:w-28 lg:w-32 h-40 sm:h-24 md:h-28 lg:h-32 rounded-lg sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-700 light:bg-gray-200">
                       <img 
                         src={item.imageUrl} 
                         alt={item.title}
@@ -253,18 +253,18 @@ export default function LiveNewsPage() {
                           className="w-4 h-4 sm:w-5 sm:h-5 rounded"
                         />
                       )}
-                      <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
+                      <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-500 light:text-gray-600 font-medium truncate">
                         {item.source}
                       </span>
-                      <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline">•</span>
-                      <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-xs sm:text-sm text-gray-400 dark:text-gray-400 light:text-gray-400 hidden sm:inline">•</span>
+                      <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-500 light:text-gray-600">
                         {formatTime(item.publishedAt)}
                       </span>
                     </div>
-                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-2">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-white light:text-gray-900 mb-2 hover:text-blue-600 dark:hover:text-blue-400 light:hover:text-blue-600 transition-colors line-clamp-2">
                       {item.title}
                     </h3>
-                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2 mb-3">
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 light:text-gray-600 leading-relaxed line-clamp-2 mb-3">
                       {item.description}
                     </p>
                     
@@ -274,7 +274,7 @@ export default function LiveNewsPage() {
                         {item.tags.slice(0, 5).map((tag) => (
                           <span 
                             key={tag}
-                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                            className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs bg-blue-100 dark:bg-blue-900/30 light:bg-blue-100 text-blue-700 dark:text-blue-400 light:text-blue-700"
                           >
                             #{tag}
                           </span>
@@ -284,7 +284,7 @@ export default function LiveNewsPage() {
                   </div>
                   
                   {/* External Link Icon */}
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 dark:text-gray-400 light:text-gray-400 flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </div>
@@ -294,8 +294,8 @@ export default function LiveNewsPage() {
         )}
 
         {filteredNews.length === 0 && !loading && !error && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-8 sm:p-12 text-center border border-gray-200 dark:border-gray-700">
-            <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
+          <div className="bg-white dark:bg-gray-800 light:bg-white rounded-xl sm:rounded-2xl shadow-lg p-8 sm:p-12 text-center border border-gray-200 dark:border-gray-700 light:border-gray-300">
+            <p className="text-gray-600 dark:text-gray-400 light:text-gray-600 text-base sm:text-lg">
               📭 No news found for selected filter.
             </p>
           </div>
@@ -306,10 +306,10 @@ export default function LiveNewsPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/20 dark:border-white/10 p-4 sm:p-5 lg:p-6"
+            className="bg-white dark:bg-white/10 light:bg-white backdrop-blur-xl rounded-xl sm:rounded-2xl border border-gray-200 dark:border-white/20 light:border-gray-300 shadow-lg p-4 sm:p-5 lg:p-6"
           >
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-left">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 light:text-gray-600 text-center sm:text-left">
                 <span className="hidden sm:inline">Showing {startIndex + 1}-{Math.min(endIndex, filteredNews.length)} of {filteredNews.length} news articles</span>
                 <span className="sm:hidden">{startIndex + 1}-{Math.min(endIndex, filteredNews.length)} of {filteredNews.length}</span>
               </div>
@@ -318,7 +318,7 @@ export default function LiveNewsPage() {
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm bg-white/10 hover:bg-white/20 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm bg-gray-100 dark:bg-white/10 light:bg-gray-100 hover:bg-gray-200 dark:hover:bg-white/20 light:hover:bg-gray-200 text-gray-700 dark:text-white light:text-gray-700 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="hidden sm:inline">← Previous</span>
                   <span className="sm:hidden">←</span>
@@ -344,7 +344,7 @@ export default function LiveNewsPage() {
                         className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                           currentPage === pageNum
                             ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                            : 'bg-white/10 hover:bg-white/20 text-gray-300'
+                            : 'bg-gray-100 dark:bg-white/10 light:bg-gray-100 hover:bg-gray-200 dark:hover:bg-white/20 light:hover:bg-gray-200 text-gray-700 dark:text-gray-300 light:text-gray-700'
                         }`}
                       >
                         {pageNum}
@@ -356,7 +356,7 @@ export default function LiveNewsPage() {
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm bg-white/10 hover:bg-white/20 text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm bg-gray-100 dark:bg-white/10 light:bg-gray-100 hover:bg-gray-200 dark:hover:bg-white/20 light:hover:bg-gray-200 text-gray-700 dark:text-white light:text-gray-700 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="hidden sm:inline">Next →</span>
                   <span className="sm:hidden">→</span>
