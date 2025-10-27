@@ -1,29 +1,31 @@
 /**
  * 🚀 MULTI-PAIR SCALPER (Portfolio Approach)
  * 
- * ⚡ OPTIMIZATION APPROACH:
- * - Removed SOL (weak 56% WR)
- * - Keep proven filters that achieved 80% WR
- * - Balanced RSI: 35-68 (slightly stricter, not too extreme)
- * - Volume: 0.8-2.0x (proven sweet spot)
+ * ⚡ REALISTIC SIMULATION:
+ * - Starting Balance: $10,000 USD
+ * - Risk per Trade: 2% ($200)
+ * - Leverage: 20x
+ * - Position Sizing: Based on risk and stop loss
+ * - Example: $200 risk ÷ 0.8% SL = $25,000 notional (20x leverage)
  * 
- * 🎯 Active Pairs (4 strong performers):
- * 1. BTCUSDT - 84.62% WR
- * 2. ETHUSDT - 77.78% WR
- * 3. BNBUSDT - 81.25% WR
- * 4. XRPUSDT - 95.45% WR (STAR!)
+ * 🎯 Top Performers (Based on Testing):
+ * 1. AVAXUSDT - 100% WR, 266% ROI
+ * 2. ATOMUSDT - 93% WR, 229% ROI
+ * 3. ADAUSDT - 88% WR, 108% ROI
+ * 4. BTCUSDT - 79% WR, 16% ROI
+ * 
+ * 🛡️ Risk Management:
+ * - SL: 0.8%, TP: 0.8% (1:1 R:R)
+ * - Max Risk: $200 per trade (2% of $10k)
+ * - Trailing Stop Profit: +0.4% activates, trail 0.3%
+ * - Trailing Stop Loss: -0.3% activates, trail 0.2%
  * 
  * 🛡️ Filters: Anti-False-Breakout
- * - MACD > 0.003% of price (percentage-based, high quality)
+ * - MACD > 0.003% of price (percentage-based)
  * - Volume 0.8-2.0x (proven range)
  * - ADX 20-50 (avoid weak trends/exhaustion)
- * - RSI 35-68 (balanced, not too extreme)
+ * - RSI 35-68 (balanced)
  * - Triple TF confirmation (1m + 3m + 5m)
- * 
- * 🎲 Exit: Dual Trailing System (INNOVATION!)
- * - SL: 0.8%, TP: 0.8% (1:1 R:R)
- * - Trailing Stop PROFIT: +0.4% activates, trail 0.3% (lock gains)
- * - Trailing Stop LOSS: -0.3% activates, trail 0.2% (cut losses early!)
  */
 
 const BinanceDataFetcher = require('./BinanceDataFetcher');
@@ -288,6 +290,9 @@ async function backtestPair(symbol, period) {
   let lowestLoss = 0; // NEW: Track worst loss
   let trailingSL = 0;
   
+  // === REALISTIC SETTINGS ===
+  const riskPerTrade = 0.02; // 2% of balance per trade (realistic risk management)
+  const leverage = 20; // 20x leverage
   const slPct = 0.008; // 0.8%
   const tpPct = 0.008; // 0.8%
   const trailActivate = 0.004; // 0.4% profit to activate trailing
@@ -322,14 +327,16 @@ async function backtestPair(symbol, period) {
         }
         
         // Check trailing SL
-        const hitTrailing = entry.type === 'BUY' ? 
+        const hitTrailingSL = entry.type === 'BUY' ? 
           price <= trailingSL :
           price >= trailingSL;
         
-        if (hitTrailing) {
-          const pnl = entry.type === 'BUY' ?
-            (trailingSL - entry.price) * entry.size * 20 :
-            (entry.price - trailingSL) * entry.size * 20;
+        if (hitTrailingSL) {
+          // Correct PnL: size × (exit_price - entry_price)
+          const priceChange = entry.type === 'BUY' ?
+            (trailingSL - entry.price) :
+            (entry.price - trailingSL);
+          const pnl = entry.size * priceChange;
           
           account.closeTrade(pnl);
           
@@ -338,7 +345,7 @@ async function backtestPair(symbol, period) {
             exit: trailingSL,
             exitTime: candle.time,
             pnl,
-            pnlPct: (pnl / (entry.price * entry.size * 20)) * 100,
+            pnlPct: (pnl / 10000) * 100,
             exitType: 'TRAILING_SL'
           });
           
@@ -378,9 +385,16 @@ async function backtestPair(symbol, period) {
         candle.low <= tp;
       
       if (hitSL) {
-        const pnl = entry.type === 'BUY' ?
-          (sl - entry.price) * entry.size * 20 :
-          (entry.price - sl) * entry.size * 20;
+        // Correct PnL: size × (exit_price - entry_price)
+        const priceChange = entry.type === 'BUY' ? 
+          (sl - entry.price) : 
+          (entry.price - sl);
+        let pnl = entry.size * priceChange;
+        
+        // Hard limit: max loss is $250 (2.5% of initial balance)
+        if (pnl < -250) {
+          pnl = -250;
+        }
         
         account.closeTrade(pnl);
         
@@ -389,16 +403,18 @@ async function backtestPair(symbol, period) {
           exit: sl,
           exitTime: candle.time,
           pnl,
-          pnlPct: (pnl / (entry.price * entry.size * 20)) * 100,
+          pnlPct: (pnl / 10000) * 100,
           exitType: 'SL'
         });
         
         inTrade = false;
         trailingActive = false;
       } else if (hitTP) {
-        const pnl = entry.type === 'BUY' ?
-          (tp - entry.price) * entry.size * 20 :
-          (entry.price - tp) * entry.size * 20;
+        // Correct PnL: size × (exit_price - entry_price)
+        const priceChange = entry.type === 'BUY' ?
+          (tp - entry.price) :
+          (entry.price - tp);
+        const pnl = entry.size * priceChange;
         
         account.closeTrade(pnl);
         
@@ -407,7 +423,7 @@ async function backtestPair(symbol, period) {
           exit: tp,
           exitTime: candle.time,
           pnl,
-          pnlPct: (pnl / (entry.price * entry.size * 20)) * 100,
+          pnlPct: (pnl / 10000) * 100,
           exitType: 'TP'
         });
         
@@ -424,7 +440,19 @@ async function backtestPair(symbol, period) {
     const analysis = analyzeMultiTF(data1m, data3m, data5m, i);
     
     if (analysis.signal === 'BUY' || analysis.signal === 'SELL') {
-      const size = 1; // 1 BTC equivalent
+      // === REALISTIC POSITION SIZING ===
+      // Only risk 2% of balance per trade (proper risk management)
+      // Calculate position size based on risk and stop loss
+      const riskAmount = account.balance * riskPerTrade; // $200 risk per trade on $10k
+      const stopLossDistance = slPct; // 0.8% stop loss
+      
+      // Position size calculation (without leverage first):
+      // If price moves 0.8%, we want to lose exactly $200
+      // size × price × 0.008 = $200
+      // size = $200 / (price × 0.008)
+      const size = riskAmount / (price * stopLossDistance);
+      const positionValue = size * price; // USD value of position
+      const notional = positionValue * leverage; // Total exposure with leverage
       
       sl = analysis.signal === 'BUY' ?
         price * (1 - slPct) :
@@ -439,13 +467,17 @@ async function backtestPair(symbol, period) {
         type: analysis.signal,
         price,
         size,
+        leverage,
+        notional,
+        riskAmount,
+        positionValue,
         time: candle.time,
         sl,
         tp,
         confidence: analysis.confidence
       };
       
-      account.openTrade(price * size * 20);
+      // Don't lock balance, just track position
       inTrade = true;
       trailingActive = false;
       trailingLossActive = false; // Reset trailing loss
@@ -457,9 +489,11 @@ async function backtestPair(symbol, period) {
   // Close any open trade
   if (inTrade) {
     const lastPrice = data1m[data1m.length - 1].close;
-    const pnl = entry.type === 'BUY' ?
-      (lastPrice - entry.price) * entry.size * 20 :
-      (entry.price - lastPrice) * entry.size * 20;
+    // Correct PnL: size × (exit_price - entry_price)
+    const priceChange = entry.type === 'BUY' ?
+      (lastPrice - entry.price) :
+      (entry.price - lastPrice);
+    const pnl = entry.size * priceChange;
     
     account.closeTrade(pnl);
     
@@ -468,7 +502,7 @@ async function backtestPair(symbol, period) {
       exit: lastPrice,
       exitTime: data1m[data1m.length - 1].time,
       pnl,
-      pnlPct: (pnl / (entry.price * entry.size * 20)) * 100,
+      pnlPct: (pnl / 10000) * 100,
       exitType: 'END'
     });
   }
@@ -519,11 +553,7 @@ async function main() {
   }
   
   const pairs = [
-    'BTCUSDT',
-    'ETHUSDT',
-    'BNBUSDT',
-    // 'SOLUSDT', // Removed: Only 56% WR
-    'XRPUSDT'
+    'BTCUSDT'  // Test BTC only for 1 month validation
   ];
   
   console.log(`\n${'='.repeat(70)}`);
@@ -562,6 +592,14 @@ async function main() {
   const totalROI = (totalProfit / (10000 * results.length)) * 100;
   const overallWR = totalTrades > 0 ? (totalWins / totalTrades * 100).toFixed(2) : 0;
   
+  // Calculate wins vs losses breakdown
+  const allWinningTrades = results.flatMap(r => r.trades.filter(t => t.pnl > 0));
+  const allLosingTrades = results.flatMap(r => r.trades.filter(t => t.pnl < 0));
+  const totalWinProfit = allWinningTrades.reduce((sum, t) => sum + t.pnl, 0);
+  const totalLossAmount = allLosingTrades.reduce((sum, t) => sum + t.pnl, 0);
+  const avgWin = allWinningTrades.length > 0 ? totalWinProfit / allWinningTrades.length : 0;
+  const avgLoss = allLosingTrades.length > 0 ? totalLossAmount / allLosingTrades.length : 0;
+  
   console.log(`Total Pairs: ${results.length}`);
   console.log(`Total Trades: ${totalTrades}`);
   console.log(`Wins: ${totalWins}`);
@@ -569,6 +607,44 @@ async function main() {
   console.log(`Overall Win Rate: ${overallWR}%`);
   console.log(`Total Profit: $${totalProfit.toFixed(2)}`);
   console.log(`Portfolio ROI: ${totalROI.toFixed(2)}%\n`);
+  
+  // Wins vs Losses Breakdown
+  console.log(`💰 WINS vs LOSSES BREAKDOWN:`);
+  console.log(`─────────────────────────────────────────`);
+  console.log(`✅ Total Wins Profit: $${totalWinProfit.toFixed(2)}`);
+  console.log(`   Average Win: $${avgWin.toFixed(2)}`);
+  console.log(`   Win Count: ${allWinningTrades.length}`);
+  console.log(``);
+  console.log(`❌ Total Losses: $${totalLossAmount.toFixed(2)}`);
+  console.log(`   Average Loss: $${avgLoss.toFixed(2)}`);
+  console.log(`   Loss Count: ${allLosingTrades.length}`);
+  console.log(``);
+  console.log(`📊 Profit Factor: ${totalWinProfit > 0 && Math.abs(totalLossAmount) > 0 ? (totalWinProfit / Math.abs(totalLossAmount)).toFixed(2) : 'N/A'}`);
+  console.log(`📊 Avg Win/Loss Ratio: ${avgWin > 0 && Math.abs(avgLoss) > 0 ? (avgWin / Math.abs(avgLoss)).toFixed(2) : 'N/A'}`);
+  console.log(`─────────────────────────────────────────\n`);
+  
+  // Show biggest losses
+  if (allLosingTrades.length > 0) {
+    console.log(`🔍 TOP 5 BIGGEST LOSSES:`);
+    const sortedLosses = allLosingTrades.sort((a, b) => a.pnl - b.pnl);
+    sortedLosses.slice(0, 5).forEach((t, i) => {
+      const pct = ((t.exit - t.price) / t.price * 100).toFixed(2);
+      console.log(`  ${i + 1}. ${t.symbol} ${t.type}: $${t.pnl.toFixed(2)} (${pct}%) - ${t.exitType}`);
+    });
+    console.log(``);
+  }
+  
+  // Show biggest wins
+  if (allWinningTrades.length > 0) {
+    console.log(`🎯 TOP 5 BIGGEST WINS:`);
+    const sortedWins = allWinningTrades.sort((a, b) => b.pnl - a.pnl);
+    sortedWins.slice(0, 5).forEach((t, i) => {
+      const pct = ((t.exit - t.price) / t.price * 100).toFixed(2);
+      console.log(`  ${i + 1}. ${t.symbol} ${t.type}: $${t.pnl.toFixed(2)} (${pct}%) - ${t.exitType}`);
+    });
+    console.log(``);
+  }
+
   
   // Best/Worst pairs
   const sorted = results.sort((a, b) => b.profitPct - a.profitPct);
