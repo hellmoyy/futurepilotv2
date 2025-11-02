@@ -40,10 +40,14 @@ interface MoralisWebhookPayload {
   erc20Transfers: MoralisERC20Transfer[];
 }
 
-// USDT Contract Addresses
+// USDT Contract Addresses (support both mainnet and testnet)
 const USDT_CONTRACTS = {
-  ETHEREUM: process.env.USDT_ERC20_CONTRACT?.toLowerCase() || '0xdac17f958d2ee523a2206206994597c13d831ec7',
-  BSC: process.env.USDT_BEP20_CONTRACT?.toLowerCase() || '0x55d398326f99059ff775485246999027b3197955',
+  // Mainnet
+  ETHEREUM_MAINNET: process.env.USDT_ERC20_CONTRACT?.toLowerCase() || '0xdac17f958d2ee523a2206206994597c13d831ec7',
+  BSC_MAINNET: process.env.USDT_BEP20_CONTRACT?.toLowerCase() || '0x55d398326f99059ff775485246999027b3197955',
+  // Testnet
+  ETHEREUM_TESTNET: process.env.TESTNET_USDT_ERC20_CONTRACT?.toLowerCase() || '0x46484aee842a735fbf4c05af7e371792cf52b498',
+  BSC_TESTNET: process.env.TESTNET_USDT_BEP20_CONTRACT?.toLowerCase() || '0x46484aee842a735fbf4c05af7e371792cf52b498',
 };
 
 // Chain ID mapping
@@ -106,10 +110,12 @@ export async function POST(request: NextRequest) {
           contract: transfer.contract,
         });
 
-        // Verify it's a USDT transfer
+        // Verify it's a USDT transfer (check all USDT contracts: mainnet + testnet)
         const contractAddress = transfer.contract.toLowerCase();
-        const isUSDT = contractAddress === USDT_CONTRACTS.ETHEREUM || 
-                       contractAddress === USDT_CONTRACTS.BSC;
+        const isUSDT = contractAddress === USDT_CONTRACTS.ETHEREUM_MAINNET || 
+                       contractAddress === USDT_CONTRACTS.BSC_MAINNET ||
+                       contractAddress === USDT_CONTRACTS.ETHEREUM_TESTNET ||
+                       contractAddress === USDT_CONTRACTS.BSC_TESTNET;
 
         if (!isUSDT) {
           console.log('⚠️ Not a USDT transfer, skipping...', contractAddress);
@@ -121,8 +127,8 @@ export async function POST(request: NextRequest) {
         const recipientAddress = transfer.to.toLowerCase();
         const user = await User.findOne({
           $or: [
-            { 'wallet.erc20Address': { $regex: new RegExp(`^${recipientAddress}$`, 'i') } },
-            { 'wallet.bep20Address': { $regex: new RegExp(`^${recipientAddress}$`, 'i') } }
+            { 'walletData.erc20Address': { $regex: new RegExp(`^${recipientAddress}$`, 'i') } },
+            { 'walletData.bep20Address': { $regex: new RegExp(`^${recipientAddress}$`, 'i') } }
           ]
         });
 

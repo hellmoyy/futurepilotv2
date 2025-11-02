@@ -11,16 +11,33 @@ const USDT_ABI = [
 ];
 
 // Network configurations
-const NETWORK_CONFIG = {
+const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
+
+const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
   ethereum: {
     rpc: process.env.ETHEREUM_RPC_URL,
     contract: process.env.USDT_ERC20_CONTRACT,
-    name: 'ERC20'
+    name: 'Ethereum Mainnet',
+    chainId: '0x1'
   },
   bsc: {
     rpc: process.env.BSC_RPC_URL,
     contract: process.env.USDT_BEP20_CONTRACT,
-    name: 'BEP20'
+    name: 'BSC Mainnet',
+    chainId: '0x38'
+  }
+} : {
+  ethereum: {
+    rpc: process.env.TESTNET_ETHEREUM_RPC_URL,
+    contract: process.env.TESTNET_USDT_ERC20_CONTRACT,
+    name: 'Ethereum Sepolia Testnet',
+    chainId: '0xaa36a7'
+  },
+  bsc: {
+    rpc: process.env.TESTNET_BSC_RPC_URL,
+    contract: process.env.TESTNET_USDT_BEP20_CONTRACT,
+    name: 'BSC Testnet',
+    chainId: '0x61'
   }
 };
 
