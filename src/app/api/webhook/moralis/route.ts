@@ -153,14 +153,41 @@ export async function POST(request: NextRequest) {
 
         // Determine network
         const network = CHAIN_NETWORKS[payload.chainId as keyof typeof CHAIN_NETWORKS] || 'ERC20';
+        
+        // Get decimals from env based on chain and network mode
+        const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
+        let usdtDecimals = 6; // Default
+        
+        if (payload.chainId === '0x61' || payload.chainId === '0x38') {
+          // BSC (Testnet or Mainnet)
+          usdtDecimals = NETWORK_MODE === 'testnet'
+            ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
+            : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+        } else if (payload.chainId === '0xaa36a7' || payload.chainId === '0x1') {
+          // Ethereum (Testnet or Mainnet)
+          usdtDecimals = NETWORK_MODE === 'testnet'
+            ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
+            : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+        }
 
-        // Parse amount (USDT has 6 decimals)
-        const amount = parseFloat(transfer.valueWithDecimals);
+        // Parse amount - Moralis already provides valueWithDecimals formatted
+        // But we verify with raw value if needed
+        let amount: number;
+        if (transfer.valueWithDecimals) {
+          amount = parseFloat(transfer.valueWithDecimals);
+        } else {
+          // Fallback: calculate from raw value
+          const rawValue = BigInt(transfer.value);
+          const divisor = BigInt(10 ** usdtDecimals);
+          amount = Number(rawValue) / Number(divisor);
+        }
 
         console.log('💰 Processing deposit:', {
           user: user.email,
           amount,
+          decimals: usdtDecimals,
           network,
+          chainId: payload.chainId,
           txHash: transfer.transactionHash,
         });
 
