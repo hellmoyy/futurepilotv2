@@ -73,32 +73,22 @@ function validateConfig() {
 // 📊 CREATE QSTASH SCHEDULE
 // ============================================================================
 
-function createSchedule() {
+function createSchedule(endpoint) {
   return new Promise((resolve, reject) => {
-    // Ensure URL has proper scheme
-    let baseUrl = CONFIG.appUrl;
-    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-      baseUrl = `https://${baseUrl}`;
-    }
+    // QStash API v2 requires destination in URL path, not JSON body!
+    // Format: POST /v2/schedules/{destination}
+    // IMPORTANT: Do NOT encode the full URL, QStash needs to see https:// scheme!
     
-    const endpoint = `${baseUrl}/api/cron/balance-check?token=${CONFIG.cronSecret}`;
-    
-    // QStash API v2 format
-    const data = JSON.stringify({
-      destination: endpoint,
-      cron: CONFIG.cronExpression,
-    });
-
     const options = {
       hostname: 'qstash.upstash.io',
       port: 443,
-      path: '/v2/schedules',
+      path: `/v2/schedules/${endpoint}`, // Pass URL directly, don't encode
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${CONFIG.qstashToken}`,
-        'Content-Type': 'application/json',
-        'Content-Length': data.length,
-      },
+        'Upstash-Cron': CONFIG.cronExpression,
+        'Content-Type': 'application/json'
+      }
     };
 
     console.log('📋 Schedule Configuration:');
@@ -113,73 +103,31 @@ function createSchedule() {
     console.log('🚀 Creating schedule in Upstash QStash...\n');
 
     const req = https.request(options, (res) => {
-      let responseData = '';
+      let data = '';
 
       res.on('data', (chunk) => {
-        responseData += chunk;
+        data += chunk;
       });
 
       res.on('end', () => {
-        try {
-          const response = JSON.parse(responseData);
-
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            console.log('✅ Schedule created successfully!\n');
-            console.log('📊 Schedule Details:');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log(`Schedule ID:  ${response.scheduleId || response.id || 'N/A'}`);
-            console.log(`Destination:  ${response.destination || endpoint}`);
-            console.log(`Cron:         ${response.cron || CONFIG.cronExpression}`);
-            console.log(`Created:      ${new Date().toISOString()}`);
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-            
-            console.log('🔗 Useful Links:');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('Dashboard:  https://console.upstash.com/qstash');
-            console.log('Logs:       https://console.upstash.com/qstash/logs');
-            console.log('Schedules:  https://console.upstash.com/qstash/schedules');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
-            console.log('✅ Next Steps:');
-            console.log('1. ✅ Schedule created (this step)');
-            console.log('2. 🔍 Go to Upstash Console and verify schedule');
-            console.log('3. 🧪 Test schedule with "Send Now" button');
-            console.log('4. 📊 Monitor logs for successful execution');
-            console.log('5. ✅ Wait for first hourly execution\n');
-
+        if (res.statusCode === 200 || res.statusCode === 201) {
+          try {
+            const response = JSON.parse(data);
             resolve(response);
-          } else {
-            console.error('❌ Failed to create schedule\n');
-            console.error(`Status Code: ${res.statusCode}`);
-            console.error(`Response: ${responseData}\n`);
-            
-            if (res.statusCode === 401) {
-              console.error('💡 Fix: Invalid QSTASH_TOKEN');
-              console.error('   1. Go to https://console.upstash.com/qstash');
-              console.error('   2. Copy your QStash Token');
-              console.error('   3. Update QSTASH_TOKEN in .env.local\n');
-            }
-            
-            reject(new Error(`HTTP ${res.statusCode}: ${responseData}`));
+          } catch (e) {
+            reject(new Error(`Failed to parse response: ${data}`));
           }
-        } catch (error) {
-          console.error('❌ Error parsing response:', error.message);
-          console.error('Response:', responseData);
-          reject(error);
+        } else {
+          reject(new Error(`HTTP ${res.statusCode}: ${data}`));
         }
       });
     });
 
     req.on('error', (error) => {
-      console.error('❌ Request failed:', error.message);
-      console.error('\n💡 Possible issues:');
-      console.error('- No internet connection');
-      console.error('- Firewall blocking HTTPS requests');
-      console.error('- Invalid QStash token\n');
       reject(error);
     });
 
-    req.write(data);
+    // No body needed - destination is in URL path
     req.end();
   });
 }
@@ -271,7 +219,8 @@ async function main() {
     }
 
     // Step 3: Create schedule
-    await createSchedule();
+    const endpoint = `${CONFIG.appUrl}/api/cron/balance-check?token=${CONFIG.cronSecret}`;
+    const result = await createSchedule(endpoint);
 
     console.log('╔══════════════════════════════════════════════════════════════════╗');
     console.log('║                                                                  ║');
@@ -280,6 +229,11 @@ async function main() {
     console.log('║  Balance check cron will run every hour automatically! 🎉       ║');
     console.log('║                                                                  ║');
     console.log('╚══════════════════════════════════════════════════════════════════╝\n');
+
+    console.log('📝 Schedule Details:');
+    console.log(`   Schedule ID: ${result.scheduleId}`);
+    console.log(`   URL: https://console.upstash.com/qstash`);
+    console.log(`   Test: Click "Send Now" to trigger immediately\n`);
 
     process.exit(0);
   } catch (error) {
