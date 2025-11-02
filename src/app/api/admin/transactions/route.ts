@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '@/lib/mongodb';
 import mongoose from 'mongoose';
+import { User } from '@/models/User';
 
 // Verify admin token
 async function verifyAdminToken(request: NextRequest) {
@@ -65,17 +66,36 @@ export async function GET(request: NextRequest) {
     // Connect to database
     await connectDB();
 
-    // Fetch transactions with user details
+    // Fetch transactions without populate to avoid schema error
     const transactions = await Transaction.find()
-      .populate('userId', 'name email')
       .sort({ createdAt: -1 })
       .limit(1000) // Limit to last 1000 transactions
       .lean();
+    
+    // Manually fetch user info for all transactions
+    const userIds = transactions.map((t: any) => t.userId).filter(Boolean);
+    const users = await User.find({ _id: { $in: userIds } })
+      .select('name email')
+      .lean();
+    
+    // Create user map for quick lookup
+    const userMap = new Map(
+      users.map((u: any) => [u._id.toString(), { name: u.name, email: u.email }])
+    );
+    
+    // Attach user info to transactions
+    const transactionsWithUsers = transactions.map((tx: any) => ({
+      ...tx,
+      userId: tx.userId ? {
+        _id: tx.userId,
+        ...userMap.get(tx.userId.toString())
+      } : null
+    }));
 
     return NextResponse.json({
       success: true,
-      transactions,
-      total: transactions.length,
+      transactions: transactionsWithUsers,
+      total: transactionsWithUsers.length,
     });
   } catch (error: any) {
     console.error('Error fetching transactions:', error);

@@ -115,7 +115,6 @@ export async function GET(request: NextRequest) {
     const recentTransactions = await Transaction.find()
       .sort({ createdAt: -1 })
       .limit(10)
-      .populate('userId', 'email name')
       .lean();
 
     // 10. New users today
@@ -141,10 +140,7 @@ export async function GET(request: NextRequest) {
       membershipBreakdown,
       recentTransactions: recentTransactions.map(tx => ({
         id: tx._id.toString(),
-        user: tx.userId ? {
-          email: (tx.userId as any).email,
-          name: (tx.userId as any).name
-        } : null,
+        user: null, // User info removed to avoid populate error
         amount: tx.amount,
         network: tx.network,
         status: tx.status,

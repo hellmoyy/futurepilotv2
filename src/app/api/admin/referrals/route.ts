@@ -44,26 +44,39 @@ export async function GET(request: NextRequest) {
 
     // Fetch all users who have a referredBy field (they were referred)
     const referredUsers = await User.find({ referredBy: { $exists: true, $ne: null } })
-      .populate('referredBy', 'name email referralCode')
       .select('name email membershipLevel totalEarnings createdAt referredBy')
       .lean();
+    
+    // Manually fetch referrer info to avoid populate error
+    const referrerIds = referredUsers.map((u: any) => u.referredBy).filter(Boolean);
+    const referrers = await User.find({ _id: { $in: referrerIds } })
+      .select('name email referralCode')
+      .lean();
+    
+    // Create referrer map for quick lookup
+    const referrerMapLookup = new Map(
+      referrers.map((r: any) => [r._id.toString(), r])
+    );
 
     // Build referrals array
-    const referrals = referredUsers.map((user: any) => ({
-      _id: new mongoose.Types.ObjectId().toString(),
-      referrer: user.referredBy || {},
-      referred: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        membershipLevel: user.membershipLevel,
+    const referrals = referredUsers.map((user: any) => {
+      const referrerInfo = referrerMapLookup.get(user.referredBy?.toString()) || {};
+      return {
+        _id: new mongoose.Types.ObjectId().toString(),
+        referrer: referrerInfo,
+        referred: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          membershipLevel: user.membershipLevel,
+          createdAt: user.createdAt,
+        },
+        totalEarnings: user.totalEarnings || 0,
+        commissionsPaid: user.totalEarnings ? user.totalEarnings * 0.1 : 0, // 10% commission example
+        status: user.totalEarnings > 0 ? 'active' : 'inactive',
         createdAt: user.createdAt,
-      },
-      totalEarnings: user.totalEarnings || 0,
-      commissionsPaid: user.totalEarnings ? user.totalEarnings * 0.1 : 0, // 10% commission example
-      status: user.totalEarnings > 0 ? 'active' : 'inactive',
-      createdAt: user.createdAt,
-    }));
+      };
+    });
 
     // Calculate top referrers
     const referrerMap = new Map();
