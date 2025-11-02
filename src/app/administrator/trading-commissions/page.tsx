@@ -59,6 +59,7 @@ export default function TradingCommissionsPage() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, startDate, endDate]);
 
   const fetchData = async () => {

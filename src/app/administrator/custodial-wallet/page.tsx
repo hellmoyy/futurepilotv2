@@ -42,6 +42,7 @@ export default function CustodialWalletPage() {
       return;
     }
     fetchTokenInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenType, selectedNetwork, customTokenAddress]);
 
   const getExplorerUrl = (network: string) => {
@@ -413,7 +414,7 @@ export default function CustodialWalletPage() {
           </div>
         ) : (
           <div className="bg-gray-800/30 rounded-lg p-8 border border-gray-700 text-center">
-            <p className="text-gray-400">Click "Scan All Users" to fetch real-time USDT balances from blockchain</p>
+            <p className="text-gray-400">Click &ldquo;Scan All Users&rdquo; to fetch real-time USDT balances from blockchain</p>
             <p className="text-gray-500 text-sm mt-2">
               This will scan all user wallets on {networkMode === 'mainnet' ? 'Ethereum & BSC Mainnet' : 'Sepolia & BSC Testnet'}
             </p>

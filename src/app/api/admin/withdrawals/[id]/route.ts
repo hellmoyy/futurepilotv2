@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '@/lib/mongodb';
+import { notificationManager } from '@/lib/notifications/NotificationManager';
 import mongoose from 'mongoose';
 
 // Verify admin token
@@ -115,6 +116,29 @@ export async function PUT(
     }
 
     await withdrawal.save();
+
+    // Send notifications
+    try {
+      if (action === 'approve') {
+        await notificationManager.notifyWithdrawalApproved(
+          withdrawal.userId.toString(),
+          withdrawal.amount,
+          withdrawal.network,
+          withdrawal.walletAddress,
+          txHash
+        );
+      } else {
+        await notificationManager.notifyWithdrawalRejected(
+          withdrawal.userId.toString(),
+          withdrawal.amount,
+          withdrawal.network,
+          notes || 'No reason provided'
+        );
+      }
+    } catch (notifError) {
+      console.error('Error sending withdrawal notification:', notifError);
+      // Don't fail the withdrawal process if notification fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -402,6 +402,98 @@ class NotificationManager {
       },
     });
   }
+
+  /**
+   * Withdrawal Notifications
+   */
+
+  /**
+   * Notify user when withdrawal request is submitted
+   */
+  async notifyWithdrawalRequested(
+    userId: string,
+    amount: number,
+    network: string,
+    walletAddress: string
+  ): Promise<void> {
+    const maskedAddress = walletAddress.substring(0, 6) + '...' + walletAddress.substring(38);
+    
+    await this.send({
+      userId,
+      type: 'withdrawal_requested',
+      title: 'Withdrawal Request Submitted',
+      message: `Your withdrawal request of $${amount.toFixed(2)} to ${network} (${maskedAddress}) has been submitted and is pending admin approval.`,
+      priority: 'info',
+      channels: ['all'], // Toast + Email + Database
+      actionUrl: '/withdrawals',
+      metadata: {
+        amount,
+        network,
+        walletAddress: maskedAddress,
+        status: 'pending',
+      },
+    });
+  }
+
+  /**
+   * Notify user when withdrawal is approved
+   */
+  async notifyWithdrawalApproved(
+    userId: string,
+    amount: number,
+    network: string,
+    walletAddress: string,
+    txHash: string
+  ): Promise<void> {
+    const maskedAddress = walletAddress.substring(0, 6) + '...' + walletAddress.substring(38);
+    const maskedTxHash = txHash.substring(0, 10) + '...' + txHash.substring(56);
+    
+    await this.send({
+      userId,
+      type: 'withdrawal_approved',
+      title: '✅ Withdrawal Approved',
+      message: `Your withdrawal of $${amount.toFixed(2)} has been approved and processed. Transaction: ${maskedTxHash}`,
+      priority: 'success',
+      channels: ['all'], // Toast + Email + Database
+      actionUrl: '/withdrawals',
+      metadata: {
+        amount,
+        network,
+        walletAddress: maskedAddress,
+        txHash,
+        status: 'completed',
+        explorerUrl: network === 'ERC20' 
+          ? `https://etherscan.io/tx/${txHash}` 
+          : `https://bscscan.com/tx/${txHash}`,
+      },
+    });
+  }
+
+  /**
+   * Notify user when withdrawal is rejected
+   */
+  async notifyWithdrawalRejected(
+    userId: string,
+    amount: number,
+    network: string,
+    reason: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'withdrawal_rejected',
+      title: '❌ Withdrawal Rejected',
+      message: `Your withdrawal request of $${amount.toFixed(2)} has been rejected. Reason: ${reason}`,
+      priority: 'error',
+      channels: ['all'], // Toast + Email + Database
+      actionUrl: '/withdrawals',
+      metadata: {
+        amount,
+        network,
+        reason,
+        status: 'rejected',
+      },
+    });
+  }
 }
 
 // Export singleton instance

@@ -101,6 +101,7 @@ export default function NotificationCenter() {
 
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   // Fetch notifications when opening dropdown
@@ -108,6 +109,7 @@ export default function NotificationCenter() {
     if (isOpen) {
       fetchNotifications();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Close dropdown when clicking outside

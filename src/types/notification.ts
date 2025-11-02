@@ -12,6 +12,7 @@ export type NotificationType =
   | 'tier_upgrade'             // User tier upgraded
   | 'referral_commission'      // Referral commission earned
   | 'deposit_confirmed'        // Gas fee deposit confirmed
+  | 'withdrawal_requested'     // Withdrawal request submitted
   | 'withdrawal_approved'      // Withdrawal request approved
   | 'withdrawal_rejected'      // Withdrawal request rejected
   | 'system_alert'             // System-wide alerts
@@ -69,6 +70,7 @@ export interface NotificationPayload {
   message: string;
   priority: NotificationPriority;
   channels: NotificationChannel[];
+  actionUrl?: string;        // Optional action URL (e.g., /withdrawals, /referral)
   metadata?: NotificationMetadata;
 }
 

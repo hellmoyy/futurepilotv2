@@ -596,7 +596,7 @@ export default function AdminSettingsPage() {
 
                 <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-4">
                   <p className="text-yellow-400 text-sm">
-                    ⚠️ <strong>Note:</strong> Trading commission is automatically deducted from user's gas fee balance after each profitable trade. No commission is charged on losing trades.
+                    ⚠️ <strong>Note:</strong> Trading commission is automatically deducted from user&apos;s gas fee balance after each profitable trade. No commission is charged on losing trades.
                   </p>
                 </div>
 

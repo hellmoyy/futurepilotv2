@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import { Withdrawal } from '@/models/Withdrawal';
 import { User } from '@/models/User';
+import { notificationManager } from '@/lib/notifications/NotificationManager';
 import mongoose from 'mongoose';
 
 // GET - Get user's withdrawal history
@@ -143,8 +144,30 @@ export async function POST(request: NextRequest) {
     user.totalEarnings = (user.totalEarnings || 0) - amount;
     await user.save();
 
-    // TODO: Send notification to admin
-    // TODO: Send email confirmation to user
+    // Send notifications
+    try {
+      // Notify user
+      await notificationManager.send({
+        userId: (user._id as any).toString(),
+        type: 'withdrawal_requested',
+        priority: 'info',
+        title: 'Withdrawal Request Submitted',
+        message: `Your withdrawal request of $${amount.toFixed(2)} to ${network} has been submitted and is pending admin approval.`,
+        channels: ['database', 'email'],
+        actionUrl: '/withdrawals',
+        metadata: {
+          withdrawalId: withdrawal._id.toString(),
+          amount,
+          network,
+          walletAddress: walletAddress.substring(0, 6) + '...' + walletAddress.substring(38), // Masked address
+        },
+      });
+
+      console.log(`[Withdrawal] New request from ${user.email}: $${amount} (${network})`);
+    } catch (notifError) {
+      console.error('Error sending withdrawal notification:', notifError);
+      // Don't fail the withdrawal if notification fails
+    }
 
     return NextResponse.json(
       {

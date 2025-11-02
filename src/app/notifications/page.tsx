@@ -127,6 +127,7 @@ export default function NotificationsPage() {
     if (status === 'authenticated') {
       fetchNotifications(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, filters]);
 
   // Priority icon
@@ -254,7 +255,7 @@ export default function NotificationsPage() {
           <div className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-xl p-12 text-center">
             <div className="text-6xl mb-4">🔔</div>
             <h3 className="text-xl font-semibold text-white mb-2">No notifications found</h3>
-            <p className="text-gray-400">You're all caught up!</p>
+            <p className="text-gray-400">You&apos;re all caught up!</p>
           </div>
         ) : (
           <div className="space-y-4">

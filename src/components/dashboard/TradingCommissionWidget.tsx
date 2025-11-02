@@ -39,6 +39,7 @@ export function TradingCommissionWidget() {
     if (session?.user?.id) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const fetchData = async () => {
