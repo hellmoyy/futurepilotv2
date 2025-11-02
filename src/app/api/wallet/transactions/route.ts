@@ -26,10 +26,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get transactions for this user
+    // Get pagination params from query
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    
+    // Validate params
+    const validPage = Math.max(1, page);
+    const validLimit = Math.min(Math.max(1, limit), 100); // Max 100 per page
+    const skip = (validPage - 1) * validLimit;
+
+    // Get total count
+    const totalCount = await Transaction.countDocuments({ userId: user._id });
+
+    // Get paginated transactions
     const transactions = await Transaction.find({ userId: user._id })
       .sort({ createdAt: -1 })
-      .limit(50);
+      .skip(skip)
+      .limit(validLimit);
 
     const formattedTransactions = transactions.map(tx => ({
       id: tx._id,
@@ -40,7 +54,17 @@ export async function GET(request: NextRequest) {
       createdAt: tx.createdAt.toISOString()
     }));
 
-    return NextResponse.json(formattedTransactions);
+    return NextResponse.json({
+      transactions: formattedTransactions,
+      pagination: {
+        total: totalCount,
+        page: validPage,
+        limit: validLimit,
+        totalPages: Math.ceil(totalCount / validLimit),
+        hasNext: validPage < Math.ceil(totalCount / validLimit),
+        hasPrev: validPage > 1
+      }
+    });
 
   } catch (error) {
     console.error('❌ Error fetching transactions:', error);

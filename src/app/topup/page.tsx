@@ -23,11 +23,28 @@ interface Transaction {
   createdAt: string;
 }
 
+interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export default function TopUpPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string>('');
@@ -56,7 +73,7 @@ export default function TopUpPage() {
       fetchWalletData();
       fetchTransactions();
     }
-  }, [status]);
+  }, [status, pagination.page, pagination.limit]);
 
   // Auto-refresh every 10 seconds to detect new deposits (Always ON)
   useEffect(() => {
@@ -99,7 +116,13 @@ export default function TopUpPage() {
 
         if (txResponse.ok) {
           const newTxData = await txResponse.json();
-          setTransactions(newTxData);
+          // Only update if on first page to avoid confusion
+          if (pagination.page === 1) {
+            setTransactions(newTxData.transactions || newTxData);
+            if (newTxData.pagination) {
+              setPagination(newTxData.pagination);
+            }
+          }
         }
       } catch (error) {
         console.error('Auto-refresh error:', error);
@@ -139,10 +162,18 @@ export default function TopUpPage() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('/api/wallet/transactions');
+      const response = await fetch(`/api/wallet/transactions?page=${pagination.page}&limit=${pagination.limit}`);
       if (response.ok) {
         const data = await response.json();
-        setTransactions(data);
+        // Handle both old format (array) and new format (object with pagination)
+        if (Array.isArray(data)) {
+          setTransactions(data);
+        } else {
+          setTransactions(data.transactions || []);
+          if (data.pagination) {
+            setPagination(data.pagination);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -699,6 +730,87 @@ export default function TopUpPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {transactions.length > 0 && pagination.total > 0 && (
+                <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/10 pt-6 light:border-gray-200">
+                  {/* Pagination Info */}
+                  <div className="text-sm text-gray-400 light:text-gray-600">
+                    Showing {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} transactions
+                  </div>
+
+                  {/* Pagination Buttons */}
+                  <div className="flex items-center space-x-2">
+                    {/* Items per page selector */}
+                    <select
+                      value={pagination.limit}
+                      onChange={(e) => setPagination({ ...pagination, limit: parseInt(e.target.value), page: 1 })}
+                      className="px-3 py-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 light:bg-white light:border-gray-300 light:text-gray-900"
+                    >
+                      <option value="10">10 / page</option>
+                      <option value="20">20 / page</option>
+                      <option value="50">50 / page</option>
+                      <option value="100">100 / page</option>
+                    </select>
+
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                      disabled={!pagination.hasPrev}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        pagination.hasPrev
+                          ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 light:bg-white light:hover:bg-gray-50 light:text-gray-900 light:border-gray-300'
+                          : 'bg-white/5 text-gray-500 border border-white/5 cursor-not-allowed light:bg-gray-100 light:border-gray-200'
+                      }`}
+                    >
+                      Previous
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (pagination.totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (pagination.page <= 3) {
+                          pageNum = i + 1;
+                        } else if (pagination.page >= pagination.totalPages - 2) {
+                          pageNum = pagination.totalPages - 4 + i;
+                        } else {
+                          pageNum = pagination.page - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setPagination({ ...pagination, page: pageNum })}
+                            className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                              pagination.page === pageNum
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-white/10 hover:bg-white/20 text-white light:bg-white light:hover:bg-gray-50 light:text-gray-900 light:border light:border-gray-300'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                      disabled={!pagination.hasNext}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        pagination.hasNext
+                          ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 light:bg-white light:hover:bg-gray-50 light:text-gray-900 light:border-gray-300'
+                          : 'bg-white/5 text-gray-500 border border-white/5 cursor-not-allowed light:bg-gray-100 light:border-gray-200'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
