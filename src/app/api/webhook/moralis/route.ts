@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
-import { User } from '@/models/User';
-import { Transaction } from '@/models/Transaction';
-import { getUserBalance } from '@/lib/network-balance';
+import { processMoralisWebhookPayload } from '@/lib/webhookProcessors/moralis';
+import { WebhookRetryManager } from '@/lib/webhookRetry';
 import { Web3 } from 'web3';
 
 /**
@@ -14,6 +13,7 @@ import { Web3 } from 'web3';
  * - User receives USDT on their BEP-20 address
  * 
  * ✅ Security: Webhook signature verification enabled (Keccak-256)
+ * ✅ Reliability: Automatic retry with exponential backoff
  */
 
 // Initialize Web3 for signature verification
@@ -146,6 +146,9 @@ const CHAIN_NETWORKS = {
 } as const;
 
 export async function POST(request: NextRequest) {
+  let rawBody = '';
+  let payload: any = null;
+  
   try {
     console.log('🔔 Moralis webhook received');
 
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-signature');
     
     // Get raw body for signature verification
-    const rawBody = await request.text();
+    rawBody = await request.text();
     
     // Verify signature (required for security)
     const isValid = await verifyMoralisSignature(rawBody, signature);
@@ -169,215 +172,64 @@ export async function POST(request: NextRequest) {
     console.log('✅ Webhook signature verified');
     
     // Parse the body after verification
-    const payload: MoralisWebhookPayload = JSON.parse(rawBody);
+    payload = JSON.parse(rawBody);
     
-    console.log('📦 Webhook payload:', {
-      confirmed: payload.confirmed,
-      chainId: payload.chainId,
-      streamId: payload.streamId,
-      transfersCount: payload.erc20Transfers?.length || 0,
-    });
-
-    // Only process confirmed transactions
-    if (!payload.confirmed) {
-      console.log('⏳ Transaction not confirmed yet, skipping...');
+    // ✅ RETRY-ENABLED PROCESSING
+    try {
+      await processMoralisWebhookPayload(payload);
+      
       return NextResponse.json({ 
-        success: true, 
-        message: 'Transaction not confirmed yet' 
+        success: true,
+        message: 'Webhook processed successfully'
+      });
+    } catch (processingError) {
+      // Save for retry with exponential backoff
+      console.error('❌ Error processing webhook, saving for retry:', processingError);
+      
+      const headers: Record<string, string> = {};
+      request.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      
+      await WebhookRetryManager.saveForRetry({
+        webhookType: 'moralis',
+        payload,
+        headers,
+        error: processingError instanceof Error ? processingError : new Error(String(processingError)),
+        sourceIP: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined
+      });
+      
+      // Return 200 to Moralis (we'll retry internally)
+      return NextResponse.json({
+        success: true,
+        message: 'Webhook received, saved for retry'
       });
     }
-
-    // Check if we have ERC20 transfers
-    if (!payload.erc20Transfers || payload.erc20Transfers.length === 0) {
-      console.log('⚠️ No ERC20 transfers in webhook');
-      return NextResponse.json({ 
-        success: true, 
-        message: 'No ERC20 transfers found' 
-      });
-    }
-
-    await connectDB();
-
-    const results = {
-      processed: 0,
-      skipped: 0,
-      errors: 0,
-      details: [] as any[]
-    };
-
-    // Process each transfer
-    for (const transfer of payload.erc20Transfers) {
+  } catch (error) {
+    console.error('❌ Critical webhook error:', error);
+    
+    // If we have payload, try to save for retry
+    if (payload) {
       try {
-        console.log('💸 Processing transfer:', {
-          txHash: transfer.transactionHash,
-          from: transfer.from,
-          to: transfer.to,
-          value: transfer.valueWithDecimals,
-          contract: transfer.contract,
+        const headers: Record<string, string> = {};
+        request.headers.forEach((value, key) => {
+          headers[key] = value;
         });
-
-        // Verify it's a USDT transfer (check all USDT contracts: mainnet + testnet)
-        const contractAddress = transfer.contract.toLowerCase();
-        const isUSDT = contractAddress === USDT_CONTRACTS.ETHEREUM_MAINNET || 
-                       contractAddress === USDT_CONTRACTS.BSC_MAINNET ||
-                       contractAddress === USDT_CONTRACTS.ETHEREUM_TESTNET ||
-                       contractAddress === USDT_CONTRACTS.BSC_TESTNET;
-
-        if (!isUSDT) {
-          console.log('⚠️ Not a USDT transfer, skipping...', contractAddress);
-          results.skipped++;
-          continue;
-        }
-
-        // Find user by wallet address
-        const recipientAddress = transfer.to.toLowerCase();
-        const user = await User.findOne({
-          $or: [
-            { 'walletData.erc20Address': { $regex: new RegExp(`^${recipientAddress}$`, 'i') } },
-            { 'walletData.bep20Address': { $regex: new RegExp(`^${recipientAddress}$`, 'i') } }
-          ]
-        });
-
-        if (!user) {
-          console.log('⚠️ User not found for address:', recipientAddress);
-          results.skipped++;
-          continue;
-        }
-
-        console.log('✅ User found:', user.email);
-
-        // Check if transaction already exists
-        const existingTx = await Transaction.findOne({ 
-          txHash: transfer.transactionHash 
-        });
-
-        if (existingTx) {
-          console.log('⚠️ Transaction already processed:', transfer.transactionHash);
-          results.skipped++;
-          continue;
-        }
-
-        // Determine network
-        const network = CHAIN_NETWORKS[payload.chainId as keyof typeof CHAIN_NETWORKS] || 'ERC20';
         
-        // Get decimals from env based on chain and network mode
-        const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
-        let usdtDecimals = 6; // Default
-        
-        if (payload.chainId === '0x61' || payload.chainId === '0x38') {
-          // BSC (Testnet or Mainnet)
-          usdtDecimals = NETWORK_MODE === 'testnet'
-            ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
-            : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
-        } else if (payload.chainId === '0xaa36a7' || payload.chainId === '0x1') {
-          // Ethereum (Testnet or Mainnet)
-          usdtDecimals = NETWORK_MODE === 'testnet'
-            ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
-            : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
-        }
-
-        // Parse amount - Moralis already provides valueWithDecimals formatted
-        // But we verify with raw value if needed
-        let amount: number;
-        if (transfer.valueWithDecimals) {
-          amount = parseFloat(transfer.valueWithDecimals);
-        } else {
-          // Fallback: calculate from raw value
-          const rawValue = BigInt(transfer.value);
-          const divisor = BigInt(10 ** usdtDecimals);
-          amount = Number(rawValue) / Number(divisor);
-        }
-
-        console.log('💰 Processing deposit:', {
-          user: user.email,
-          amount,
-          decimals: usdtDecimals,
-          network,
-          chainId: payload.chainId,
-          txHash: transfer.transactionHash,
+        await WebhookRetryManager.saveForRetry({
+          webhookType: 'moralis',
+          payload,
+          headers,
+          error: error instanceof Error ? error : new Error(String(error))
         });
-
-        // Create transaction record
-        const newTransaction = new Transaction({
-          userId: user._id,
-          network,
-          txHash: transfer.transactionHash,
-          amount,
-          status: 'confirmed',
-          blockNumber: parseInt(payload.block.number),
-          walletAddress: recipientAddress,
-        });
-
-        await newTransaction.save();
-
-        // Update user balance for current network
-        const previousBalance = getUserBalance(user);
-        if (!user.walletData) {
-          user.walletData = {
-            erc20Address: recipientAddress,
-            bep20Address: recipientAddress,
-            encryptedPrivateKey: '',
-            balance: 0,
-            mainnetBalance: 0,
-            createdAt: new Date(),
-          };
-        }
-        
-        // Update correct balance based on network mode
-        const networkMode = process.env.NETWORK_MODE || 'testnet';
-        if (networkMode === 'mainnet') {
-          user.walletData.mainnetBalance = (user.walletData.mainnetBalance || 0) + amount;
-        } else {
-          user.walletData.balance = (user.walletData.balance || 0) + amount;
-        }
-        
-        await user.save();
-
-        const newBalance = getUserBalance(user);
-        console.log('✅ Deposit processed successfully:', {
-          user: user.email,
-          network: networkMode,
-          previousBalance,
-          newBalance,
-          depositAmount: amount,
-        });
-
-        results.processed++;
-        results.details.push({
-          txHash: transfer.transactionHash,
-          user: user.email,
-          amount,
-          network,
-          status: 'success'
-        });
-
-      } catch (error) {
-        console.error('❌ Error processing transfer:', error);
-        results.errors++;
-        results.details.push({
-          txHash: transfer.transactionHash,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          status: 'error'
-        });
+      } catch (retryError) {
+        console.error('❌ Failed to save webhook for retry:', retryError);
       }
     }
-
-    console.log('📊 Webhook processing complete:', results);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Webhook processed',
-      results,
-    });
-
-  } catch (error) {
-    console.error('❌ Moralis webhook error:', error);
+    
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Webhook processing failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -3,6 +3,7 @@ import { openai } from '../openai';
 import { SafetyManager } from './SafetyManager';
 import { TradeManager } from './TradeManager';
 import { PositionMonitor } from './PositionMonitor';
+import { beforeTrade, afterTrade } from './hooks';
 
 export interface TradingConfig {
   symbol: string;
@@ -779,6 +780,21 @@ export class TradingEngine {
 
           console.log(`✅ Trade record closed: ${this.currentTradeId}`);
           
+          // 💰 TRADING COMMISSION: Deduct commission if profitable
+          if (position.pnl > 0) {
+            console.log(`💰 Deducting trading commission from profit: $${position.pnl.toFixed(2)}`);
+            const commissionResult = await afterTrade(this.userId, position.pnl, this.currentTradeId);
+            
+            if (commissionResult.success) {
+              console.log(`✅ Commission deducted: $${commissionResult.commission?.toFixed(2)}`);
+              console.log(`💵 Remaining gas fee balance: $${commissionResult.remainingBalance?.toFixed(2)}`);
+            } else {
+              console.error(`❌ Failed to deduct commission: ${commissionResult.error}`);
+            }
+          } else {
+            console.log(`📊 No commission (position closed at loss: $${position.pnl.toFixed(2)})`);
+          }
+          
           // Clear current trade ID
           this.currentTradeId = null;
         } catch (tradeError) {
@@ -993,6 +1009,24 @@ export class TradingEngine {
             if (f.reason) safetyWarnings.push(f.reason);
           });
       }
+
+      // 💰 TRADING COMMISSION: Check if user can trade (gas fee balance >= $10)
+      console.log('💰 Checking trading commission eligibility...');
+      const tradeEligibility = await beforeTrade(this.userId);
+      
+      if (!tradeEligibility.allowed) {
+        console.log(`🚫 Trading blocked: ${tradeEligibility.reason}`);
+        console.log(`📊 Gas Fee Balance: $${tradeEligibility.gasFeeBalance.toFixed(2)}`);
+        
+        return {
+          success: false,
+          message: `Trading blocked: ${tradeEligibility.reason}. Gas fee balance: $${tradeEligibility.gasFeeBalance.toFixed(2)}`,
+          position: null,
+        };
+      }
+      
+      console.log(`✅ Trading allowed! Gas Fee: $${tradeEligibility.gasFeeBalance.toFixed(2)}, Max Profit: $${tradeEligibility.maxProfit.toFixed(2)}`);
+      safetyWarnings.push(`Max profit before auto-close: $${tradeEligibility.maxProfit.toFixed(2)}`);
 
       // Execute trade
       if (signal.action === 'BUY' || signal.action === 'SELL') {

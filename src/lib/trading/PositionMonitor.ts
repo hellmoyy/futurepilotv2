@@ -18,6 +18,7 @@ import { TradeLog } from '@/models/TradeLog';
 import { Trade } from '@/models/Trade';
 import { SmartInterventionValidator, ValidationResult } from './SmartInterventionValidator';
 import { NewsDrivenIntervention, NewsInterventionResult } from './NewsDrivenIntervention';
+import { onProfitUpdate } from './hooks';
 
 export interface MonitorConfig {
   checkInterval: number; // Check every X seconds (default: 10s)
@@ -220,7 +221,34 @@ export class PositionMonitor {
 
       console.log(`📊 Position Status: ${trade.symbol} ${trade.side.toUpperCase()} | Entry: $${trade.entryPrice} | Current: $${currentPrice} | P&L: $${pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)`);
 
-      // 🚨 PRIORITY 1: Check NEWS for critical events (hacks, regulations)
+      // � TRADING COMMISSION: Check if position should auto-close (profit approaching gas fee balance limit)
+      if (pnl > 0) {
+        const autoCloseCheck = await onProfitUpdate(this.userId, pnl, trade._id?.toString());
+        
+        if (autoCloseCheck.shouldClose) {
+          console.log(`🚨 AUTO-CLOSE TRIGGERED: ${autoCloseCheck.reason}`);
+          console.log(`💰 Current Profit: $${autoCloseCheck.currentProfit.toFixed(2)}`);
+          console.log(`📊 Max Profit: $${autoCloseCheck.maxProfit.toFixed(2)}`);
+          console.log(`🎯 Threshold: $${autoCloseCheck.threshold.toFixed(2)}`);
+          
+          this.positionStatus.alerts.push({
+            type: 'CRITICAL',
+            reason: `AUTO-CLOSE: ${autoCloseCheck.reason}`,
+            action: 'CLOSE_POSITION',
+            details: {
+              currentProfit: autoCloseCheck.currentProfit,
+              maxProfit: autoCloseCheck.maxProfit,
+              threshold: autoCloseCheck.threshold,
+            },
+          });
+          
+          // Immediately process alert to close position
+          await this.processAlerts(trade);
+          return; // Exit monitoring after auto-close
+        }
+      }
+
+      // �🚨 PRIORITY 1: Check NEWS for critical events (hacks, regulations)
       await this.checkNewsIntervention(trade);
 
       // Run all monitoring checks
