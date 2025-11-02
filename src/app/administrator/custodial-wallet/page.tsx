@@ -12,7 +12,7 @@ export default function CustodialWalletPage() {
   const [networkMode, setNetworkMode] = useState<'testnet' | 'mainnet'>('testnet');
   const [tokenType, setTokenType] = useState<'USDT' | 'NATIVE' | 'CUSTOM'>('USDT');
   const [customTokenAddress, setCustomTokenAddress] = useState('');
-  const [tokenDecimals, setTokenDecimals] = useState(6); // USDT default = 6
+  const [tokenDecimals, setTokenDecimals] = useState(18); // Default 18 for testnet USDT
   const [tokenSymbol, setTokenSymbol] = useState('USDT');
   const [tokenName, setTokenName] = useState('Tether USD');
   const [tokenInfoLoading, setTokenInfoLoading] = useState(false);
@@ -139,9 +139,18 @@ export default function CustodialWalletPage() {
         console.log('✅ Token info loaded:', data);
       } else {
         console.error('Failed to fetch token info:', data.error);
-        // Set defaults on error
+        // Set defaults on error based on network
         if (tokenType === 'USDT') {
-          setTokenDecimals(6);
+          // Use correct decimals based on network
+          let defaultDecimals = 6;
+          if (selectedNetwork === 'BSC_TESTNET' || selectedNetwork === 'ETHEREUM_TESTNET') {
+            defaultDecimals = 18; // Testnet USDT uses 18 decimals
+          } else if (selectedNetwork === 'BSC_MAINNET') {
+            defaultDecimals = 18; // BSC mainnet USDT uses 18 decimals
+          } else if (selectedNetwork === 'ETHEREUM_MAINNET') {
+            defaultDecimals = 6; // Ethereum mainnet USDT uses 6 decimals
+          }
+          setTokenDecimals(defaultDecimals);
           setTokenSymbol('USDT');
           setTokenName('Tether USD');
         } else if (tokenType === 'NATIVE') {
