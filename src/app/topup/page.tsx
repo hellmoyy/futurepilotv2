@@ -31,6 +31,9 @@ export default function TopUpPage() {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [checkingDeposit, setCheckingDeposit] = useState(false);
+  const [lastCheckTime, setLastCheckTime] = useState<number>(0);
+  const [checkCooldown, setCheckCooldown] = useState<number>(0);
   
   // Detect network type from NETWORK_MODE env variable
   const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
@@ -121,6 +124,65 @@ export default function TopUpPage() {
     }
   };
 
+  const checkDeposit = async () => {
+    // Check cooldown (5 seconds = 5000ms)
+    const now = Date.now();
+    const timeSinceLastCheck = now - lastCheckTime;
+    
+    if (timeSinceLastCheck < 5000) {
+      const remainingTime = Math.ceil((5000 - timeSinceLastCheck) / 1000);
+      alert(`Please wait ${remainingTime} seconds before checking again`);
+      return;
+    }
+
+    setCheckingDeposit(true);
+    setLastCheckTime(now);
+    setCheckCooldown(5);
+
+    // Start countdown timer
+    const countdownInterval = setInterval(() => {
+      setCheckCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    try {
+      // Refresh wallet data and transactions
+      const [walletResponse, txResponse] = await Promise.all([
+        fetch('/api/wallet/get'),
+        fetch('/api/wallet/transactions')
+      ]);
+
+      if (walletResponse.ok) {
+        const walletDataNew = await walletResponse.json();
+        const balanceChanged = walletDataNew.balance !== walletData?.balance;
+        
+        setWalletData(walletDataNew);
+        
+        if (txResponse.ok) {
+          const txData = await txResponse.json();
+          setTransactions(txData);
+        }
+
+        // Show success message
+        if (balanceChanged) {
+          alert(`✅ Balance updated! New balance: $${walletDataNew.balance.toFixed(2)}`);
+        } else {
+          alert('✅ Checked! No new deposits found.');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking deposit:', error);
+      alert('❌ Failed to check deposit. Please try again.');
+    } finally {
+      setCheckingDeposit(false);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
@@ -145,10 +207,38 @@ export default function TopUpPage() {
         
         {/* Balance Display */}
         <div className="bg-white/[0.03] backdrop-blur-3xl rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-4 light:bg-blue-50 light:border-blue-200">
-          <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
-          <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">
-            ${walletData?.balance.toFixed(2) || '0.00'}
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
+              <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">
+                ${walletData?.balance.toFixed(2) || '0.00'}
+              </p>
+            </div>
+            <button
+              onClick={checkDeposit}
+              disabled={checkingDeposit || checkCooldown > 0}
+              className="px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
+            >
+              {checkingDeposit ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Checking...</span>
+                </>
+              ) : checkCooldown > 0 ? (
+                <span>Wait {checkCooldown}s</span>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Check Deposit</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
