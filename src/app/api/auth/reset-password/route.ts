@@ -35,6 +35,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if user is banned
+    if (user.isBanned) {
+      return NextResponse.json(
+        { error: 'Your account has been banned. Please contact administrator for more information.' },
+        { status: 403 }
+      );
+    }
+
     // Update password and clear reset token
     user.password = password;
     user.passwordResetToken = undefined;

@@ -5,6 +5,10 @@ import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { getUserBalance, getNetworkMode } from '@/lib/network-balance';
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

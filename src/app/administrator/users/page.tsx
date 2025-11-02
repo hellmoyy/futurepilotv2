@@ -12,6 +12,7 @@ interface User {
   balance: number;
   referralCode: string;
   emailVerified: boolean;
+  isBanned: boolean;
   createdAt: string;
 }
 
@@ -21,6 +22,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'banned'
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -29,6 +31,7 @@ export default function AdminUsersPage() {
     name: '',
     email: '',
     membershipLevel: 'bronze',
+    isBanned: false,
   });
 
   const checkAuth = useCallback(async () => {
@@ -53,11 +56,29 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
+      // Add cache busting to force fresh data
+      const response = await fetch('/api/admin/users?t=' + Date.now(), {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       const data = await response.json();
+      
+      console.log('Fetched users:', data.users?.length, 'users'); // Debug log
+      
+      // Log first user to check isBanned field
+      if (data.users && data.users.length > 0) {
+        console.log('Sample user data:', {
+          email: data.users[0].email,
+          isBanned: data.users[0].isBanned,
+          bannedAt: data.users[0].bannedAt
+        });
+      }
       
       if (data.success) {
         setUsers(data.users);
+        console.log('Users state updated'); // Debug log
       }
       setLoading(false);
     } catch (error) {
@@ -70,7 +91,10 @@ export default function AdminUsersPage() {
     const matchesSearch = (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = filterLevel === 'all' || (user.membershipLevel || 'bronze') === filterLevel;
-    return matchesSearch && matchesLevel;
+    const matchesStatus = filterStatus === 'all' || 
+                         (filterStatus === 'active' && !user.isBanned) ||
+                         (filterStatus === 'banned' && user.isBanned);
+    return matchesSearch && matchesLevel && matchesStatus;
   });
 
   const getMembershipColor = (level: string) => {
@@ -94,6 +118,7 @@ export default function AdminUsersPage() {
       name: user.name || '',
       email: user.email || '',
       membershipLevel: user.membershipLevel || 'bronze',
+      isBanned: user.isBanned || false,
     });
     setShowEditModal(true);
   };
@@ -107,21 +132,27 @@ export default function AdminUsersPage() {
     if (!selectedUser) return;
 
     try {
+      console.log('Updating user with data:', editForm); // Debug log
+      
       const response = await fetch(`/api/admin/users/${selectedUser._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      console.log('Update response:', data); // Debug log
+
+      if (response.ok && data.success) {
+        alert('✅ User updated successfully!');
         setShowEditModal(false);
         fetchUsers(); // Refresh list
       } else {
-        alert('Failed to update user');
+        alert('❌ Failed to update user: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Error updating user');
+      alert('❌ Error updating user');
     }
   };
 
@@ -169,7 +200,7 @@ export default function AdminUsersPage() {
 
       {/* Filters */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Search</label>
@@ -197,6 +228,20 @@ export default function AdminUsersPage() {
               <option value="platinum">Platinum</option>
             </select>
           </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Account Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">✅ Active</option>
+              <option value="banned">🚫 Banned</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -207,12 +252,12 @@ export default function AdminUsersPage() {
           <p className="text-2xl font-bold text-white">{users.length}</p>
         </div>
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Verified</p>
-          <p className="text-2xl font-bold text-green-500">{users.filter(u => u.emailVerified).length}</p>
+          <p className="text-gray-400 text-sm mb-1">Active</p>
+          <p className="text-2xl font-bold text-green-500">{users.filter(u => !u.isBanned).length}</p>
         </div>
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Unverified</p>
-          <p className="text-2xl font-bold text-yellow-500">{users.filter(u => !u.emailVerified).length}</p>
+          <p className="text-gray-400 text-sm mb-1">Banned</p>
+          <p className="text-2xl font-bold text-red-500">{users.filter(u => u.isBanned).length}</p>
         </div>
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
           <p className="text-gray-400 text-sm mb-1">Total Earnings</p>
@@ -231,7 +276,7 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Level</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Balance</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">GasFee Balance</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Earnings</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Joined</th>
@@ -247,14 +292,21 @@ export default function AdminUsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-700/50 transition">
+                  <tr key={user._id} className={`hover:bg-gray-700/50 transition ${user.isBanned ? 'bg-red-900/20' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold">
-                          {(user.name || 'U').charAt(0).toUpperCase()}
+                        <div className={`w-10 h-10 rounded-full ${user.isBanned ? 'bg-red-600' : 'bg-purple-600'} flex items-center justify-center text-white font-semibold`}>
+                          {user.isBanned ? '🚫' : (user.name || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-white">{user.name || 'Unknown'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-white">{user.name || 'Unknown'}</p>
+                            {user.isBanned && (
+                              <span className="px-2 py-0.5 text-[10px] font-bold text-red-400 bg-red-500/20 border border-red-500/50 rounded">
+                                BANNED
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-400">{user.referralCode || '-'}</p>
                         </div>
                       </div>
@@ -274,13 +326,13 @@ export default function AdminUsersPage() {
                       <p className="text-sm font-medium text-white">${(user.totalEarnings || 0).toFixed(2)}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.emailVerified ? (
-                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-500/10 text-green-500 border border-green-500/50">
-                          Verified
+                      {user.isBanned ? (
+                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-500/10 text-red-500 border border-red-500/50">
+                          🚫 Banned
                         </span>
                       ) : (
-                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/50">
-                          Unverified
+                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-500/10 text-green-500 border border-green-500/50">
+                          ✅ Active
                         </span>
                       )}
                     </td>
@@ -366,7 +418,18 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Balance</p>
+                  <p className="text-gray-400 text-sm mb-1">Account Status</p>
+                  <p className="text-white font-medium">
+                    {selectedUser.isBanned ? (
+                      <span className="text-red-500">🚫 Banned</span>
+                    ) : (
+                      <span className="text-green-500">✅ Active</span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-gray-400 text-sm mb-1">GasFee Balance</p>
                   <p className="text-green-400 font-medium text-lg">${(selectedUser.balance || 0).toFixed(2)}</p>
                 </div>
 
@@ -458,6 +521,38 @@ export default function AdminUsersPage() {
                   <option value="gold">Gold</option>
                   <option value="platinum">Platinum</option>
                 </select>
+              </div>
+
+              {/* Ban/Unban Toggle */}
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-sm font-medium text-red-400 mb-1">
+                      Account Status
+                    </label>
+                    <p className="text-xs text-gray-400">
+                      {editForm.isBanned 
+                        ? 'User is currently banned from accessing the platform' 
+                        : 'User has full access to the platform'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, isBanned: !editForm.isBanned })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      editForm.isBanned ? 'bg-red-600' : 'bg-green-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        editForm.isBanned ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="mt-2 text-xs text-red-400 font-medium">
+                  {editForm.isBanned ? '🚫 BANNED' : '✅ ACTIVE'}
+                </div>
               </div>
             </div>
 

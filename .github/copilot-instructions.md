@@ -248,4 +248,232 @@ Maximum Drawdown: <20% (well-managed)
 
 ---
 
+## 💰 CUSTODIAL WALLET & BALANCE SYSTEM
+
+### 📊 Network-Isolated Balance Architecture
+
+**Database Structure:**
+```typescript
+User.walletData {
+  balance: number           // Testnet balance (Sepolia + BSC Testnet)
+  mainnetBalance: number    // Mainnet balance (Ethereum + BSC)
+  erc20Address: string      // Ethereum address (same for testnet/mainnet)
+  bep20Address: string      // BSC address (same for testnet/mainnet)
+  encryptedPrivateKey: string
+}
+```
+
+**Network Mode Switching:**
+- Set via `NETWORK_MODE=testnet` or `NETWORK_MODE=mainnet` in `.env.local`
+- Helper library: `/src/lib/network-balance.ts`
+  - `getUserBalance(user)` - Returns correct balance based on network mode
+  - `createBalanceUpdate(amount)` - Creates MongoDB update for correct field
+  - `getBalanceField()` - Returns 'walletData.balance' or 'walletData.mainnetBalance'
+
+### 🔍 Balance Discrepancy Detection & Resolution
+
+**Issue:** Database balance doesn't match blockchain balance
+
+**Common Causes:**
+1. **Manual Credit Duplicates** - Admin manually credited amount that already exists on blockchain
+2. **Missing Transactions** - Deposit detection system missed some deposits
+3. **Incorrect Amounts** - Transaction recorded with wrong amount
+4. **Auto-Detection Gaps** - Webhook/cron missed deposits during downtime
+
+**Diagnostic Scripts:** (in `/scripts/` directory)
+
+```bash
+# 1. Check balance discrepancy
+node scripts/check-balance-discrepancy.js
+# Shows: Database vs Transaction vs Blockchain comparison
+
+# 2. Scan blockchain for all deposits
+node scripts/scan-missing-deposit.js
+# Lists all Transfer events to user addresses
+
+# 3. Compare blockchain vs database
+node scripts/compare-blockchain-db.js
+# Side-by-side comparison with missing/extra transactions
+
+# 4. Fix discrepancies
+node scripts/cleanup-and-fix-balance.js
+# Removes duplicates, adds missing, corrects amounts
+```
+
+**Resolution Steps:**
+
+1. **Identify Discrepancy:**
+   ```bash
+   node scripts/check-balance-discrepancy.js
+   ```
+   Output shows:
+   - Database Balance: $X
+   - Transaction Total: $Y
+   - Blockchain Total: $Z
+
+2. **Find Root Cause:**
+   ```bash
+   node scripts/scan-missing-deposit.js
+   ```
+   Lists all blockchain deposits with TxHash, Amount, Date
+
+3. **Compare & Analyze:**
+   ```bash
+   node scripts/compare-blockchain-db.js
+   ```
+   Shows:
+   - Missing in Database (deposits not recorded)
+   - Manual Credits (fake TxHash like `MANUAL_CREDIT_*`)
+   - Extra transactions (not on blockchain)
+
+4. **Fix Issues:**
+   ```bash
+   node scripts/cleanup-and-fix-balance.js
+   ```
+   Actions:
+   - Delete duplicate manual credits
+   - Add missing blockchain transactions
+   - Correct wrong amounts
+   - Update user balance to match blockchain
+
+**Prevention Tips:**
+- ✅ Always check blockchain before manual credit
+- ✅ Use deposit detection system (webhook + cron)
+- ✅ Verify balance after any manual operation
+- ✅ Run weekly balance audits
+- ✅ Monitor deposit detection system logs
+
+### 📝 MongoDB Collections
+
+**User Collection:** `futurepilotcol` (NOT `users`)
+```javascript
+const User = mongoose.model('futurepilotcol', UserSchema);
+```
+
+**Transaction Collection:** `transactions`
+```javascript
+const Transaction = mongoose.model('transactions', TransactionSchema);
+```
+
+**Important:** Always use correct collection names in scripts to avoid "0 users found" errors.
+
+### 🛠️ Admin Dashboard Features
+
+**User Accounts Summary (Custodial Wallet Page):**
+- Real-time blockchain balance scanning
+- Network-aware (testnet vs mainnet)
+- Shows:
+  - Total users with wallets
+  - ERC20 total balance (Ethereum/Sepolia)
+  - BEP20 total balance (BSC/BSC Testnet)
+  - Grand total USDT
+  - Top 10 users by balance
+- Endpoint: `POST /api/admin/scan-user-balances`
+- Manual trigger: "Scan All Users" button
+
+**Dashboard Stats:**
+- Endpoint: `GET /api/admin/dashboard-stats`
+- Returns: totalUsers, totalBalance, totalDeposits, totalEarnings, etc.
+- Network-aware balance aggregation
+- Force-dynamic, no caching
+
+**Transaction Management:**
+- Status: 'pending' | 'confirmed' | 'failed'
+- Type: 'deposit' | 'withdrawal' | 'commission' | 'referral_bonus' | 'trading_profit' | 'trading_loss'
+- Stats filtered by `status='confirmed'`
+
+### 🔐 USDT Contract Addresses
+
+**Testnet:**
+```bash
+TESTNET_USDT_ERC20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498  # Sepolia
+TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498  # BSC Testnet
+TESTNET_USDT_ERC20_DECIMAL=18
+TESTNET_USDT_BEP20_DECIMAL=18
+```
+
+**Mainnet:**
+```bash
+USDT_ERC20_CONTRACT=0xdAC17F958D2ee523a2206206994597C13D831ec7  # Ethereum
+USDT_BEP20_CONTRACT=0x55d398326f99059fF775485246999027B3197955  # BSC
+USDT_ERC20_DECIMAL=6   # Ethereum USDT uses 6 decimals
+USDT_BEP20_DECIMAL=18  # BSC USDT uses 18 decimals
+```
+
+**RPC Endpoints (No Rate Limits):**
+```bash
+# Testnet
+TESTNET_ETHEREUM_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+TESTNET_BSC_RPC_URL=https://bsc-testnet-rpc.publicnode.com
+
+# Mainnet
+ETHEREUM_RPC_URL=https://ethereum-rpc.publicnode.com
+BSC_RPC_URL=https://bsc-rpc.publicnode.com
+```
+
+### ⚠️ Common Pitfalls
+
+1. **❌ Don't use manual credits if deposit already on blockchain**
+   - Always check blockchain first: `node scripts/scan-missing-deposit.js`
+   - Manual credits should only be used for off-chain adjustments
+
+2. **❌ Don't modify balance directly in MongoDB**
+   - Use Transaction records to maintain audit trail
+   - Balance should always equal sum of confirmed transactions
+
+3. **❌ Don't forget network mode when querying balances**
+   - Always use `getUserBalance()` helper
+   - Wrong: `user.walletData.balance` (could be testnet or mainnet)
+   - Right: `getUserBalance(user)` (network-aware)
+
+4. **❌ Don't use wrong collection names**
+   - User collection: `futurepilotcol` (not `users`)
+   - Transaction collection: `transactions` (lowercase)
+
+5. **❌ Don't ignore blockchain as source of truth**
+   - Database can have errors, blockchain is immutable
+   - Always reconcile database with blockchain
+   - Run regular audits to detect discrepancies early
+
+### 🧰 Utility Scripts Reference
+
+All scripts in `/scripts/` directory:
+
+**Balance Verification:**
+- `check-balance-discrepancy.js` - Full diagnostic report
+- `scan-missing-deposit.js` - Scan blockchain for deposits
+- `compare-blockchain-db.js` - Side-by-side comparison
+- `list-all-users.js` - List all users with balances
+
+**Balance Fixes:**
+- `cleanup-and-fix-balance.js` - Auto-fix discrepancies
+- `reset-test-user-balance.js` - Reset specific user balance
+- `update-user-balance.js` - Manual balance update script
+
+**Transaction Management:**
+- `update-transaction-types.js` - Add type field to old transactions
+- `delete-test-transactions.js` - Clean up test data
+- `manual-credit.js` - Safe manual credit (with verification)
+
+**Debug Tools:**
+- `check-user-balances.js` - Detailed balance breakdown
+- `find-users-with-balance.js` - Find non-zero balances
+- `debug-balance-aggregate.js` - Test MongoDB aggregations
+
+**Usage Pattern:**
+```bash
+# Always load .env.local for scripts
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+
+# Use correct collection names
+const User = mongoose.model('futurepilotcol', userSchema);
+const Transaction = mongoose.model('transactions', transactionSchema);
+
+# Network-aware queries
+const networkMode = process.env.NETWORK_MODE || 'testnet';
+const balanceField = networkMode === 'mainnet' ? 'mainnetBalance' : 'balance';
+```
+
+---
+
 **Remember:** This is high-risk futures trading with leverage. Only use capital you can afford to lose. Past performance does not guarantee future results.

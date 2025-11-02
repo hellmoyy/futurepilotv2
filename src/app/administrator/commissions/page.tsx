@@ -192,8 +192,8 @@ export default function AdminCommissionsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Commission Management</h1>
-          <p className="text-gray-400">Approve and manage commission payments</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Withdrawal Management</h1>
+          <p className="text-gray-400">Manage and approve referral commission withdrawals</p>
         </div>
         <div className="flex space-x-3">
           <button

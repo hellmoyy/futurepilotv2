@@ -25,6 +25,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid email or password');
         }
 
+        // Check if user is banned
+        if (user.isBanned) {
+          throw new Error('Your account has been banned. Please contact administrator for more information.');
+        }
+
         // Check if user has a password (for OAuth users, password might be null)
         if (!user.password) {
           throw new Error('Please sign in with your OAuth provider');

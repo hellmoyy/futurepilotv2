@@ -28,6 +28,14 @@ export async function POST(request: Request) {
       });
     }
 
+    // Check if user is banned
+    if (user.isBanned) {
+      return NextResponse.json(
+        { error: 'Your account has been banned. Please contact administrator for more information.' },
+        { status: 403 }
+      );
+    }
+
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes

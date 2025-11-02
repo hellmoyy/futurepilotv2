@@ -40,6 +40,10 @@ export interface IUser extends Document {
   // Password reset fields
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  // Ban status
+  isBanned?: boolean;
+  bannedAt?: Date;
+  banReason?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -183,6 +187,13 @@ const UserSchema = new Schema<IUser>(
       type: Date,
       select: false,
     },
+    // Ban status
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },
+    bannedAt: Date,
+    banReason: String,
   },
   {
     timestamps: true,
@@ -218,4 +229,4 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 export const User: Model<IUser> =
-  mongoose.models.futurepilotcol || mongoose.model<IUser>('futurepilotcol', UserSchema);
+  mongoose.models.futurepilotcols || mongoose.model<IUser>('futurepilotcols', UserSchema, 'futurepilotcols');

@@ -35,7 +35,6 @@ export default function TopUpPage() {
   const [checkingDeposit, setCheckingDeposit] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState<number>(0);
   const [checkCooldown, setCheckCooldown] = useState<number>(0);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [lastBalance, setLastBalance] = useState<number>(0);
   const [showNewDepositNotification, setShowNewDepositNotification] = useState(false);
   
@@ -59,9 +58,9 @@ export default function TopUpPage() {
     }
   }, [status]);
 
-  // Auto-refresh every 10 seconds to detect new deposits
+  // Auto-refresh every 10 seconds to detect new deposits (Always ON)
   useEffect(() => {
-    if (!autoRefreshEnabled || status !== 'authenticated') {
+    if (status !== 'authenticated') {
       return;
     }
 
@@ -108,7 +107,7 @@ export default function TopUpPage() {
     }, 10000); // Refresh every 10 seconds
 
     return () => clearInterval(refreshInterval);
-  }, [status, walletData, autoRefreshEnabled]);
+  }, [status, walletData]);
 
   // Request notification permission on mount
   useEffect(() => {
@@ -306,26 +305,32 @@ export default function TopUpPage() {
         {/* Balance Display */}
         <div className="bg-white/[0.03] backdrop-blur-3xl rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-4 light:bg-blue-50 light:border-blue-200">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
-                {autoRefreshEnabled && (
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center overflow-hidden bg-white/5 border border-white/10">
+                <img 
+                  src="/images/coin/usdt.png" 
+                  alt="USDT" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
                   <span className="flex items-center gap-1 text-[10px] text-green-400 light:text-green-600">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
                     Live
                   </span>
-                )}
+                </div>
+                <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">
+                  ${walletData?.balance.toFixed(2) || '0.00'}
+                </p>
               </div>
-              <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">
-                ${walletData?.balance.toFixed(2) || '0.00'}
-              </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={checkDeposit}
-                disabled={checkingDeposit || checkCooldown > 0}
-                className="px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
-              >
+            <button
+              onClick={checkDeposit}
+              disabled={checkingDeposit || checkCooldown > 0}
+              className="px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
+            >
               {checkingDeposit ? (
                 <>
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
@@ -345,14 +350,6 @@ export default function TopUpPage() {
                 </>
               )}
             </button>
-              <button
-                onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                className="px-2 py-1 text-[10px] bg-white/5 hover:bg-white/10 text-gray-400 rounded border border-white/10 transition-all"
-                title={autoRefreshEnabled ? 'Disable auto-refresh' : 'Enable auto-refresh'}
-              >
-                {autoRefreshEnabled ? '🔄 On' : '⏸️ Off'}
-              </button>
-            </div>
           </div>
         </div>
       </div>

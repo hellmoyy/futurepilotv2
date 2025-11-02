@@ -38,7 +38,7 @@ export default function ReferralPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [activeTab, setActiveTab] = useState<'network' | 'history' | 'transaction' | 'withdraw'>('network');
+  const [activeTab, setActiveTab] = useState<'network' | 'history' | 'transaction' | 'withdraw' | 'commission'>('network');
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [withdrawalStats, setWithdrawalStats] = useState<any>(null);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
@@ -52,6 +52,9 @@ export default function ReferralPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionStats, setTransactionStats] = useState<any>(null);
   const [transactionLoading, setTransactionLoading] = useState(false);
+  
+  // Commission rates from admin settings
+  const [commissionRates, setCommissionRates] = useState<any>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -62,6 +65,7 @@ export default function ReferralPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchReferralStats();
+      fetchCommissionRates();
     }
   }, [status]);
 
@@ -83,6 +87,18 @@ export default function ReferralPage() {
       console.error('Error fetching referral stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCommissionRates = async () => {
+    try {
+      const response = await fetch('/api/settings/commission-rates');
+      const data = await response.json();
+      if (data.success) {
+        setCommissionRates(data.rates);
+      }
+    } catch (error) {
+      console.error('Error fetching commission rates:', error);
     }
   };
 
@@ -251,7 +267,70 @@ export default function ReferralPage() {
         </div>
       </div>
 
-      {/* Stats Grid - Moved to Top */}
+      {/* Available Commission & Membership Level Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Available Commission Card */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-green-500/20 blur-xl opacity-50 group-hover:opacity-75 transition-opacity light:from-green-200/40 light:via-emerald-200/40 light:to-green-200/40"></div>
+          <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-white/10 p-5 sm:p-6 lg:p-8 hover:border-white/20 transition-all light:bg-gradient-to-br light:from-white light:to-green-50 light:border-green-200 light:hover:border-green-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5 rounded-2xl sm:rounded-3xl light:from-green-100/50 light:to-emerald-100/50"></div>
+            
+            <div className="relative flex flex-col gap-4">
+              <div>
+                <div className="flex items-center space-x-3 mb-2">
+                  <span className="text-3xl sm:text-4xl">💵</span>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">Available Commission</h2>
+                    <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Ready to withdraw</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-left">
+                <div className="inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl w-full">
+                  <p className="text-xs sm:text-sm text-white/80">Balance</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">
+                    ${stats.totalEarnings.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Membership Level Card */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 blur-xl opacity-50 group-hover:opacity-75 transition-opacity light:from-blue-200/40 light:via-cyan-200/40 light:to-blue-200/40"></div>
+          <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-white/10 p-5 sm:p-6 lg:p-8 hover:border-white/20 transition-all light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200 light:hover:border-blue-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 rounded-2xl sm:rounded-3xl light:from-blue-100/50 light:to-cyan-100/50"></div>
+            
+            <div className="relative flex flex-col gap-4">
+              <div>
+                <div className="flex items-center space-x-3 mb-2">
+                  <span className="text-3xl sm:text-4xl">{currentLevel.icon}</span>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">{currentLevel.name} Member</h2>
+                    <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Your current membership level</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-left">
+                <div className={`inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r ${currentLevel.color} rounded-xl sm:rounded-2xl w-full`}>
+                  <p className="text-xs sm:text-sm text-white/80">Total Commission Rate</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">
+                    {commissionRates && stats 
+                      ? (commissionRates[stats.membershipLevel || 'bronze'].level1 + 
+                         commissionRates[stats.membershipLevel || 'bronze'].level2 + 
+                         commissionRates[stats.membershipLevel || 'bronze'].level3)
+                      : currentLevel.rate}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Earnings */}
         <div className="group relative bg-white/[0.03] backdrop-blur-3xl rounded-xl sm:rounded-2xl border border-white/10 p-4 sm:p-5 lg:p-6 hover:border-white/20 transition-all hover:scale-105 light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200 light:hover:border-blue-300">
@@ -270,11 +349,17 @@ export default function ReferralPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity light:from-blue-100/50"></div>
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">Level 1</span>
+              <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">
+                Level 1 {commissionRates && stats && `(${commissionRates[stats.membershipLevel || 'bronze'].level1}%)`}
+              </span>
               <span className="text-xl sm:text-2xl">👤</span>
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">{stats.totalReferrals.level1}</p>
-            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">Direct referrals</p>
+            <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900 flex items-center gap-2">
+              <span className="text-lg">👤</span> {stats.totalReferrals.level1}
+            </p>
+            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">
+              ${stats.referrals.filter(r => r.level === 1).reduce((sum, r) => sum + r.earnings, 0).toFixed(2)} earned
+            </p>
           </div>
         </div>
 
@@ -283,11 +368,17 @@ export default function ReferralPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity light:from-cyan-100/50"></div>
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">Level 2</span>
+              <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">
+                Level 2 {commissionRates && stats && `(${commissionRates[stats.membershipLevel || 'bronze'].level2}%)`}
+              </span>
               <span className="text-xl sm:text-2xl">👥</span>
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">{stats.totalReferrals.level2}</p>
-            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">2nd generation</p>
+            <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900 flex items-center gap-2">
+              <span className="text-lg">👥</span> {stats.totalReferrals.level2}
+            </p>
+            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">
+              ${stats.referrals.filter(r => r.level === 2).reduce((sum, r) => sum + r.earnings, 0).toFixed(2)} earned
+            </p>
           </div>
         </div>
 
@@ -296,37 +387,20 @@ export default function ReferralPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity light:from-purple-100/50"></div>
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">Level 3</span>
+              <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">
+                Level 3 {commissionRates && stats && `(${commissionRates[stats.membershipLevel || 'bronze'].level3}%)`}
+              </span>
               <span className="text-xl sm:text-2xl">👨‍👩‍👧‍👦</span>
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">{stats.totalReferrals.level3}</p>
-            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">3rd generation</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Membership Level Card */}
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 blur-xl opacity-50 group-hover:opacity-75 transition-opacity light:from-blue-200/40 light:via-cyan-200/40 light:to-blue-200/40"></div>
-        <div className="relative bg-white/[0.03] backdrop-blur-3xl rounded-2xl sm:rounded-3xl border border-white/10 p-5 sm:p-6 lg:p-8 hover:border-white/20 transition-all light:bg-gradient-to-br light:from-white light:to-blue-50 light:border-blue-200 light:hover:border-blue-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 rounded-2xl sm:rounded-3xl light:from-blue-100/50 light:to-cyan-100/50"></div>
-          
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="text-3xl sm:text-4xl">{currentLevel.icon}</span>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">{currentLevel.name} Member</h2>
-                  <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Your current membership level</p>
-                </div>
-              </div>
-            </div>
-            <div className="text-left sm:text-right">
-              <div className={`inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r ${currentLevel.color} rounded-xl sm:rounded-2xl`}>
-                <p className="text-xs sm:text-sm text-white/80">Commission Rate</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white">{currentLevel.rate}%</p>
-              </div>
-            </div>
+            <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900 flex items-center gap-2">
+              <span className="text-lg">👨‍👩‍👧‍👦</span> {stats.totalReferrals.level3}
+            </p>
+            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">
+              ${stats.referrals.filter(r => r.level === 3).reduce((sum, r) => sum + r.earnings, 0).toFixed(2)} earned
+            </p>
+            <p className="text-xs text-gray-500 mt-1 light:text-gray-600">
+              ${stats.referrals.filter(r => r.level === 3).reduce((sum, r) => sum + r.earnings, 0).toFixed(2)} earned
+            </p>
           </div>
         </div>
       </div>
@@ -515,11 +589,12 @@ export default function ReferralPage() {
                   { id: 'network', label: 'Network', icon: '👥' },
                   { id: 'history', label: 'History', icon: '📊' },
                   { id: 'transaction', label: 'Transaction', icon: '💳' },
-                  { id: 'withdraw', label: 'Withdraw', icon: '💰' }
+                  { id: 'withdraw', label: 'Withdraw', icon: '💰' },
+                  { id: 'commission', label: 'Commission', icon: '💎' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as 'network' | 'history' | 'transaction' | 'withdraw')}
+                    onClick={() => setActiveTab(tab.id as 'network' | 'history' | 'transaction' | 'withdraw' | 'commission')}
                     className={`relative px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 sm:space-x-2 whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
@@ -884,6 +959,123 @@ export default function ReferralPage() {
           </div>
         </div>
       </div>
+
+      {/* Commission Tab */}
+      {activeTab === 'commission' && commissionRates && stats && (
+        <div className="p-4 sm:p-5 lg:p-6 space-y-4 sm:space-y-6">
+          <div className="mb-6">
+            <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2 mb-2 light:text-gray-900">
+              <span>💰</span>
+              <span>Commission Structure - {currentLevel.name} Tier</span>
+            </h3>
+            <p className="text-sm text-gray-400 light:text-gray-600">Earn commissions from your referral network across 3 levels</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Level 1 */}
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-5 light:bg-gradient-to-br light:from-green-50 light:to-emerald-50 light:border-green-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center light:bg-green-200">
+                    <span className="text-xl">👤</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-300 light:text-gray-700">Level 1</p>
+                    <p className="text-xs text-gray-500 light:text-gray-600">Direct Referrals</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center py-3">
+                <p className="text-4xl font-bold text-green-400 light:text-green-600">
+                  {commissionRates[stats.membershipLevel || 'bronze'].level1}%
+                </p>
+                <p className="text-xs text-gray-400 mt-1 light:text-gray-600">Per transaction</p>
+              </div>
+              <div className="text-xs text-gray-400 bg-white/5 rounded-lg p-2 mt-3 light:text-gray-700 light:bg-green-100">
+                Users you personally refer
+              </div>
+            </div>
+
+            {/* Level 2 */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-5 light:bg-gradient-to-br light:from-blue-50 light:to-cyan-50 light:border-blue-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center light:bg-blue-200">
+                    <span className="text-xl">👥</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-300 light:text-gray-700">Level 2</p>
+                    <p className="text-xs text-gray-500 light:text-gray-600">Second Level</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center py-3">
+                <p className="text-4xl font-bold text-blue-400 light:text-blue-600">
+                  {commissionRates[stats.membershipLevel || 'bronze'].level2}%
+                </p>
+                <p className="text-xs text-gray-400 mt-1 light:text-gray-600">Per transaction</p>
+              </div>
+              <div className="text-xs text-gray-400 bg-white/5 rounded-lg p-2 mt-3 light:text-gray-700 light:bg-blue-100">
+                Referrals of your referrals
+              </div>
+            </div>
+
+            {/* Level 3 */}
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-5 light:bg-gradient-to-br light:from-purple-50 light:to-pink-50 light:border-purple-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center light:bg-purple-200">
+                    <span className="text-xl">👨‍👩‍👧‍👦</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-300 light:text-gray-700">Level 3</p>
+                    <p className="text-xs text-gray-500 light:text-gray-600">Third Level</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center py-3">
+                <p className="text-4xl font-bold text-purple-400 light:text-purple-600">
+                  {commissionRates[stats.membershipLevel || 'bronze'].level3}%
+                </p>
+                <p className="text-xs text-gray-400 mt-1 light:text-gray-600">Per transaction</p>
+              </div>
+              <div className="text-xs text-gray-400 bg-white/5 rounded-lg p-2 mt-3 light:text-gray-700 light:bg-purple-100">
+                Third level of your network
+              </div>
+            </div>
+          </div>
+
+          {/* Example Calculation */}
+          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 light:bg-gradient-to-r light:from-yellow-50 light:to-orange-50 light:border-yellow-300">
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">💡</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-yellow-400 mb-2 light:text-yellow-700">Example Commission Calculation:</p>
+                <div className="space-y-1 text-xs text-gray-300 light:text-gray-700">
+                  <p>• Level 1 user deposits $1,000 → You earn ${(1000 * commissionRates[stats.membershipLevel || 'bronze'].level1 / 100).toFixed(2)}</p>
+                  <p>• Level 2 user deposits $1,000 → You earn ${(1000 * commissionRates[stats.membershipLevel || 'bronze'].level2 / 100).toFixed(2)}</p>
+                  <p>• Level 3 user deposits $1,000 → You earn ${(1000 * commissionRates[stats.membershipLevel || 'bronze'].level3 / 100).toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Upgrade Notice */}
+          {stats.membershipLevel !== 'platinum' && (
+            <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-xl p-4 light:bg-gradient-to-r light:from-cyan-50 light:to-blue-50 light:border-cyan-300">
+              <div className="flex items-start space-x-3">
+                <span className="text-2xl">🚀</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-cyan-400 mb-1 light:text-cyan-700">Upgrade to Earn More!</p>
+                  <p className="text-xs text-gray-400 light:text-gray-700">
+                    Higher membership tiers get better commission rates on all levels. Upgrade now to maximize your earnings!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Withdrawal Modal */}
       {showWithdrawModal && stats && (

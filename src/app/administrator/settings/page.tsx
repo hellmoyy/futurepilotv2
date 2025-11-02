@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'commission' | 'security' | 'email'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'commission' | 'trading' | 'security' | 'email'>('general');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // General Settings
   const [platformName, setPlatformName] = useState('FuturePilot');
@@ -12,10 +13,17 @@ export default function AdminSettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [allowRegistration, setAllowRegistration] = useState(true);
 
-  // Commission Settings
-  const [referralCommission, setReferralCommission] = useState(10);
+  // Referral Commission Settings (Tier-based)
+  const [commissionRates, setCommissionRates] = useState({
+    bronze: { level1: 5, level2: 2, level3: 1 },
+    silver: { level1: 10, level2: 5, level3: 2 },
+    gold: { level1: 15, level2: 8, level3: 4 },
+    platinum: { level1: 20, level2: 10, level3: 5 },
+  });
+  const [minimumWithdrawal, setMinimumWithdrawal] = useState(10);
+
+  // Trading Commission Settings
   const [tradingCommission, setTradingCommission] = useState(5);
-  const [minimumWithdrawal, setMinimumWithdrawal] = useState(50);
 
   // Security Settings
   const [twoFactorRequired, setTwoFactorRequired] = useState(false);
@@ -27,14 +35,83 @@ export default function AdminSettingsPage() {
   const [smtpHost, setSmtpHost] = useState('smtp.example.com');
   const [emailNotifications, setEmailNotifications] = useState(true);
 
+  // Fetch settings on component mount
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/settings');
+      const data = await response.json();
+
+      if (data.success && data.settings) {
+        const s = data.settings;
+        
+        // General Settings
+        if (s.platformName) setPlatformName(s.platformName);
+        if (s.platformUrl) setPlatformUrl(s.platformUrl);
+        if (s.maintenanceMode !== undefined) setMaintenanceMode(s.maintenanceMode);
+        if (s.allowRegistration !== undefined) setAllowRegistration(s.allowRegistration);
+
+        // Commission Settings
+        if (s.referralCommission) setCommissionRates(s.referralCommission);
+        if (s.minimumWithdrawal !== undefined) setMinimumWithdrawal(s.minimumWithdrawal);
+        if (s.tradingCommission !== undefined) setTradingCommission(s.tradingCommission);
+
+        // Security Settings
+        if (s.twoFactorRequired !== undefined) setTwoFactorRequired(s.twoFactorRequired);
+        if (s.sessionTimeout) setSessionTimeout(s.sessionTimeout);
+        if (s.maxLoginAttempts) setMaxLoginAttempts(s.maxLoginAttempts);
+
+        // Email Settings
+        if (s.emailFrom) setEmailFrom(s.emailFrom);
+        if (s.smtpHost) setSmtpHost(s.smtpHost);
+        if (s.emailNotifications !== undefined) setEmailNotifications(s.emailNotifications);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Settings saved successfully!');
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          platformName,
+          platformUrl,
+          maintenanceMode,
+          allowRegistration,
+          referralCommission: commissionRates,
+          minimumWithdrawal,
+          tradingCommission,
+          twoFactorRequired,
+          sessionTimeout,
+          maxLoginAttempts,
+          emailFrom,
+          smtpHost,
+          emailNotifications,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Settings saved successfully!');
+      } else {
+        alert('❌ Failed to save settings: ' + (data.message || 'Unknown error'));
+      }
     } catch (error) {
-      alert('Failed to save settings');
+      console.error('Error saving settings:', error);
+      alert('❌ Failed to save settings. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -42,7 +119,8 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: 'general', name: 'General', icon: '⚙️' },
-    { id: 'commission', name: 'Commission', icon: '💰' },
+    { id: 'commission', name: 'Referral Commission', icon: '💰' },
+    { id: 'trading', name: 'Trading Commission', icon: '📈' },
     { id: 'security', name: 'Security', icon: '🔒' },
     { id: 'email', name: 'Email', icon: '📧' },
   ];
@@ -55,7 +133,18 @@ export default function AdminSettingsPage() {
         <p className="text-gray-400">Configure platform settings and preferences</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <svg className="w-12 h-12 animate-spin text-purple-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-gray-400">Loading settings...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar Tabs */}
         <div className="lg:col-span-1">
           <div className="bg-gray-800 rounded-xl p-4 space-y-2">
@@ -153,57 +242,343 @@ export default function AdminSettingsPage() {
             {activeTab === 'commission' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-4">Commission Settings</h3>
-                  <p className="text-gray-400 text-sm mb-6">Configure commission rates and limits</p>
+                  <h3 className="text-xl font-bold text-white mb-4">Referral Commission Settings</h3>
+                  <p className="text-gray-400 text-sm mb-6">Configure commission rates for each membership tier and referral level</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Referral Commission Rate (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={referralCommission}
-                    onChange={(e) => setReferralCommission(Number(e.target.value))}
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <p className="text-gray-400 text-xs mt-1">Percentage earned from referral deposits</p>
+                {/* Bronze Tier */}
+                <div className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border border-orange-500/30 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <span className="text-3xl mr-3">🥉</span>
+                    <div>
+                      <h4 className="text-lg font-bold text-orange-400">Bronze Tier</h4>
+                      <p className="text-gray-400 text-xs">Entry level membership</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 1 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.bronze.level1}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          bronze: { ...commissionRates.bronze, level1: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 2 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.bronze.level2}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          bronze: { ...commissionRates.bronze, level2: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 3 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.bronze.level3}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          bronze: { ...commissionRates.bronze, level3: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Trading Commission Rate (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={tradingCommission}
-                    onChange={(e) => setTradingCommission(Number(e.target.value))}
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <p className="text-gray-400 text-xs mt-1">Percentage earned from trading profits</p>
+                {/* Silver Tier */}
+                <div className="bg-gradient-to-r from-gray-700/20 to-gray-600/20 border border-gray-400/30 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <span className="text-3xl mr-3">🥈</span>
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-300">Silver Tier</h4>
+                      <p className="text-gray-400 text-xs">Advanced membership</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 1 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.silver.level1}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          silver: { ...commissionRates.silver, level1: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 2 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.silver.level2}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          silver: { ...commissionRates.silver, level2: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 3 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.silver.level3}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          silver: { ...commissionRates.silver, level3: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
+                {/* Gold Tier */}
+                <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-700/20 border border-yellow-500/30 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <span className="text-3xl mr-3">🥇</span>
+                    <div>
+                      <h4 className="text-lg font-bold text-yellow-400">Gold Tier</h4>
+                      <p className="text-gray-400 text-xs">Premium membership</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 1 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.gold.level1}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          gold: { ...commissionRates.gold, level1: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 2 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.gold.level2}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          gold: { ...commissionRates.gold, level2: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 3 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.gold.level3}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          gold: { ...commissionRates.gold, level3: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Platinum Tier */}
+                <div className="bg-gradient-to-r from-cyan-900/20 to-blue-800/20 border border-cyan-500/30 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <span className="text-3xl mr-3">💎</span>
+                    <div>
+                      <h4 className="text-lg font-bold text-cyan-400">Platinum Tier</h4>
+                      <p className="text-gray-400 text-xs">Elite membership</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 1 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.platinum.level1}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          platinum: { ...commissionRates.platinum, level1: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 2 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.platinum.level2}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          platinum: { ...commissionRates.platinum, level2: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Level 3 Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={commissionRates.platinum.level3}
+                        onChange={(e) => setCommissionRates({
+                          ...commissionRates,
+                          platinum: { ...commissionRates.platinum, level3: Number(e.target.value) }
+                        })}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Minimum Withdrawal */}
+                <div className="bg-gray-700/50 rounded-lg p-6">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Minimum Withdrawal Amount ($)
+                    Minimum Withdrawal Amount (USDT)
                   </label>
                   <input
                     type="number"
                     value={minimumWithdrawal}
                     onChange={(e) => setMinimumWithdrawal(Number(e.target.value))}
                     min="0"
+                    step="5"
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
-                  <p className="text-gray-400 text-xs mt-1">Minimum amount users can withdraw</p>
+                  <p className="text-gray-400 text-xs mt-1">Minimum amount users can withdraw from referral earnings</p>
                 </div>
 
                 <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
                   <p className="text-blue-400 text-sm">
-                    💡 <strong>Tip:</strong> Changes to commission rates will only apply to new transactions. Existing commissions remain unchanged.
+                    💡 <strong>Info:</strong> Level 1 = Direct referrals, Level 2 = Referrals of your referrals, Level 3 = Third level referrals
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'trading' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-4">Trading Commission Settings</h3>
+                  <p className="text-gray-400 text-sm mb-6">Configure commission rates for trading bot profits</p>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6">
+                  <div className="flex items-center mb-4">
+                    <span className="text-3xl mr-3">📈</span>
+                    <div>
+                      <h4 className="text-lg font-bold text-purple-400">Platform Trading Commission</h4>
+                      <p className="text-gray-400 text-xs">Commission earned from user trading bot profits</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Trading Commission Rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={tradingCommission}
+                      onChange={(e) => setTradingCommission(Number(e.target.value))}
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <p className="text-gray-400 text-xs mt-1">
+                      Percentage of trading bot profits that goes to the platform
+                    </p>
+                  </div>
+
+                  <div className="mt-6 bg-gray-700/50 rounded-lg p-4">
+                    <h5 className="font-semibold text-white mb-2">Example Calculation:</h5>
+                    <div className="space-y-1 text-sm text-gray-300">
+                      <p>• User makes $1,000 profit from trading bot</p>
+                      <p>• Platform commission ({tradingCommission}%): ${(1000 * tradingCommission / 100).toFixed(2)}</p>
+                      <p className="text-green-400 font-semibold">• User keeps: ${(1000 - (1000 * tradingCommission / 100)).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-4">
+                  <p className="text-yellow-400 text-sm">
+                    ⚠️ <strong>Note:</strong> Trading commission only applies to profitable trades. No commission is charged on losing trades.
+                  </p>
+                </div>
+
+                <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+                  <p className="text-blue-400 text-sm">
+                    💡 <strong>Tip:</strong> Recommended trading commission range is 3-10% to remain competitive while maintaining profitability.
                   </p>
                 </div>
               </div>
@@ -363,6 +738,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* System Info */}
       <div className="bg-gray-800 rounded-xl p-6">

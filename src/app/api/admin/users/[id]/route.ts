@@ -43,9 +43,11 @@ export async function PUT(
 
     const { id } = params;
     const body = await request.json();
-    const { name, email, membershipLevel } = body;
+    const { name, email, membershipLevel, isBanned } = body;
 
-    // Validate input
+    console.log('Update user request:', { id, name, email, membershipLevel, isBanned }); // Debug log
+
+    // Validate required fields
     if (!name || !email || !membershipLevel) {
       return NextResponse.json(
         { success: false, message: 'Name, email, and membership level are required' },
@@ -65,6 +67,15 @@ export async function PUT(
     // Connect to database
     await connectDB();
 
+    // Get current user data
+    const currentUser = await User.findById(id);
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     // Check if email is already taken by another user
     const existingUser = await User.findOne({ email, _id: { $ne: id } });
     if (existingUser) {
@@ -74,14 +85,30 @@ export async function PUT(
       );
     }
 
+    // Prepare update data
+    const updateData: any = {
+      name,
+      email,
+      membershipLevel: membershipLevel.toLowerCase(),
+      isBanned: isBanned || false,
+    };
+
+    // If banning user, set bannedAt timestamp
+    if (isBanned && !currentUser.isBanned) {
+      updateData.bannedAt = new Date();
+    }
+
+    // If unbanning user, clear bannedAt
+    if (!isBanned && currentUser.isBanned) {
+      updateData.bannedAt = null;
+    }
+
+    console.log('Update data prepared:', updateData); // Debug log
+
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      {
-        name,
-        email,
-        membershipLevel: membershipLevel.toLowerCase(),
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -92,6 +119,12 @@ export async function PUT(
       );
     }
 
+    console.log('User updated successfully:', {
+      id: updatedUser._id,
+      isBanned: updatedUser.isBanned,
+      bannedAt: updatedUser.bannedAt
+    }); // Debug log
+
     return NextResponse.json({
       success: true,
       message: 'User updated successfully',
@@ -100,6 +133,8 @@ export async function PUT(
         name: updatedUser.name,
         email: updatedUser.email,
         membershipLevel: updatedUser.membershipLevel,
+        isBanned: updatedUser.isBanned,
+        bannedAt: updatedUser.bannedAt,
       },
     });
   } catch (error: any) {

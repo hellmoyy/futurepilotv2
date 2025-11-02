@@ -16,24 +16,28 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { theme } = useTheme();
-  const [gasFeeBalance, setGasFeeBalance] = useState<number>(0);
+  const [usdtBalance, setUsdtBalance] = useState<number>(0);
 
   useEffect(() => {
-    // Fetch gas fee balance from API
-    const fetchGasFeeBalance = async () => {
+    // Fetch USDT balance from wallet API
+    const fetchBalance = async () => {
       try {
-        const response = await fetch('/api/user/balance');
+        const response = await fetch('/api/wallet/get');
         if (response.ok) {
           const data = await response.json();
-          setGasFeeBalance(data.gasFeeBalance || 0);
+          setUsdtBalance(data.balance || 0);
         }
       } catch (error) {
-        console.error('Error fetching gas fee balance:', error);
+        console.error('Error fetching USDT balance:', error);
       }
     };
 
     if (session) {
-      fetchGasFeeBalance();
+      fetchBalance();
+      
+      // Auto-refresh every 30 seconds
+      const interval = setInterval(fetchBalance, 30000);
+      return () => clearInterval(interval);
     }
   }, [session]);
 
@@ -183,14 +187,16 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-white/10 light:border-blue-200 p-4 light:bg-blue-50">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/coin/usdt.png" 
+                  alt="USDT" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">Gas Fee Balance</p>
-                <p className="text-lg font-bold text-white dark:text-white light:text-gray-900">${gasFeeBalance.toFixed(2)}</p>
+                <p className="text-lg font-bold text-white dark:text-white light:text-gray-900">${usdtBalance.toFixed(2)}</p>
               </div>
             </div>
           </div>

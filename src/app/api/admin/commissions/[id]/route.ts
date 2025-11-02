@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '@/lib/mongodb';
-import mongoose from 'mongoose';
+import { Withdrawal } from '@/models/Withdrawal';
 
 // Verify admin token
 async function verifyAdminToken(request: NextRequest) {
@@ -26,34 +26,7 @@ async function verifyAdminToken(request: NextRequest) {
   }
 }
 
-// Commission Schema (inline for now)
-const commissionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  type: { 
-    type: String, 
-    enum: ['referral', 'trading', 'bonus', 'other'],
-    default: 'referral' 
-  },
-  amount: { type: Number, required: true },
-  status: { 
-    type: String, 
-    enum: ['pending', 'approved', 'paid', 'rejected'], 
-    default: 'pending' 
-  },
-  description: { type: String },
-  sourceUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  paymentMethod: { type: String },
-  walletAddress: { type: String },
-  txHash: { type: String },
-  requestedAt: { type: Date, default: Date.now },
-  processedAt: { type: Date },
-  processedBy: { type: String },
-  notes: { type: String },
-}, { timestamps: true });
-
-const Commission = mongoose.models.Commission || mongoose.model('Commission', commissionSchema);
-
-// PUT - Process commission (approve/reject/pay)
+// PUT - Process withdrawal (approve/reject/complete)
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -71,6 +44,13 @@ export async function PUT(
     const { id } = params;
     const body = await request.json();
     const { action, txHash, notes } = body;
+
+    // Map frontend action to withdrawal status
+    const actionMapping: { [key: string]: string } = {
+      'approve': 'processing',
+      'reject': 'rejected',
+      'pay': 'completed',
+    };
 
     // Validate action
     if (!action || !['approve', 'reject', 'pay'].includes(action)) {
@@ -91,69 +71,73 @@ export async function PUT(
     // Connect to database
     await connectDB();
 
-    // Find commission
-    const commission = await Commission.findById(id);
-    if (!commission) {
+    // Find withdrawal
+    const withdrawal = await Withdrawal.findById(id);
+    if (!withdrawal) {
       return NextResponse.json(
-        { success: false, message: 'Commission not found' },
+        { success: false, message: 'Withdrawal not found' },
         { status: 404 }
       );
     }
 
     // Check status transitions
-    if (action === 'approve' && commission.status !== 'pending') {
+    if (action === 'approve' && withdrawal.status !== 'pending') {
       return NextResponse.json(
-        { success: false, message: 'Only pending commissions can be approved' },
+        { success: false, message: 'Only pending withdrawals can be approved' },
         { status: 400 }
       );
     }
 
-    if (action === 'pay' && commission.status !== 'approved') {
+    if (action === 'pay' && withdrawal.status !== 'processing') {
       return NextResponse.json(
-        { success: false, message: 'Only approved commissions can be marked as paid' },
+        { success: false, message: 'Only processing withdrawals can be marked as completed' },
         { status: 400 }
       );
     }
 
-    // Update commission
-    if (action === 'approve') {
-      commission.status = 'approved';
-    } else if (action === 'reject') {
-      commission.status = 'rejected';
-    } else if (action === 'pay') {
-      commission.status = 'paid';
-      commission.txHash = txHash;
+    // Update withdrawal
+    withdrawal.status = actionMapping[action] as any;
+    
+    if (action === 'pay') {
+      withdrawal.transactionHash = txHash;
+      withdrawal.completedAt = new Date();
     }
 
-    commission.processedAt = new Date();
-    commission.processedBy = admin.email;
+    if (action === 'reject') {
+      withdrawal.rejectionReason = notes || 'Rejected by admin';
+    }
+
+    withdrawal.processedAt = new Date();
     
     if (notes) {
-      commission.notes = notes;
+      withdrawal.notes = notes;
     }
 
-    await commission.save();
+    await withdrawal.save();
+
+    // Transform response to match Commission interface
+    const commission = {
+      _id: withdrawal._id.toString(),
+      status: withdrawal.status === 'completed' ? 'paid' : withdrawal.status === 'processing' ? 'approved' : withdrawal.status,
+      processedAt: withdrawal.processedAt,
+      txHash: withdrawal.transactionHash,
+    };
 
     return NextResponse.json({
       success: true,
-      message: `Commission ${action}ed successfully`,
-      commission: {
-        _id: commission._id,
-        status: commission.status,
-        processedAt: commission.processedAt,
-        processedBy: commission.processedBy,
-      },
+      message: `Withdrawal ${action}ed successfully`,
+      commission,
     });
   } catch (error: any) {
-    console.error('Error processing commission:', error);
+    console.error('Error processing withdrawal:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to process commission', error: error.message },
+      { success: false, message: 'Failed to process withdrawal', error: error.message },
       { status: 500 }
     );
   }
 }
 
-// DELETE - Delete commission (optional, for testing)
+// DELETE - Delete withdrawal (optional, for testing)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -173,24 +157,24 @@ export async function DELETE(
     // Connect to database
     await connectDB();
 
-    // Delete commission
-    const deletedCommission = await Commission.findByIdAndDelete(id);
+    // Delete withdrawal
+    const deletedWithdrawal = await Withdrawal.findByIdAndDelete(id);
 
-    if (!deletedCommission) {
+    if (!deletedWithdrawal) {
       return NextResponse.json(
-        { success: false, message: 'Commission not found' },
+        { success: false, message: 'Withdrawal not found' },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Commission deleted successfully',
+      message: 'Withdrawal deleted successfully',
     });
   } catch (error: any) {
-    console.error('Error deleting commission:', error);
+    console.error('Error deleting withdrawal:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to delete commission', error: error.message },
+      { success: false, message: 'Failed to delete withdrawal', error: error.message },
       { status: 500 }
     );
   }

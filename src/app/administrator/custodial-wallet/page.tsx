@@ -16,6 +16,8 @@ export default function CustodialWalletPage() {
   const [tokenSymbol, setTokenSymbol] = useState('USDT');
   const [tokenName, setTokenName] = useState('Tether USD');
   const [tokenInfoLoading, setTokenInfoLoading] = useState(false);
+  const [userAccountsSummary, setUserAccountsSummary] = useState<any>(null);
+  const [scanningAccounts, setScanningAccounts] = useState(false);
 
   // Auto-fetch balance and network mode on mount
   useEffect(() => {
@@ -166,6 +168,36 @@ export default function CustodialWalletPage() {
     }
   };
 
+  const scanUserAccounts = async () => {
+    setScanningAccounts(true);
+    setUserAccountsSummary(null);
+
+    try {
+      const response = await fetch('/api/admin/scan-user-balances', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          networkMode: networkMode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Scan failed');
+      }
+
+      setUserAccountsSummary(data);
+    } catch (error: any) {
+      console.error('Scan error:', error);
+      alert(`❌ Scan failed: ${error.message}`);
+    } finally {
+      setScanningAccounts(false);
+    }
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -286,6 +318,107 @@ export default function CustodialWalletPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* User Accounts Summary Card */}
+      <div className="bg-gradient-to-br from-blue-900/30 to-green-900/30 border border-blue-500/30 rounded-xl p-6 mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-600 rounded-lg p-3">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">User Accounts Summary</h2>
+              <p className="text-gray-400 text-sm">Scan all user USDT balances from blockchain</p>
+            </div>
+          </div>
+          <button
+            onClick={scanUserAccounts}
+            disabled={scanningAccounts}
+            className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 px-4 py-2 rounded-lg text-sm transition flex items-center space-x-2 disabled:opacity-50"
+          >
+            <svg className={`w-4 h-4 ${scanningAccounts ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span>{scanningAccounts ? 'Scanning...' : 'Scan All Users'}</span>
+          </button>
+        </div>
+
+        {userAccountsSummary ? (
+          <div className="space-y-4">
+            {/* Summary Stats */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs mb-1 font-semibold uppercase tracking-wide">Total Users</p>
+                <p className="text-2xl font-bold text-white">{userAccountsSummary.totalUsers}</p>
+              </div>
+              <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs mb-1 font-semibold uppercase tracking-wide">ERC20 Balance</p>
+                <p className="text-2xl font-bold text-blue-400">${userAccountsSummary.erc20Total.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">{userAccountsSummary.erc20Count} addresses</p>
+              </div>
+              <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs mb-1 font-semibold uppercase tracking-wide">BEP20 Balance</p>
+                <p className="text-2xl font-bold text-yellow-400">${userAccountsSummary.bep20Total.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">{userAccountsSummary.bep20Count} addresses</p>
+              </div>
+              <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+                <p className="text-gray-400 text-xs mb-1 font-semibold uppercase tracking-wide">Total USDT</p>
+                <p className="text-2xl font-bold text-green-400">${userAccountsSummary.grandTotal.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">Combined</p>
+              </div>
+            </div>
+
+            {/* Network Mode Indicator */}
+            <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700">
+              <p className="text-gray-400 text-xs">
+                <span className="font-semibold">Network Mode:</span>{' '}
+                <span className={`font-bold ${networkMode === 'mainnet' ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {networkMode === 'mainnet' ? '🟢 MAINNET' : '🟡 TESTNET'}
+                </span>
+                {' '}- Scanning {networkMode === 'mainnet' ? 'Ethereum & BSC Mainnet' : 'Sepolia & BSC Testnet'}
+              </p>
+            </div>
+
+            {/* Top Users Table */}
+            {userAccountsSummary.topUsers && userAccountsSummary.topUsers.length > 0 && (
+              <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-sm font-semibold text-blue-400 mb-3">📊 Top 10 Users by Balance</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="text-left py-2 px-2 text-gray-400 font-medium">Email</th>
+                        <th className="text-right py-2 px-2 text-gray-400 font-medium">ERC20</th>
+                        <th className="text-right py-2 px-2 text-gray-400 font-medium">BEP20</th>
+                        <th className="text-right py-2 px-2 text-gray-400 font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userAccountsSummary.topUsers.map((user: any, index: number) => (
+                        <tr key={index} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                          <td className="py-2 px-2 text-white">{user.email}</td>
+                          <td className="py-2 px-2 text-right text-blue-400">${user.erc20Balance.toFixed(2)}</td>
+                          <td className="py-2 px-2 text-right text-yellow-400">${user.bep20Balance.toFixed(2)}</td>
+                          <td className="py-2 px-2 text-right text-green-400 font-semibold">${user.totalBalance.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-gray-800/30 rounded-lg p-8 border border-gray-700 text-center">
+            <p className="text-gray-400">Click "Scan All Users" to fetch real-time USDT balances from blockchain</p>
+            <p className="text-gray-500 text-sm mt-2">
+              This will scan all user wallets on {networkMode === 'mainnet' ? 'Ethereum & BSC Mainnet' : 'Sepolia & BSC Testnet'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sweep Configuration */}
