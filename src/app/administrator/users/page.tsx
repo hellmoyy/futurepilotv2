@@ -8,6 +8,8 @@ interface User {
   email: string;
   name: string;
   membershipLevel: string;
+  tierSetManually?: boolean;
+  totalPersonalDeposit?: number;
   totalEarnings: number;
   balance: number;
   referralCode: string;
@@ -315,9 +317,16 @@ export default function AdminUsersPage() {
                       <p className="text-sm text-gray-300">{user.email || '-'}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getMembershipColor(user.membershipLevel || 'bronze')}`}>
-                        {(user.membershipLevel || 'bronze').toUpperCase()}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getMembershipColor(user.membershipLevel || 'bronze')}`}>
+                          {(user.membershipLevel || 'bronze').toUpperCase()}
+                        </span>
+                        {user.tierSetManually && (
+                          <span className="px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded border border-purple-500/50" title="Tier set manually by admin">
+                            🔒 Manual
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <p className="text-sm font-medium text-green-400">${(user.balance || 0).toFixed(2)}</p>
@@ -521,6 +530,17 @@ export default function AdminUsersPage() {
                   <option value="gold">Gold</option>
                   <option value="platinum">Platinum</option>
                 </select>
+                {selectedUser?.tierSetManually && (
+                  <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded text-xs text-purple-300">
+                    <span className="font-semibold">🔒 Manual Tier:</span> Auto-upgrade from deposits is disabled. 
+                    Tier will remain as set until you enable auto-upgrade.
+                  </div>
+                )}
+                {selectedUser?.totalPersonalDeposit !== undefined && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Total Personal Deposit: <span className="text-white font-semibold">${selectedUser.totalPersonalDeposit.toFixed(2)}</span>
+                  </p>
+                )}
               </div>
 
               {/* Ban/Unban Toggle */}

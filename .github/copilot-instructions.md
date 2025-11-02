@@ -2,6 +2,256 @@
 
 This is a Next.js project with Tailwind CSS for modern web development with integrated Binance Futures trading bot.
 
+## 🎯 PLATFORM OVERVIEW
+
+**FuturePilot** adalah platform trading bot otomatis yang terhubung dengan Binance Futures untuk melakukan trading secara otomatis di pasar futures.
+
+### 💡 Core Concept
+
+#### **Gas Fee Balance System:**
+- **Minimum Requirement:** User harus memiliki **minimal 10 USDT** gas fee balance untuk dapat trading
+- **Monetization Model:** Gas fee balance adalah biaya yang digunakan untuk monetisasi FuturePilot
+- **Commission System:** Setiap keuntungan trading, **20% (default, configurable) adalah komisi platform** (FuturePilot)
+- **Admin Configurable:** Admin dapat mengatur commission rate di `/administrator/settings` tab "Trading Commission"
+- **Auto-Deduction:** Komisi dipotong otomatis dari gas fee balance
+- **Trading Restriction:** Jika saldo gas fee < 10 USDT → User **TIDAK BISA TRADING**
+- **Auto-Close Protection:** Jika profit mendekati habisnya gas fee balance, bot akan auto-close posisi untuk mencegah gas fee balance minus
+
+**Example:**
+```
+User A trading dengan gas fee balance: 10 USDT
+Profit trading mencapai: 50 USDT
+Bot auto-close posisi → Prevent gas fee balance menjadi minus
+Komisi platform (20%): 50 USDT × 20% = 10 USDT (dipotong dari gas fee balance)
+Remaining gas fee: 10 - 10 = 0 USDT (user harus topup lagi untuk trading)
+```
+
+**Important Notes:**
+- ✅ FuturePilot **TIDAK punya akses** ke saldo trading user
+- ✅ User menyimpan saldo trading di **Binance account mereka masing-masing**
+- ✅ Connection via **Binance API Key** (read + trade permission)
+- ✅ Gas fee balance **terpisah** dari trading balance
+
+---
+
+## 💰 REFERRAL COMMISSION SYSTEM
+
+### 📊 How It Works
+
+**Referral Commission** adalah komisi yang didapatkan dari mengajak user baru untuk topup gas fee balance.
+
+#### **Commission Flow:**
+```
+User A (Referrer) mengajak User B
+↓
+User B deposit gas fee balance: $100
+↓
+User A mendapat komisi berupa % dari deposit User B
+↓
+Commission rate ditentukan oleh TIER User A
+↓
+Komisi masuk ke Available Commission User A
+↓
+User A bisa withdraw komisi ke wallet
+```
+
+#### **Multi-Level System (3 Levels):**
+```
+User A (You) → Level 1: User B → Level 2: User C → Level 3: User D
+
+Example:
+- User B deposit $100 → User A dapat komisi Level 1 (based on User A's tier rate)
+- User C deposit $100 → User A dapat komisi Level 2 (based on User A's tier rate)
+- User D deposit $100 → User A dapat komisi Level 3 (based on User A's tier rate)
+
+Note: Each referrer gets commission based on THEIR OWN tier rate, not a fixed distribution.
+```
+
+#### **Commission Calculation:**
+```javascript
+// IMPORTANT: Commission calculated from FULL topup amount, not platform fee!
+
+Example 1:
+User A (Gold Tier) → User B (Bronze Tier)
+User B deposit: $100
+
+User A Commission (Level 1): $100 × 30% (Gold Level 1) = $30.00
+User B Gas Fee Balance: $100 (full amount credited)
+
+Example 2:
+User A (Gold Tier) → User B (Bronze Tier) → User C
+User C deposit: $100
+
+User B Commission (Level 1): $100 × 10% (Bronze Level 1) = $10.00
+User A Commission (Level 2): $100 × 5% (Gold Level 2) = $5.00
+User C Gas Fee Balance: $100 (full amount credited)
+
+Example 3 (Complete 3-Level):
+User A (Gold: 30%, 5%, 5%) → User B (Bronze: 10%, 5%, 5%) → User C → User D
+User D deposit: $100
+
+User C Commission (Level 1): $100 × 10% (Bronze Level 1) = $10.00
+User B Commission (Level 2): $100 × 5% (Bronze Level 2) = $5.00
+User A Commission (Level 3): $100 × 5% (Gold Level 3) = $5.00
+User D Gas Fee Balance: $100 (full amount credited)
+
+Total Commissions:
+- User A: $30 (from B) + $5 (from C) + $5 (from D) = $40
+- User B: $10 (from C) + $5 (from D) = $15
+- User C: $10 (from D) = $10
+```
+
+### 🎖️ MEMBERSHIP TIER SYSTEM
+
+**Tier ditentukan dari TOTAL DEPOSIT PRIBADI (Personal Topup Gas Fee Balance)**
+
+| Tier | Min Deposit | Max Deposit | Level 1 | Level 2 | Level 3 | Total Rate |
+|------|-------------|-------------|---------|---------|---------|------------|
+| 🥉 **Bronze** | $0 | $999 | 10% | 5% | 5% | 20% |
+| 🥈 **Silver** | $1,000 | $1,999 | 20% | 5% | 5% | 30% |
+| 🥇 **Gold** | $2,000 | $9,999 | 30% | 5% | 5% | 40% |
+| 💎 **Platinum** | $10,000 | ∞ | 40% | 5% | 5% | 50% |
+
+**Tier Upgrade Logic:**
+```typescript
+// User saat ini Bronze (total deposit: $500)
+// User topup lagi: $600
+// Total deposit: $500 + $600 = $1,100
+// Auto upgrade to Silver ✅
+
+if (totalPersonalDeposit >= 10000) tier = 'platinum';
+else if (totalPersonalDeposit >= 2000) tier = 'gold';
+else if (totalPersonalDeposit >= 1000) tier = 'silver';
+else tier = 'bronze';
+```
+
+**Important:**
+- ✅ Tier based on **personal deposit**, bukan dari referral
+- ✅ Commission rate bisa di-set di `/administrator/settings` tab "Referral Commission"
+- ✅ Tier threshold bisa di-set di `/administrator/settings` (future feature)
+
+---
+
+## 📋 FEATURE STATUS
+
+### ✅ **COMPLETED FEATURES:**
+
+1. **Trading Bot System**
+   - ✅ Binance Futures integration dengan API Key
+   - ✅ Automated trading dengan proven strategy (675% ROI backtested)
+   - ✅ Risk management (2% per trade, 10x leverage)
+   - ✅ Dual trailing system (profit + loss)
+   - ✅ Emergency exit protection (-2% hard cap)
+
+2. **Gas Fee Balance System**
+   - ✅ Custodial wallet (ERC20 + BEP20)
+   - ✅ Automatic deposit detection (webhook + cron)
+   - ✅ Network-isolated balance (testnet vs mainnet)
+   - ✅ Balance display di sidebar
+   - ✅ Top-up page dengan QR code generation
+   - ✅ Transaction history
+
+3. **Referral System (UI)**
+   - ✅ Referral code generation
+   - ✅ 3-level referral tracking
+   - ✅ Referral stats (Level 1/2/3 count + earnings)
+   - ✅ Available Commission display
+   - ✅ Total Commission Rate calculation (sum of 3 levels)
+   - ✅ Commission structure tab (detailed breakdown)
+   - ✅ Membership level card dengan tier info
+
+4. **Admin System**
+   - ✅ User management (ban/unban)
+   - ✅ Dashboard statistics
+   - ✅ Transaction monitoring
+   - ✅ Withdrawal approval (referral commissions)
+   - ✅ Settings management
+     - ✅ Tier-based commission rates
+     - ✅ Trading commission percentage
+     - ✅ Minimum withdrawal amount
+
+5. **Database & Models**
+   - ✅ User model (dengan gasFeeBalance, totalEarnings, totalPersonalDeposit, referralCode, referredBy)
+   - ✅ Transaction model (deposit, withdrawal, commission, etc)
+   - ✅ Withdrawal model (untuk commission withdrawals)
+   - ✅ ReferralCommission model (tracking komisi per level)
+   - ✅ Settings model (platform settings)
+
+6. **Referral Commission System** ✅
+   - ✅ Commission integrated with gas fee topup
+   - ✅ Dynamic rates from Settings (admin configurable)
+   - ✅ 3-level commission distribution
+   - ✅ Commission calculated from FULL topup amount
+   - ✅ Available commission tracking (totalEarnings - totalWithdrawn)
+   - ✅ Tier auto-upgrade based on totalPersonalDeposit
+
+### ✅ **TRADING COMMISSION INFRASTRUCTURE (COMPLETE):**
+
+1. **Trading Commission System** ✅
+   - ✅ Core library (`/src/lib/tradingCommission.ts`)
+     - ✅ `canUserTrade()` - Minimum 10 USDT check
+     - ✅ `calculateMaxProfit()` - Calculate profit limits
+     - ✅ `shouldAutoClose()` - Auto-close detection
+     - ✅ `deductTradingCommission()` - Commission deduction
+     - ✅ `getTradingCommissionSummary()` - User statistics
+   - ✅ Trading Hooks (`/src/lib/trading/hooks.ts`)
+     - ✅ `beforeTrade()` - Pre-trade eligibility check
+     - ✅ `onProfitUpdate()` - Periodic auto-close check
+     - ✅ `afterTrade()` - Post-trade commission deduction
+   - ✅ API Endpoint (`/api/trading/commission`)
+     - ✅ POST - Deduct commission
+     - ✅ GET - Check eligibility, max profit, summary, auto-close
+   - ✅ Admin Dashboard (`/administrator/trading-commissions`)
+     - ✅ Total platform revenue statistics
+     - ✅ Top 10 users by commission
+     - ✅ Transaction history with filters
+     - ✅ Export to CSV
+   - ✅ User Dashboard Widget (`TradingCommissionWidget`)
+     - ✅ Trading limits display
+     - ✅ Commission history
+     - ✅ Gas fee balance status
+     - ✅ **Dark/Light theme support** (Updated Jan 2025)
+   - ✅ Admin Sidebar Integration
+     - ✅ Trading Commissions link added
+     - ✅ Accessible from `/administrator/trading-commissions`
+   - ✅ Transaction Model - Added `trading_commission` type with `tradingMetadata`
+   - ✅ Documentation:
+     - ✅ `/docs/TRADING_COMMISSION_SYSTEM.md` - System architecture
+     - ✅ `/docs/TRADING_COMMISSION_TESTING.md` - Testing guide
+     - ✅ `/docs/TRADING_COMMISSION_THEME_FIX.md` - Theme support details
+     - ✅ `/docs/WEEK1_COMPLETION_SUMMARY.md` - Week 1 deliverables
+   - ✅ Testing Script (`/scripts/test-trading-commission.js`)
+   - **Status:** ✅ COMPLETE - Ready for bot integration + testing
+
+### ⚠️ **PARTIALLY COMPLETED / NEEDS TESTING:**
+
+1. **Trading Commission Testing** ⚠️
+   - ✅ Test script created (6 test cases)
+   - ✅ Testing guide documented
+   - ✅ UI theme support verified
+   - ❌ Manual testing not yet performed
+   - ❌ Automated tests (Jest) not implemented
+   - **Status:** Ready for testing, pending execution
+
+### ❌ **NOT STARTED / TODO:**
+
+1. **Tier Upgrade Notification**
+   - ❌ Email notification saat tier upgrade
+   - ❌ Dashboard alert untuk tier upgrade
+   - ❌ Commission rate increase notification
+
+2. **Commission Transaction History (UI)**
+   - ❌ Filter by source (gas_fee_topup, trading_commission, etc)
+   - ❌ Export commission report (CSV/PDF)
+   - ❌ Commission analytics dashboard
+
+3. **Trading Notifications**
+   - ❌ Auto-close triggered notification
+   - ❌ Gas fee < $10 warning
+   - ❌ Low balance alerts
+
+---
+
 ## Project Structure
 - Next.js 14+ with App Router
 - Tailwind CSS for styling  
@@ -345,7 +595,7 @@ node scripts/cleanup-and-fix-balance.js
 
 ### 📝 MongoDB Collections
 
-**User Collection:** `futurepilotcol` (NOT `users`)
+**User Collection:** `futurepilotcols` (NOT `users`)
 ```javascript
 const User = mongoose.model('futurepilotcol', UserSchema);
 ```
@@ -466,7 +716,7 @@ All scripts in `/scripts/` directory:
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 
 # Use correct collection names
-const User = mongoose.model('futurepilotcol', userSchema);
+const User = mongoose.model('futurepilotcols', userSchema);
 const Transaction = mongoose.model('transactions', transactionSchema);
 
 # Network-aware queries

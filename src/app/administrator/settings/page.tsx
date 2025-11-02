@@ -23,7 +23,7 @@ export default function AdminSettingsPage() {
   const [minimumWithdrawal, setMinimumWithdrawal] = useState(10);
 
   // Trading Commission Settings
-  const [tradingCommission, setTradingCommission] = useState(5);
+  const [tradingCommission, setTradingCommission] = useState(20);
 
   // Security Settings
   const [twoFactorRequired, setTwoFactorRequired] = useState(false);
@@ -248,11 +248,17 @@ export default function AdminSettingsPage() {
 
                 {/* Bronze Tier */}
                 <div className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border border-orange-500/30 rounded-xl p-6">
-                  <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-3">🥉</span>
-                    <div>
-                      <h4 className="text-lg font-bold text-orange-400">Bronze Tier</h4>
-                      <p className="text-gray-400 text-xs">Entry level membership</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <span className="text-3xl mr-3">🥉</span>
+                      <div>
+                        <h4 className="text-lg font-bold text-orange-400">Bronze Tier</h4>
+                        <p className="text-gray-400 text-xs">Entry level membership</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Tier Requirement</p>
+                      <p className="text-sm font-bold text-orange-400">$0 - $999</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -312,11 +318,17 @@ export default function AdminSettingsPage() {
 
                 {/* Silver Tier */}
                 <div className="bg-gradient-to-r from-gray-700/20 to-gray-600/20 border border-gray-400/30 rounded-xl p-6">
-                  <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-3">🥈</span>
-                    <div>
-                      <h4 className="text-lg font-bold text-gray-300">Silver Tier</h4>
-                      <p className="text-gray-400 text-xs">Advanced membership</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <span className="text-3xl mr-3">🥈</span>
+                      <div>
+                        <h4 className="text-lg font-bold text-gray-300">Silver Tier</h4>
+                        <p className="text-gray-400 text-xs">Advanced membership</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Tier Requirement</p>
+                      <p className="text-sm font-bold text-gray-300">$1,000 - $1,999</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -376,11 +388,17 @@ export default function AdminSettingsPage() {
 
                 {/* Gold Tier */}
                 <div className="bg-gradient-to-r from-yellow-900/20 to-yellow-700/20 border border-yellow-500/30 rounded-xl p-6">
-                  <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-3">🥇</span>
-                    <div>
-                      <h4 className="text-lg font-bold text-yellow-400">Gold Tier</h4>
-                      <p className="text-gray-400 text-xs">Premium membership</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <span className="text-3xl mr-3">🥇</span>
+                      <div>
+                        <h4 className="text-lg font-bold text-yellow-400">Gold Tier</h4>
+                        <p className="text-gray-400 text-xs">Premium membership</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Tier Requirement</p>
+                      <p className="text-sm font-bold text-yellow-400">$2,000 - $9,999</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -440,11 +458,17 @@ export default function AdminSettingsPage() {
 
                 {/* Platinum Tier */}
                 <div className="bg-gradient-to-r from-cyan-900/20 to-blue-800/20 border border-cyan-500/30 rounded-xl p-6">
-                  <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-3">💎</span>
-                    <div>
-                      <h4 className="text-lg font-bold text-cyan-400">Platinum Tier</h4>
-                      <p className="text-gray-400 text-xs">Elite membership</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <span className="text-3xl mr-3">💎</span>
+                      <div>
+                        <h4 className="text-lg font-bold text-cyan-400">Platinum Tier</h4>
+                        <p className="text-gray-400 text-xs">Elite membership</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Tier Requirement</p>
+                      <p className="text-sm font-bold text-cyan-400">$10,000+</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -572,14 +596,26 @@ export default function AdminSettingsPage() {
 
                 <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-4">
                   <p className="text-yellow-400 text-sm">
-                    ⚠️ <strong>Note:</strong> Trading commission only applies to profitable trades. No commission is charged on losing trades.
+                    ⚠️ <strong>Note:</strong> Trading commission is automatically deducted from user's gas fee balance after each profitable trade. No commission is charged on losing trades.
                   </p>
                 </div>
 
                 <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
                   <p className="text-blue-400 text-sm">
-                    💡 <strong>Tip:</strong> Recommended trading commission range is 3-10% to remain competitive while maintaining profitability.
+                    💡 <strong>Business Logic:</strong> Commission is deducted from gas fee balance, not from trading account. User must maintain minimum $10 USDT gas fee to continue trading. Auto-close triggers at 90% of max profit to prevent negative balance.
                   </p>
+                </div>
+
+                <div className="bg-purple-500/10 border border-purple-500/50 rounded-lg p-4">
+                  <h5 className="font-semibold text-purple-400 mb-2">Gas Fee Balance Protection:</h5>
+                  <div className="space-y-1 text-sm text-gray-300">
+                    <p>• <strong>Minimum Gas Fee:</strong> $10 USDT (users cannot trade below this)</p>
+                    <p>• <strong>Max Profit Formula:</strong> Gas Fee ÷ Commission Rate</p>
+                    <p>• <strong>Auto-Close Threshold:</strong> 90% of max profit</p>
+                    <p className="text-purple-300 mt-2">
+                      <strong>Example with {tradingCommission}% rate:</strong> If user has $50 gas fee, max profit = $50 ÷ 0.{tradingCommission.toString().padStart(2, '0')} = ${(50 / (tradingCommission / 100)).toFixed(2)}. Auto-close triggers at ${(50 / (tradingCommission / 100) * 0.9).toFixed(2)} profit.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

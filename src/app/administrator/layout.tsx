@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 export default function AdminLayout({
   children,
@@ -76,6 +77,7 @@ export default function AdminLayout({
     { href: '/administrator/users', label: 'Users', icon: 'users' },
     { href: '/administrator/referrals', label: 'Referrals', icon: 'referrals' },
     { href: '/administrator/commissions', label: 'Withdrawals', icon: 'card' },
+    { href: '/administrator/trading-commissions', label: 'Trading Commissions', icon: 'money' },
     { href: '/administrator/transactions', label: 'Transactions', icon: 'list' },
     { href: '/administrator/custodial-wallet', label: 'Custodial Wallet', icon: 'wallet' },
     { href: '/administrator/analytics', label: 'Analytics', icon: 'chart' },
@@ -174,6 +176,9 @@ export default function AdminLayout({
               </div>
 
               <div className="flex items-center space-x-4">
+                {/* Notification Center */}
+                <NotificationCenter />
+                
                 <div className="text-right">
                   <p className="text-sm text-white font-medium">{admin?.email}</p>
                   <p className="text-xs text-gray-400">Administrator</p>

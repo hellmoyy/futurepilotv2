@@ -16,7 +16,9 @@ export interface IUser extends Document {
   referralCode?: string;
   referredBy?: mongoose.Types.ObjectId;
   membershipLevel?: 'bronze' | 'silver' | 'gold' | 'platinum';
+  tierSetManually?: boolean; // True if admin manually set the tier (prevents auto-upgrade)
   totalEarnings?: number;
+  totalPersonalDeposit?: number; // Total personal gas fee deposits for tier calculation
   gasFeeBalance?: number;
   walletData?: {
     erc20Address: string;
@@ -108,9 +110,18 @@ const UserSchema = new Schema<IUser>(
       enum: ['bronze', 'silver', 'gold', 'platinum'],
       default: 'bronze',
     },
+    tierSetManually: {
+      type: Boolean,
+      default: false,
+    },
     totalEarnings: {
       type: Number,
       default: 0,
+    },
+    totalPersonalDeposit: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     gasFeeBalance: {
       type: Number,

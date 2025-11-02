@@ -3,13 +3,19 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 // Transaction Interface
 export interface ITransaction extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'deposit' | 'withdrawal' | 'commission' | 'referral_bonus' | 'trading_profit' | 'trading_loss';
+  type: 'deposit' | 'withdrawal' | 'commission' | 'referral_bonus' | 'trading_profit' | 'trading_loss' | 'trading_commission';
   network: 'ERC20' | 'BEP20';
   txHash: string;
   amount: number;
   status: 'pending' | 'confirmed' | 'failed';
   blockNumber?: number;
   walletAddress: string;
+  tradingMetadata?: {
+    profit: number;
+    commissionRate: number;
+    positionId?: string;
+    closedAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,7 +30,7 @@ const TransactionSchema = new Schema<ITransaction>(
     },
     type: {
       type: String,
-      enum: ['deposit', 'withdrawal', 'commission', 'referral_bonus', 'trading_profit', 'trading_loss'],
+      enum: ['deposit', 'withdrawal', 'commission', 'referral_bonus', 'trading_profit', 'trading_loss', 'trading_commission'],
       default: 'deposit',
     },
     network: {
@@ -53,6 +59,12 @@ const TransactionSchema = new Schema<ITransaction>(
     walletAddress: {
       type: String,
       required: true,
+    },
+    tradingMetadata: {
+      profit: Number,
+      commissionRate: Number,
+      positionId: String,
+      closedAt: Date,
     },
   },
   {

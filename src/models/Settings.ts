@@ -55,23 +55,23 @@ const settingsSchema = new mongoose.Schema<ISettings>(
   {
     referralCommission: {
       bronze: {
-        level1: { type: Number, default: 5, min: 0, max: 100 },
-        level2: { type: Number, default: 2, min: 0, max: 100 },
-        level3: { type: Number, default: 1, min: 0, max: 100 },
-      },
-      silver: {
         level1: { type: Number, default: 10, min: 0, max: 100 },
         level2: { type: Number, default: 5, min: 0, max: 100 },
-        level3: { type: Number, default: 2, min: 0, max: 100 },
+        level3: { type: Number, default: 5, min: 0, max: 100 },
+      },
+      silver: {
+        level1: { type: Number, default: 20, min: 0, max: 100 },
+        level2: { type: Number, default: 5, min: 0, max: 100 },
+        level3: { type: Number, default: 5, min: 0, max: 100 },
       },
       gold: {
-        level1: { type: Number, default: 15, min: 0, max: 100 },
-        level2: { type: Number, default: 8, min: 0, max: 100 },
-        level3: { type: Number, default: 4, min: 0, max: 100 },
+        level1: { type: Number, default: 30, min: 0, max: 100 },
+        level2: { type: Number, default: 5, min: 0, max: 100 },
+        level3: { type: Number, default: 5, min: 0, max: 100 },
       },
       platinum: {
-        level1: { type: Number, default: 20, min: 0, max: 100 },
-        level2: { type: Number, default: 10, min: 0, max: 100 },
+        level1: { type: Number, default: 40, min: 0, max: 100 },
+        level2: { type: Number, default: 5, min: 0, max: 100 },
         level3: { type: Number, default: 5, min: 0, max: 100 },
       },
     },
@@ -82,7 +82,7 @@ const settingsSchema = new mongoose.Schema<ISettings>(
     },
     tradingCommission: {
       type: Number,
-      default: 5,
+      default: 20,
       min: 0,
       max: 100,
     },

@@ -93,6 +93,11 @@ export async function PUT(
       isBanned: isBanned || false,
     };
 
+    // If admin changes membership level, set tierSetManually flag
+    if (currentUser.membershipLevel !== membershipLevel.toLowerCase()) {
+      updateData.tierSetManually = true;
+    }
+
     // If banning user, set bannedAt timestamp
     if (isBanned && !currentUser.isBanned) {
       updateData.bannedAt = new Date();

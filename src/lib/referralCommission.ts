@@ -1,33 +1,12 @@
 import { User } from '@/models/User';
 import { ReferralCommission } from '@/models/ReferralCommission';
+import { Settings } from '@/models/Settings';
 import mongoose from 'mongoose';
-
-/**
- * Commission Rates by Membership Level
- */
-const COMMISSION_RATES = {
-  bronze: 10,
-  silver: 20,
-  gold: 30,
-  platinum: 50,
-};
-
-/**
- * Commission Distribution by Level
- * Level 1: 50% of commission
- * Level 2: 30% of commission
- * Level 3: 20% of commission
- */
-const LEVEL_DISTRIBUTION = {
-  1: 0.50, // 50%
-  2: 0.30, // 30%
-  3: 0.20, // 20%
-};
 
 interface CommissionInput {
   userId: mongoose.Types.ObjectId | string; // User yang melakukan trading/deposit
   amount: number; // Total fee amount (e.g., trading fee)
-  source: 'trading_fee' | 'deposit_fee' | 'withdrawal_fee' | 'subscription';
+  source: 'trading_fee' | 'deposit_fee' | 'withdrawal_fee' | 'subscription' | 'gas_fee_topup';
   sourceTransactionId?: mongoose.Types.ObjectId | string;
   notes?: string;
 }
@@ -55,6 +34,13 @@ export async function calculateReferralCommission(input: CommissionInput): Promi
       return { success: true, commissions: [], totalCommission: 0 };
     }
 
+    // Get commission rates from Settings
+    const settings = await Settings.findOne();
+    if (!settings || !settings.referralCommission) {
+      console.error('Settings not found or referralCommission not configured');
+      return { success: false, commissions: [], totalCommission: 0, error: 'Commission rates not configured' };
+    }
+
     const commissions: any[] = [];
     let currentUserId: mongoose.Types.ObjectId | null = user.referredBy;
     let level = 1;
@@ -66,13 +52,18 @@ export async function calculateReferralCommission(input: CommissionInput): Promi
       const referrer: any = await User.findById(currentUserId);
       if (!referrer) break;
 
-      // Get commission rate based on membership level
+      // Get commission rate based on referrer's membership level and current level
       const membershipLevel = referrer.membershipLevel || 'bronze';
-      const baseRate = COMMISSION_RATES[membershipLevel as keyof typeof COMMISSION_RATES];
+      const tierRates = settings.referralCommission[membershipLevel];
       
-      // Calculate commission untuk level ini
-      const levelMultiplier = LEVEL_DISTRIBUTION[level as keyof typeof LEVEL_DISTRIBUTION];
-      const commissionAmount = (amount * baseRate / 100) * levelMultiplier;
+      // Get rate for current level (level1, level2, or level3)
+      let commissionRate = 0;
+      if (level === 1) commissionRate = tierRates.level1;
+      else if (level === 2) commissionRate = tierRates.level2;
+      else if (level === 3) commissionRate = tierRates.level3;
+      
+      // Calculate commission: amount × rate%
+      const commissionAmount = amount * (commissionRate / 100);
 
       if (commissionAmount > 0) {
         // Create commission record
@@ -81,7 +72,7 @@ export async function calculateReferralCommission(input: CommissionInput): Promi
           referralUserId: userId,
           referralLevel: level,
           amount: commissionAmount,
-          commissionRate: baseRate,
+          commissionRate: commissionRate,
           source,
           sourceTransactionId,
           status: 'pending', // Will be paid automatically or require approval
@@ -101,7 +92,7 @@ export async function calculateReferralCommission(input: CommissionInput): Promi
           userName: referrer.name,
           userEmail: referrer.email,
           membershipLevel,
-          commissionRate: baseRate,
+          commissionRate: commissionRate,
           amount: commissionAmount,
           commissionId: commission._id,
         });
@@ -209,6 +200,7 @@ export async function getCommissionStats(userId: string): Promise<{
     deposit_fee: number;
     withdrawal_fee: number;
     subscription: number;
+    gas_fee_topup: number;
   };
 }> {
   try {
@@ -229,6 +221,7 @@ export async function getCommissionStats(userId: string): Promise<{
         deposit_fee: 0,
         withdrawal_fee: 0,
         subscription: 0,
+        gas_fee_topup: 0,
       },
     };
 
@@ -259,7 +252,7 @@ export async function getCommissionStats(userId: string): Promise<{
       paidAmount: 0,
       totalTransactions: 0,
       byLevel: { level1: 0, level2: 0, level3: 0 },
-      bySource: { trading_fee: 0, deposit_fee: 0, withdrawal_fee: 0, subscription: 0 },
+      bySource: { trading_fee: 0, deposit_fee: 0, withdrawal_fee: 0, subscription: 0, gas_fee_topup: 0 },
     };
   }
 }

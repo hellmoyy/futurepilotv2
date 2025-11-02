@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { ReferralCommission } from '@/models/ReferralCommission';
+import { Withdrawal } from '@/models/Withdrawal';
 
 // Mark this route as dynamic
 export const dynamic = 'force-dynamic';
@@ -89,11 +90,23 @@ export async function GET(request: NextRequest) {
     // Sort by joined date (newest first)
     referralList.sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
 
+    // Calculate total withdrawn from referral commissions
+    const withdrawals = await Withdrawal.find({
+      userId: user._id,
+      type: 'referral',
+      status: { $in: ['processing', 'completed'] },
+    });
+
+    const totalWithdrawn = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+    const availableCommission = (user.totalEarnings || 0) - totalWithdrawn;
+
     const stats = {
       referralCode: user.referralCode || '',
       membershipLevel: user.membershipLevel || 'bronze',
       commissionRate,
       totalEarnings: user.totalEarnings || 0,
+      totalWithdrawn: totalWithdrawn,
+      availableCommission: Math.max(0, availableCommission), // Ensure non-negative
       totalReferrals: {
         level1: level1Referrals.length,
         level2: level2Referrals.length,

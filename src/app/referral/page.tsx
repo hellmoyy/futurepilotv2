@@ -10,6 +10,8 @@ interface ReferralStats {
   membershipLevel: string;
   commissionRate: number;
   totalEarnings: number;
+  totalWithdrawn: number;
+  availableCommission: number;
   totalReferrals: {
     level1: number;
     level2: number;
@@ -183,7 +185,7 @@ export default function ReferralPage() {
       return;
     }
 
-    if (!stats || amount > stats.totalEarnings) {
+    if (!stats || amount > stats.availableCommission) {
       setWithdrawError('Insufficient balance');
       return;
     }
@@ -289,7 +291,7 @@ export default function ReferralPage() {
                 <div className="inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl w-full">
                   <p className="text-xs sm:text-sm text-white/80">Balance</p>
                   <p className="text-2xl sm:text-3xl font-bold text-white">
-                    ${stats.totalEarnings.toFixed(2)}
+                    ${stats.availableCommission.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1116,7 +1118,7 @@ export default function ReferralPage() {
               <div className="bg-green-500/10 dark:bg-green-500/10 light:bg-green-100 border border-green-500/30 dark:border-green-500/30 light:border-green-300 rounded-xl p-4">
                 <p className="text-xs text-gray-300 dark:text-gray-300 light:text-gray-700 mb-1">Available Balance</p>
                 <p className="text-3xl font-bold text-green-400 dark:text-green-400 light:text-green-600">
-                  ${stats.totalEarnings.toFixed(2)}
+                  ${stats.availableCommission.toFixed(2)}
                 </p>
               </div>
 
@@ -1130,7 +1132,7 @@ export default function ReferralPage() {
                   <input
                     type="number"
                     min="10"
-                    max={stats.totalEarnings}
+                    max={stats.availableCommission}
                     step="0.01"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -1143,7 +1145,7 @@ export default function ReferralPage() {
                     Minimum: $10.00
                   </p>
                   <button
-                    onClick={() => setWithdrawAmount(stats.totalEarnings.toFixed(2))}
+                    onClick={() => setWithdrawAmount(stats.availableCommission.toFixed(2))}
                     className="text-xs text-green-400 dark:text-green-400 light:text-green-600 hover:underline font-semibold"
                   >
                     Withdraw All

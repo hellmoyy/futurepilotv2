@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
+import NotificationCenter from './notifications/NotificationCenter';
 
 interface DashboardNavProps {
   onMenuClick?: () => void;
@@ -45,6 +46,9 @@ export default function DashboardNav({ onMenuClick }: DashboardNavProps) {
           <div className="flex items-center space-x-4">
             {/* Theme Toggle */}
             <ThemeToggle />
+
+            {/* Notification Center */}
+            <NotificationCenter />
 
             {/* User Menu */}
             <div className="relative">

@@ -6,7 +6,7 @@ export interface IReferralCommission extends Document {
   referralLevel: 1 | 2 | 3; // Level dalam referral tree
   amount: number; // Jumlah commission dalam USD
   commissionRate: number; // Percentage rate yang digunakan (10, 20, 30, 50)
-  source: 'trading_fee' | 'deposit_fee' | 'withdrawal_fee' | 'subscription'; // Sumber commission
+  source: 'trading_fee' | 'deposit_fee' | 'withdrawal_fee' | 'subscription' | 'gas_fee_topup'; // Sumber commission
   sourceTransactionId?: mongoose.Types.ObjectId; // Reference ke transaction asli
   status: 'pending' | 'paid' | 'cancelled'; // Status pembayaran
   paidAt?: Date;
@@ -51,7 +51,7 @@ const referralCommissionSchema = new Schema<IReferralCommission>(
     source: {
       type: String,
       required: true,
-      enum: ['trading_fee', 'deposit_fee', 'withdrawal_fee', 'subscription'],
+      enum: ['trading_fee', 'deposit_fee', 'withdrawal_fee', 'subscription', 'gas_fee_topup'],
       index: true,
     },
     sourceTransactionId: {
