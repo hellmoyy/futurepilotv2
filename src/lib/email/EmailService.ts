@@ -17,7 +17,14 @@ import {
   generateLowGasFeeWarningEmail
 } from './templates/NotificationEmailTemplates';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Use a placeholder during build time if RESEND_API_KEY is not set
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_placeholder_for_build';
+
+if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('Warning: RESEND_API_KEY is not set. Email functionality will not work.');
+}
+
+const resend = new Resend(RESEND_API_KEY);
 
 export interface EmailOptions {
   to: string;

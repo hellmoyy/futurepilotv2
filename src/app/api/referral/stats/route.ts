@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     // Sort by joined date (newest first)
     referralList.sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
 
-    // Calculate total withdrawn from referral commissions
+    // Calculate total withdrawn from referral commissions (for display only)
     const withdrawals = await Withdrawal.find({
       userId: user._id,
       type: 'referral',
@@ -98,7 +98,10 @@ export async function GET(request: NextRequest) {
     });
 
     const totalWithdrawn = withdrawals.reduce((sum, w) => sum + w.amount, 0);
-    const availableCommission = (user.totalEarnings || 0) - totalWithdrawn;
+    
+    // ✅ FIX: totalEarnings already has withdrawals deducted (done in withdrawal API)
+    // No need to subtract again, otherwise it's double deduction!
+    const availableCommission = Math.max(0, user.totalEarnings || 0);
 
     const stats = {
       referralCode: user.referralCode || '',
@@ -106,7 +109,7 @@ export async function GET(request: NextRequest) {
       commissionRate,
       totalEarnings: user.totalEarnings || 0,
       totalWithdrawn: totalWithdrawn,
-      availableCommission: Math.max(0, availableCommission), // Ensure non-negative
+      availableCommission: availableCommission, // Already ensured non-negative above
       totalReferrals: {
         level1: level1Referrals.length,
         level2: level2Referrals.length,
