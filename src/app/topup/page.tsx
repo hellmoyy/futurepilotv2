@@ -32,12 +32,9 @@ export default function TopUpPage() {
   const [copied, setCopied] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   
-  // Detect network type (mainnet vs testnet)
-  // Check if using testnet RPC URLs or testnet contracts
-  const isMainnet = !process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL?.includes('testnet') &&
-                    !process.env.NEXT_PUBLIC_BSC_RPC_URL?.includes('testnet') &&
-                    !process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL?.includes('sepolia') &&
-                    !process.env.NEXT_PUBLIC_BSC_RPC_URL?.includes('bsc-testnet');
+  // Detect network type from NETWORK_MODE env variable
+  const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
+  const isMainnet = networkMode === 'mainnet';
 
   useEffect(() => {
     if (status === 'unauthenticated') {
