@@ -1,16 +1,73 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
+interface DashboardStats {
+  totalUsers: number;
+  usersWithWallets: number;
+  activeReferrals: number;
+  totalDeposits: number;
+  totalDepositAmount: string;
+  totalBalance: string;
+  totalEarnings: string;
+  newUsersToday: number;
+  networkMode: string;
+}
+
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/dashboard-stats');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setStats(data.stats);
+      } else {
+        console.error('Failed to fetch stats:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="p-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl p-6 mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">
-          Welcome back, Administrator!
-        </h2>
-        <p className="text-purple-100">
-          You have full access to manage the FuturePilot platform.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Welcome back, Administrator!
+            </h2>
+            <p className="text-purple-100">
+              You have full access to manage the FuturePilot platform.
+              {stats && (
+                <span className="ml-2 text-purple-200">
+                  ({stats.networkMode === 'mainnet' ? '🟢 Mainnet' : '🟡 Testnet'})
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={fetchStats}
+            disabled={loading}
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition flex items-center space-x-2 disabled:opacity-50"
+          >
+            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>{loading ? 'Loading...' : 'Refresh'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -25,7 +82,14 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <h3 className="text-gray-400 text-sm mb-1">Total Users</h3>
-          <p className="text-3xl font-bold text-white">Coming Soon</p>
+          <p className="text-3xl font-bold text-white">
+            {loading ? '...' : (stats?.totalUsers || 0)}
+          </p>
+          {stats && stats.newUsersToday > 0 && (
+            <p className="text-sm text-green-400 mt-2">
+              +{stats.newUsersToday} new today
+            </p>
+          )}
         </div>
 
         {/* Active Referrals */}
@@ -38,10 +102,17 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <h3 className="text-gray-400 text-sm mb-1">Active Referrals</h3>
-          <p className="text-3xl font-bold text-white">Coming Soon</p>
+          <p className="text-3xl font-bold text-white">
+            {loading ? '...' : (stats?.activeReferrals || 0)}
+          </p>
+          {stats && (
+            <p className="text-sm text-gray-400 mt-2">
+              {stats.usersWithWallets} with wallets
+            </p>
+          )}
         </div>
 
-        {/* Total Commissions */}
+        {/* Total Deposits */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-purple-500/10 rounded-lg p-3">
@@ -50,11 +121,18 @@ export default function AdminDashboardPage() {
               </svg>
             </div>
           </div>
-          <h3 className="text-gray-400 text-sm mb-1">Total Commissions</h3>
-          <p className="text-3xl font-bold text-white">Coming Soon</p>
+          <h3 className="text-gray-400 text-sm mb-1">Total Deposits</h3>
+          <p className="text-3xl font-bold text-white">
+            {loading ? '...' : `$${parseFloat(stats?.totalDepositAmount || '0').toFixed(2)}`}
+          </p>
+          {stats && (
+            <p className="text-sm text-gray-400 mt-2">
+              {stats.totalDeposits} transactions
+            </p>
+          )}
         </div>
 
-        {/* Pending Withdrawals */}
+        {/* Total Balance */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-yellow-500/10 rounded-lg p-3">
@@ -63,8 +141,15 @@ export default function AdminDashboardPage() {
               </svg>
             </div>
           </div>
-          <h3 className="text-gray-400 text-sm mb-1">Pending Withdrawals</h3>
-          <p className="text-3xl font-bold text-white">Coming Soon</p>
+          <h3 className="text-gray-400 text-sm mb-1">Total Balance</h3>
+          <p className="text-3xl font-bold text-white">
+            {loading ? '...' : `$${parseFloat(stats?.totalBalance || '0').toFixed(2)}`}
+          </p>
+          {stats && (
+            <p className="text-sm text-gray-400 mt-2">
+              ${parseFloat(stats.totalEarnings || '0').toFixed(2)} earnings
+            </p>
+          )}
         </div>
       </div>
 
