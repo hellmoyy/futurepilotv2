@@ -136,77 +136,83 @@ async function checkNetwork(
   const contract = new ethers.Contract(config.contract, USDT_ABI, provider);
   
   const currentBlock = await provider.getBlockNumber();
-  // Check last 500 blocks to catch recent deposits (more than cron's 50)
-  const fromBlock = Math.max(0, currentBlock - 500);
+  // Reduce to 100 blocks to minimize rate limit issues
+  // User can click multiple times if needed (5s cooldown)
+  const fromBlock = Math.max(0, currentBlock - 100);
   
   console.log(`Checking ${config.name} blocks ${fromBlock} to ${currentBlock}`);
 
-  const transfers = await contract.queryFilter(
-    contract.filters.Transfer(null, userAddress.toLowerCase()),
-    fromBlock,
-    currentBlock
-  );
+  try {
+    const transfers = await contract.queryFilter(
+      contract.filters.Transfer(null, userAddress.toLowerCase()),
+      fromBlock,
+      currentBlock
+    );
 
-  const deposits = [];
-  let totalAmount = 0;
+    const deposits = [];
+    let totalAmount = 0;
 
-  for (const transfer of transfers) {
-    const eventLog = transfer as ethers.EventLog;
-    const txHash = transfer.transactionHash;
+    for (const transfer of transfers) {
+      const eventLog = transfer as ethers.EventLog;
+      const txHash = transfer.transactionHash;
 
-    // Check if already processed
-    const existingTx = await Transaction.findOne({ txHash });
-    if (existingTx) {
-      console.log(`Already processed: ${txHash}`);
-      continue;
+      // Check if already processed
+      const existingTx = await Transaction.findOne({ txHash });
+      if (existingTx) {
+        console.log(`Already processed: ${txHash}`);
+        continue;
+      }
+
+      // Get decimals from env
+      let usdtDecimals = 6;
+      if (networkKey === 'bsc') {
+        usdtDecimals = NETWORK_MODE === 'testnet' 
+          ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
+          : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+      } else if (networkKey === 'ethereum') {
+        usdtDecimals = NETWORK_MODE === 'testnet'
+          ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
+          : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+      }
+
+      const amount = eventLog.args?.[2] ? parseFloat(ethers.formatUnits(eventLog.args[2], usdtDecimals)) : 0;
+
+      console.log(`✅ NEW DEPOSIT: ${amount} USDT (${txHash})`);
+
+      // Create transaction record
+      const newTransaction = new Transaction({
+        userId: user._id,
+        userEmail: user.email,
+        network: config.name,
+        txHash,
+        amount,
+        status: 'confirmed',
+        fromAddress: eventLog.args?.[0] || 'unknown',
+        toAddress: userAddress.toLowerCase(),
+        blockNumber: transfer.blockNumber,
+        createdAt: new Date()
+      });
+
+      await newTransaction.save();
+
+      // Update user balance
+      await User.findByIdAndUpdate(user._id, {
+        $inc: { 'walletData.balance': amount }
+      });
+
+      deposits.push({
+        txHash,
+        amount,
+        network: config.name,
+        blockNumber: transfer.blockNumber
+      });
+
+      totalAmount += amount;
     }
 
-    // Get decimals from env
-    let usdtDecimals = 6;
-    if (networkKey === 'bsc') {
-      usdtDecimals = NETWORK_MODE === 'testnet' 
-        ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
-        : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
-    } else if (networkKey === 'ethereum') {
-      usdtDecimals = NETWORK_MODE === 'testnet'
-        ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
-        : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
-    }
-
-    const amount = eventLog.args?.[2] ? parseFloat(ethers.formatUnits(eventLog.args[2], usdtDecimals)) : 0;
-
-    console.log(`✅ NEW DEPOSIT: ${amount} USDT (${txHash})`);
-
-    // Create transaction record
-    const newTransaction = new Transaction({
-      userId: user._id,
-      userEmail: user.email,
-      network: config.name,
-      txHash,
-      amount,
-      status: 'confirmed',
-      fromAddress: eventLog.args?.[0] || 'unknown',
-      toAddress: userAddress.toLowerCase(),
-      blockNumber: transfer.blockNumber,
-      createdAt: new Date()
-    });
-
-    await newTransaction.save();
-
-    // Update user balance
-    await User.findByIdAndUpdate(user._id, {
-      $inc: { 'walletData.balance': amount }
-    });
-
-    deposits.push({
-      txHash,
-      amount,
-      network: config.name,
-      blockNumber: transfer.blockNumber
-    });
-
-    totalAmount += amount;
+    return { deposits, totalAmount };
+  } catch (error) {
+    // Re-throw to be caught by caller
+    throw error;
   }
-
-  return { deposits, totalAmount };
 }
