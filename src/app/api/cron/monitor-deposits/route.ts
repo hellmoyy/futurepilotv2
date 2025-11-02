@@ -96,10 +96,10 @@ export async function GET(request: NextRequest) {
         const contract = new ethers.Contract(config.contract, USDT_ABI, provider);
         const currentBlock = await provider.getBlockNumber();
         
-        // Reduce block window to 50 blocks (~2.5 minutes on BSC, ~10 minutes on ETH)
-        // This is more reliable and less likely to hit rate limits
-        // Webhook handles real-time, cron is just backup for missed webhooks
-        const fromBlock = Math.max(0, currentBlock - 50);
+        // Scan last 100 blocks (~5 minutes on BSC, ~20 minutes on ETH)
+        // publicnode.com has excellent rate limits, no issues with larger windows
+        // Cron runs every 1 minute, so this ensures we catch all deposits
+        const fromBlock = Math.max(0, currentBlock - 100);
 
         // Collect all user addresses for this network
         const userAddresses = users

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import QRCode from 'qrcode';
+import { getMinDepositAmount } from '@/config/gas-fees';
 
 interface WalletData {
   erc20Address: string;
@@ -34,10 +35,16 @@ export default function TopUpPage() {
   const [checkingDeposit, setCheckingDeposit] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState<number>(0);
   const [checkCooldown, setCheckCooldown] = useState<number>(0);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [lastBalance, setLastBalance] = useState<number>(0);
+  const [showNewDepositNotification, setShowNewDepositNotification] = useState(false);
   
   // Detect network type from NETWORK_MODE env variable
   const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
   const isMainnet = networkMode === 'mainnet';
+  
+  // Get minimum deposit based on network mode
+  const minDepositAmount = isMainnet ? 10 : 1; // $10 for mainnet, $1 for testnet
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -51,6 +58,64 @@ export default function TopUpPage() {
       fetchTransactions();
     }
   }, [status]);
+
+  // Auto-refresh every 10 seconds to detect new deposits
+  useEffect(() => {
+    if (!autoRefreshEnabled || status !== 'authenticated') {
+      return;
+    }
+
+    const refreshInterval = setInterval(async () => {
+      try {
+        // Silently fetch new data in background
+        const [walletResponse, txResponse] = await Promise.all([
+          fetch('/api/wallet/get'),
+          fetch('/api/wallet/transactions')
+        ]);
+
+        if (walletResponse.ok) {
+          const newWalletData = await walletResponse.json();
+          
+          // Check if balance increased (new deposit!)
+          if (walletData && newWalletData.balance > walletData.balance) {
+            const depositAmount = newWalletData.balance - walletData.balance;
+            console.log(`🎉 New deposit detected: +${depositAmount} USDT`);
+            
+            // Show notification
+            setShowNewDepositNotification(true);
+            setTimeout(() => setShowNewDepositNotification(false), 5000);
+            
+            // Play sound or show browser notification (optional)
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('New Deposit Received! 💰', {
+                body: `+${depositAmount.toFixed(2)} USDT deposited to your wallet`,
+                icon: '/favicon.ico'
+              });
+            }
+          }
+          
+          setWalletData(newWalletData);
+          setLastBalance(newWalletData.balance);
+        }
+
+        if (txResponse.ok) {
+          const newTxData = await txResponse.json();
+          setTransactions(newTxData);
+        }
+      } catch (error) {
+        console.error('Auto-refresh error:', error);
+      }
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [status, walletData, autoRefreshEnabled]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   // Generate QR code when wallet data loads (using ERC20 address)
   useEffect(() => {
@@ -214,6 +279,21 @@ export default function TopUpPage() {
 
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4 sm:space-y-5 lg:space-y-6">
+      {/* New Deposit Notification */}
+      {showNewDepositNotification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-2xl border border-green-400 flex items-center gap-3">
+            <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="font-bold">New Deposit Received! 💰</p>
+              <p className="text-sm">Your balance has been updated</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -227,16 +307,25 @@ export default function TopUpPage() {
         <div className="bg-white/[0.03] backdrop-blur-3xl rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-4 light:bg-blue-50 light:border-blue-200">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Current Balance</p>
+                {autoRefreshEnabled && (
+                  <span className="flex items-center gap-1 text-[10px] text-green-400 light:text-green-600">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                    Live
+                  </span>
+                )}
+              </div>
               <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">
                 ${walletData?.balance.toFixed(2) || '0.00'}
               </p>
             </div>
-            <button
-              onClick={checkDeposit}
-              disabled={checkingDeposit || checkCooldown > 0}
-              className="px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
-            >
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={checkDeposit}
+                disabled={checkingDeposit || checkCooldown > 0}
+                className="px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
+              >
               {checkingDeposit ? (
                 <>
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
@@ -256,6 +345,14 @@ export default function TopUpPage() {
                 </>
               )}
             </button>
+              <button
+                onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                className="px-2 py-1 text-[10px] bg-white/5 hover:bg-white/10 text-gray-400 rounded border border-white/10 transition-all"
+                title={autoRefreshEnabled ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+              >
+                {autoRefreshEnabled ? '🔄 On' : '⏸️ Off'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -516,7 +613,7 @@ export default function TopUpPage() {
                     <p className="text-xs text-green-300 light:text-green-600">
                       • ERC-20: ~2-5 minutes<br/>
                       • BEP-20: ~30 seconds<br/>
-                      • Minimum: $10 USDT
+                      • Minimum: ${minDepositAmount} USDT {!isMainnet && '(Testnet)'}
                     </p>
                   </div>
                 </div>

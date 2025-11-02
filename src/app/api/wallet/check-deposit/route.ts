@@ -136,9 +136,9 @@ async function checkNetwork(
   const contract = new ethers.Contract(config.contract, USDT_ABI, provider);
   
   const currentBlock = await provider.getBlockNumber();
-  // Reduce to 100 blocks to minimize rate limit issues
-  // User can click multiple times if needed (5s cooldown)
-  const fromBlock = Math.max(0, currentBlock - 100);
+  // Scan last 500 blocks (~25 minutes on BSC, ~100 minutes on ETH)
+  // publicnode.com has better rate limits than official RPCs
+  const fromBlock = Math.max(0, currentBlock - 500);
   
   console.log(`Checking ${config.name} blocks ${fromBlock} to ${currentBlock}`);
 
