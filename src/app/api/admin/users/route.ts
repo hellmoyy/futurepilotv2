@@ -21,16 +21,27 @@ export async function GET(request: NextRequest) {
     // Connect to database
     await connectDB();
 
+    // Get network mode
+    const networkMode = process.env.NETWORK_MODE || 'testnet';
+
     // Fetch all users
     const users = await User.find({})
       .select('-password -verificationToken -binanceApiKey -binanceApiSecret -twoFactorSecret')
       .sort({ createdAt: -1 })
       .lean();
 
+    // Add network-aware balance field
+    const usersWithBalance = users.map((user: any) => ({
+      ...user,
+      balance: networkMode === 'mainnet' 
+        ? (user.walletData?.mainnetBalance || 0)
+        : (user.walletData?.balance || 0)
+    }));
+
     return NextResponse.json({
       success: true,
-      users: users,
-      total: users.length,
+      users: usersWithBalance,
+      total: usersWithBalance.length,
     });
 
   } catch (error) {

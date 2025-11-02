@@ -11,7 +11,7 @@ interface Transaction {
   };
   type: 'deposit' | 'withdrawal' | 'commission' | 'referral_bonus' | 'trading_profit' | 'trading_loss';
   amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'failed';
   description?: string;
   txHash?: string;
   network?: string;
@@ -72,11 +72,12 @@ export default function AdminTransactionsPage() {
   const stats = {
     total: transactions.length,
     totalAmount: transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0),
-    deposits: transactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0),
-    withdrawals: transactions.filter(t => t.type === 'withdrawal').reduce((sum, t) => sum + Math.abs(t.amount), 0),
-    commissions: transactions.filter(t => t.type === 'commission' || t.type === 'referral_bonus').reduce((sum, t) => sum + t.amount, 0),
-    completed: transactions.filter(t => t.status === 'completed').length,
+    deposits: transactions.filter(t => t.type === 'deposit' && t.status === 'confirmed').reduce((sum, t) => sum + t.amount, 0),
+    withdrawals: transactions.filter(t => t.type === 'withdrawal' && t.status === 'confirmed').reduce((sum, t) => sum + Math.abs(t.amount), 0),
+    commissions: transactions.filter(t => (t.type === 'commission' || t.type === 'referral_bonus') && t.status === 'confirmed').reduce((sum, t) => sum + t.amount, 0),
+    confirmed: transactions.filter(t => t.status === 'confirmed').length,
     pending: transactions.filter(t => t.status === 'pending').length,
+    failed: transactions.filter(t => t.status === 'failed').length,
   };
 
   const handleViewDetails = (transaction: Transaction) => {
@@ -135,9 +136,8 @@ export default function AdminTransactionsPage() {
   const getStatusBadge = (status: string) => {
     const styles = {
       pending: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/50',
-      completed: 'bg-green-500/10 text-green-500 border-green-500/50',
+      confirmed: 'bg-green-500/10 text-green-500 border-green-500/50',
       failed: 'bg-red-500/10 text-red-500 border-red-500/50',
-      cancelled: 'bg-gray-500/10 text-gray-500 border-gray-500/50',
     };
     return styles[status as keyof typeof styles] || styles.pending;
   };
@@ -297,9 +297,8 @@ export default function AdminTransactionsPage() {
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
+              <option value="confirmed">Confirmed</option>
               <option value="failed">Failed</option>
-              <option value="cancelled">Cancelled</option>
             </select>
           </div>
 

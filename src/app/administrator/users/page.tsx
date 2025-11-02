@@ -9,6 +9,7 @@ interface User {
   name: string;
   membershipLevel: string;
   totalEarnings: number;
+  balance: number;
   referralCode: string;
   emailVerified: boolean;
   createdAt: string;
@@ -230,6 +231,7 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Balance</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Earnings</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Joined</th>
@@ -239,7 +241,7 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-gray-700">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <p className="text-gray-400">No users found</p>
                   </td>
                 </tr>
@@ -264,6 +266,9 @@ export default function AdminUsersPage() {
                       <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getMembershipColor(user.membershipLevel || 'bronze')}`}>
                         {(user.membershipLevel || 'bronze').toUpperCase()}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <p className="text-sm font-medium text-green-400">${(user.balance || 0).toFixed(2)}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <p className="text-sm font-medium text-white">${(user.totalEarnings || 0).toFixed(2)}</p>
@@ -358,6 +363,11 @@ export default function AdminUsersPage() {
                       <span className="text-yellow-500">✗ Unverified</span>
                     )}
                   </p>
+                </div>
+
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-gray-400 text-sm mb-1">Balance</p>
+                  <p className="text-green-400 font-medium text-lg">${(selectedUser.balance || 0).toFixed(2)}</p>
                 </div>
 
                 <div className="bg-gray-700/50 rounded-lg p-4">

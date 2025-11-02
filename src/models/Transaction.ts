@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 // Transaction Interface
 export interface ITransaction extends Document {
   userId: mongoose.Types.ObjectId;
+  type: 'deposit' | 'withdrawal' | 'commission' | 'referral_bonus' | 'trading_profit' | 'trading_loss';
   network: 'ERC20' | 'BEP20';
   txHash: string;
   amount: number;
@@ -20,6 +21,11 @@ const TransactionSchema = new Schema<ITransaction>(
       type: Schema.Types.ObjectId,
       ref: 'futurepilotcol',
       required: true,
+    },
+    type: {
+      type: String,
+      enum: ['deposit', 'withdrawal', 'commission', 'referral_bonus', 'trading_profit', 'trading_loss'],
+      default: 'deposit',
     },
     network: {
       type: String,

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { verify } from 'jsonwebtoken';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
@@ -10,20 +9,25 @@ import { Transaction } from '@/models/Transaction';
  * Returns real-time statistics for admin dashboard
  */
 
+// Disable caching for this API route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
-    // Check admin authentication
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
+    // Verify admin token (same as other admin endpoints)
+    const token = request.cookies.get('admin-token')?.value;
+    if (!token) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Verify admin
-    if (session.user.email !== process.env.ADMIN_EMAIL) {
+    const secret = process.env.NEXTAUTH_SECRET || 'fallback-secret-key';
+    const decoded = verify(token, secret) as any;
+
+    if (decoded.role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
@@ -71,14 +75,11 @@ export async function GET(request: NextRequest) {
     const balanceField = networkMode === 'mainnet' ? 'walletData.mainnetBalance' : 'walletData.balance';
     const balanceAggregate = await User.aggregate([
       {
-        $match: {
-          [balanceField]: { $exists: true, $ne: null }
-        }
-      },
-      {
         $group: {
           _id: null,
-          totalBalance: { $sum: `$${balanceField}` }
+          totalBalance: { 
+            $sum: networkMode === 'mainnet' ? '$walletData.mainnetBalance' : '$walletData.balance'
+          }
         }
       }
     ]);
