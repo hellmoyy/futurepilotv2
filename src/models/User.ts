@@ -22,7 +22,8 @@ export interface IUser extends Document {
     erc20Address: string;
     bep20Address: string;
     encryptedPrivateKey: string;
-    balance: number;
+    balance: number; // Testnet balance
+    mainnetBalance: number; // Mainnet balance (separate)
     createdAt: Date;
   };
   // Withdrawal wallet addresses
@@ -120,6 +121,11 @@ const UserSchema = new Schema<IUser>(
         select: false,
       },
       balance: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      mainnetBalance: {
         type: Number,
         default: 0,
         min: 0,

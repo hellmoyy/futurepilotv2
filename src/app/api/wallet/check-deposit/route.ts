@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { ethers } from 'ethers';
+import { createBalanceUpdate, getUserBalance } from '@/lib/network-balance';
 
 const USDT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -104,12 +105,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get updated balance
+    // Get updated balance for current network
     const updatedUser = await User.findById(user._id);
+    const currentBalance = getUserBalance(updatedUser);
 
     return NextResponse.json({
       success: true,
-      balance: updatedUser?.walletData?.balance || 0,
+      balance: currentBalance, // Network-aware balance
       newDepositsCount: results.newDeposits.length,
       totalNewAmount: results.totalNewAmount,
       networksChecked: results.checked,
@@ -196,10 +198,9 @@ async function checkNetwork(
 
       await newTransaction.save();
 
-      // Update user balance
-      await User.findByIdAndUpdate(user._id, {
-        $inc: { 'walletData.balance': amount }
-      });
+      // Update user balance for current network
+      const balanceUpdate = createBalanceUpdate(amount);
+      await User.findByIdAndUpdate(user._id, balanceUpdate);
 
       deposits.push({
         txHash,

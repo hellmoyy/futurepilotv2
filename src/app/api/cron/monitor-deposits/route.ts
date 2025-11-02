@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
+import { createBalanceUpdate } from '@/lib/network-balance';
 
 // USDT Contract ABI for Transfer events
 const USDT_ABI = [
@@ -181,10 +182,9 @@ export async function GET(request: NextRequest) {
 
               await newTransaction.save();
 
-              // Update user balance
-              await User.findByIdAndUpdate(user._id, {
-                $inc: { 'walletData.balance': parseFloat(amount) }
-              });
+              // Update user balance for current network
+              const balanceUpdate = createBalanceUpdate(parseFloat(amount));
+              await User.findByIdAndUpdate(user._id, balanceUpdate);
 
               networkProcessed++;
               

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
+import { getUserBalance } from '@/lib/network-balance';
 
 /**
  * Moralis Webhook Handler
@@ -204,25 +205,35 @@ export async function POST(request: NextRequest) {
 
         await newTransaction.save();
 
-        // Update user balance
-        const previousBalance = user.walletData?.balance || 0;
+        // Update user balance for current network
+        const previousBalance = getUserBalance(user);
         if (!user.walletData) {
           user.walletData = {
             erc20Address: recipientAddress,
             bep20Address: recipientAddress,
             encryptedPrivateKey: '',
-            balance: amount,
+            balance: 0,
+            mainnetBalance: 0,
             createdAt: new Date(),
           };
-        } else {
-          user.walletData.balance = previousBalance + amount;
         }
+        
+        // Update correct balance based on network mode
+        const networkMode = process.env.NETWORK_MODE || 'testnet';
+        if (networkMode === 'mainnet') {
+          user.walletData.mainnetBalance = (user.walletData.mainnetBalance || 0) + amount;
+        } else {
+          user.walletData.balance = (user.walletData.balance || 0) + amount;
+        }
+        
         await user.save();
 
+        const newBalance = getUserBalance(user);
         console.log('✅ Deposit processed successfully:', {
           user: user.email,
+          network: networkMode,
           previousBalance,
-          newBalance: user.walletData.balance,
+          newBalance,
           depositAmount: amount,
         });
 

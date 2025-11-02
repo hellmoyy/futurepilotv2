@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { getUserBalance, getNetworkMode } from '@/lib/network-balance';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,10 +34,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get balance for current network mode
+    const balance = getUserBalance(user);
+    const networkMode = getNetworkMode();
+
     return NextResponse.json({
       erc20Address: user.walletData.erc20Address,
       bep20Address: user.walletData.bep20Address,
-      balance: user.walletData.balance || 0
+      balance,
+      networkMode, // Include network mode in response
+      testnetBalance: user.walletData.balance || 0, // For debugging
+      mainnetBalance: user.walletData.mainnetBalance || 0 // For debugging
     });
 
   } catch (error) {
