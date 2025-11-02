@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       bep20Address: wallet.address,  // Same address for both networks  
       encryptedPrivateKey: encryptedPrivateKey,
       balance: 0,
+      mainnetBalance: 0,
       createdAt: new Date()
     };
 

@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
       encryptedPrivateKey: encryptedPrivateKey,
       encryptedMnemonic: encryptedMnemonic, // New field for mnemonic
       balance: 0,
+      mainnetBalance: 0,
       createdAt: new Date(),
       hasRecoveryPhrase: !!mnemonic
     };

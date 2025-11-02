@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       bep20Address: address, // Same address works for both networks
       encryptedPrivateKey: encryptedPrivateKey,
       balance: 0,
+      mainnetBalance: 0,
       createdAt: new Date()
     };
 
