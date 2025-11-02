@@ -349,20 +349,40 @@ export default function CustodialWalletPage() {
 
         {/* Custom Token Address Input */}
         {tokenType === 'CUSTOM' && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Custom Token Address
-            </label>
-            <input
-              type="text"
-              value={customTokenAddress}
-              onChange={(e) => setCustomTokenAddress(e.target.value)}
-              placeholder="0x..."
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-            />
-            <p className="text-gray-500 text-xs mt-1">
-              Enter the token contract address for {selectedNetwork.includes('BSC') ? 'BEP-20' : 'ERC-20'} token
-            </p>
+          <div className="mb-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Custom Token Address
+              </label>
+              <input
+                type="text"
+                value={customTokenAddress}
+                onChange={(e) => setCustomTokenAddress(e.target.value)}
+                placeholder="0x..."
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              />
+              <p className="text-gray-500 text-xs mt-1">
+                Enter the token contract address for {selectedNetwork.includes('BSC') ? 'BEP-20' : 'ERC-20'} token
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Token Decimals (Manual Override)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="18"
+                value={tokenDecimals}
+                onChange={(e) => setTokenDecimals(parseInt(e.target.value) || 18)}
+                placeholder="18"
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              />
+              <p className="text-gray-500 text-xs mt-1">
+                💡 Usually 18 for most tokens. Click refresh button above to auto-fetch from blockchain.
+              </p>
+            </div>
           </div>
         )}
 
@@ -379,7 +399,7 @@ export default function CustodialWalletPage() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-blue-400 mb-2">📋 Token Information</h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                   <div>
                     <p className="text-gray-500 text-xs mb-1">Symbol</p>
                     <p className="text-white font-semibold">{tokenSymbol}</p>
@@ -390,19 +410,33 @@ export default function CustodialWalletPage() {
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs mb-1">Decimals</p>
-                    <p className="text-white font-semibold">{tokenDecimals}</p>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="18"
+                        value={tokenDecimals}
+                        onChange={(e) => setTokenDecimals(parseInt(e.target.value) || 18)}
+                        className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        title="Manual override (editable)"
+                      />
+                      <span className="text-gray-500 text-xs">✏️</span>
+                    </div>
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      onClick={fetchTokenInfo}
+                      className="text-blue-400 hover:text-blue-300 text-xs flex items-center space-x-1 transition"
+                      title="Refresh from blockchain"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Auto-fetch</span>
+                    </button>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={fetchTokenInfo}
-                className="text-blue-400 hover:text-blue-300 text-xs flex items-center space-x-1 transition"
-                title="Refresh token info"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
             </div>
             <div className="mt-3 pt-3 border-t border-blue-500/20">
               <p className="text-gray-400 text-xs">
