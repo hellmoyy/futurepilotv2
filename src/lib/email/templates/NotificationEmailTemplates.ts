@@ -318,3 +318,90 @@ export function generateLowBalanceWarningEmail(data: {
     footerText: 'Keep your account active by maintaining sufficient gas fee balance.'
   });
 }
+
+// Trading Auto-Close Notification
+export function generateTradingAutoCloseEmail(data: {
+  userName: string;
+  profit: number;
+  threshold: number;
+  gasFeeBalance: number;
+  positionId: string;
+}) {
+  return generateBaseEmailTemplate({
+    previewText: `⚠️ Position auto-closed: +$${data.profit.toFixed(2)} profit`,
+    title: '⚠️ Position Auto-Closed',
+    content: `
+      <p>Hi <strong>${data.userName}</strong>,</p>
+      
+      <p>Your trading position was automatically closed to protect your gas fee balance from going negative.</p>
+      
+      <div class="email-info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+        <p style="margin: 0;"><strong>⚠️ Auto-Close Alert:</strong></p>
+        <p style="margin: 5px 0 0 0;">Profit Secured: <strong style="color: #16a34a; font-size: 18px;">+$${data.profit.toFixed(2)} USDT</strong></p>
+        <p style="margin: 5px 0 0 0;">Auto-Close Threshold: <strong>$${data.threshold.toFixed(2)} USDT</strong></p>
+        <p style="margin: 5px 0 0 0;">Remaining Gas Fee: <strong style="color: #d97706;">$${data.gasFeeBalance.toFixed(2)} USDT</strong></p>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #92400e;">Position ID: <code style="background: #fef3c7; padding: 2px 6px; border-radius: 4px;">${data.positionId}</code></p>
+      </div>
+      
+      <p><strong>Why was this closed?</strong></p>
+      <p>Our system detected that continuing the trade could deplete your gas fee balance. To prevent this, we automatically closed the position and secured your profit.</p>
+      
+      <p><strong>What should you do?</strong></p>
+      <ul style="margin-left: 20px;">
+        <li>✅ Your profit has been secured</li>
+        <li>💰 Top up gas fee balance to continue trading</li>
+        <li>📊 Review your trading dashboard for details</li>
+      </ul>
+      
+      <p><strong>Important:</strong> Platform commission (20%) will be deducted from your gas fee balance as per our terms.</p>
+    `,
+    ctaText: 'View Trading Dashboard',
+    ctaUrl: 'https://futurepilot.pro/automation',
+    footerText: 'Auto-close protection ensures you never go into negative balance.'
+  });
+}
+
+// Low Gas Fee Trading Warning
+export function generateLowGasFeeWarningEmail(data: {
+  userName: string;
+  currentBalance: number;
+}) {
+  return generateBaseEmailTemplate({
+    previewText: `🚨 Cannot trade: Gas fee balance too low ($${data.currentBalance.toFixed(2)})`,
+    title: '🚨 Trading Paused: Low Gas Fee Balance',
+    content: `
+      <p>Hi <strong>${data.userName}</strong>,</p>
+      
+      <p><strong>Your automated trading has been paused</strong> because your gas fee balance is below the minimum required amount.</p>
+      
+      <div class="email-info-box" style="background-color: #fee2e2; border-left-color: #ef4444;">
+        <p style="margin: 0;"><strong>🚨 Critical Alert:</strong></p>
+        <p style="margin: 5px 0 0 0;">Current Balance: <strong style="color: #dc2626; font-size: 18px;">$${data.currentBalance.toFixed(2)} USDT</strong></p>
+        <p style="margin: 5px 0 0 0;">Minimum Required: <strong>$10.00 USDT</strong></p>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #991b1b;">⚠️ Trading will resume automatically after topup</p>
+      </div>
+      
+      <p><strong>Why do I need gas fee balance?</strong></p>
+      <ul style="margin-left: 20px;">
+        <li>💼 Platform commission payments (20% of profits)</li>
+        <li>🤖 Automated trading operations</li>
+        <li>⚡ Continuous bot monitoring</li>
+        <li>📊 Real-time position management</li>
+      </ul>
+      
+      <p><strong>How to resume trading:</strong></p>
+      <ol style="margin-left: 20px;">
+        <li>Top up gas fee balance (minimum $10 USDT)</li>
+        <li>Wait for confirmation (usually instant)</li>
+        <li>Trading bot will automatically resume</li>
+      </ol>
+      
+      <p style="padding: 15px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px; margin: 20px 0;">
+        <strong style="color: #1e40af;">💡 Pro Tip:</strong> Keep at least $50 USDT in gas fee balance for uninterrupted trading and maximum profit potential!
+      </p>
+    `,
+    ctaText: 'Top Up Gas Fee Balance',
+    ctaUrl: 'https://futurepilot.pro/topup',
+    footerText: 'Resume trading in minutes with a quick top-up!'
+  });
+}

@@ -174,6 +174,25 @@ class NotificationManager {
           });
           break;
 
+        case 'trading_autoclose':
+          await emailService.sendTradingAutoClose({
+            to: userEmail,
+            userName,
+            profit: payload.metadata?.profit || 0,
+            threshold: payload.metadata?.autoCloseThreshold || 0,
+            gasFeeBalance: payload.metadata?.gasFeeBalance || 0,
+            positionId: payload.metadata?.positionId || 'Unknown'
+          });
+          break;
+
+        case 'trading_low_gas':
+          await emailService.sendLowGasFeeWarning({
+            to: userEmail,
+            userName,
+            currentBalance: payload.metadata?.gasFeeBalance || 0
+          });
+          break;
+
         default:
           // For other types, use a simple text email (fallback)
           console.log(`[Notification] No template for type: ${payload.type}, skipping email`);

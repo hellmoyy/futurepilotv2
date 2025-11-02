@@ -12,7 +12,9 @@ import {
   generateTierUpgradeEmail,
   generateTradingProfitEmail,
   generateReferralCommissionEmail,
-  generateLowBalanceWarningEmail
+  generateLowBalanceWarningEmail,
+  generateTradingAutoCloseEmail,
+  generateLowGasFeeWarningEmail
 } from './templates/NotificationEmailTemplates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -264,6 +266,48 @@ export class EmailService {
         userName: data.userName,
         currentBalance: data.currentBalance,
         minimumRequired: data.minimumRequired
+      })
+    });
+  }
+
+  /**
+   * Send trading auto-close notification
+   */
+  async sendTradingAutoClose(data: {
+    to: string;
+    userName: string;
+    profit: number;
+    threshold: number;
+    gasFeeBalance: number;
+    positionId: string;
+  }) {
+    return this.sendEmail({
+      to: data.to,
+      subject: `⚠️ Position Auto-Closed: +$${data.profit.toFixed(2)}`,
+      html: generateTradingAutoCloseEmail({
+        userName: data.userName,
+        profit: data.profit,
+        threshold: data.threshold,
+        gasFeeBalance: data.gasFeeBalance,
+        positionId: data.positionId
+      })
+    });
+  }
+
+  /**
+   * Send low gas fee trading warning
+   */
+  async sendLowGasFeeWarning(data: {
+    to: string;
+    userName: string;
+    currentBalance: number;
+  }) {
+    return this.sendEmail({
+      to: data.to,
+      subject: `🚨 Cannot Trade: Low Gas Fee Balance`,
+      html: generateLowGasFeeWarningEmail({
+        userName: data.userName,
+        currentBalance: data.currentBalance
       })
     });
   }
