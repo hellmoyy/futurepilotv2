@@ -183,10 +183,11 @@ async function checkNetwork(
       const newTransaction = new Transaction({
         userId: user._id,
         userEmail: user.email,
-        network: config.name,
+        network: networkKey === 'bsc' ? 'BEP20' : 'ERC20', // Fix: Use correct enum values
         txHash,
         amount,
         status: 'confirmed',
+        walletAddress: userAddress.toLowerCase(), // Fix: Add required walletAddress field
         fromAddress: eventLog.args?.[0] || 'unknown',
         toAddress: userAddress.toLowerCase(),
         blockNumber: transfer.blockNumber,
@@ -203,7 +204,7 @@ async function checkNetwork(
       deposits.push({
         txHash,
         amount,
-        network: config.name,
+        network: config.name, // Display name for frontend
         blockNumber: transfer.blockNumber
       });
 

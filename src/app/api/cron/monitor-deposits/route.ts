@@ -168,10 +168,11 @@ export async function GET(request: NextRequest) {
               const newTransaction = new Transaction({
                 userId: user._id,
                 userEmail: user.email,
-                network: config.name,
+                network: networkKey === 'bsc' ? 'BEP20' : 'ERC20', // Fix: Use correct enum values
                 txHash,
                 amount: parseFloat(amount),
                 status: 'confirmed',
+                walletAddress: address, // Fix: Add required walletAddress field
                 fromAddress: eventLog.args?.[0] || 'unknown',
                 toAddress: address,
                 blockNumber: transfer.blockNumber,
