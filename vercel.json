@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/run-bots",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/monitor-deposits",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

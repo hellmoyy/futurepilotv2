@@ -31,6 +31,13 @@ export default function TopUpPage() {
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  
+  // Detect network type (mainnet vs testnet)
+  // Check if using testnet RPC URLs or testnet contracts
+  const isMainnet = !process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL?.includes('testnet') &&
+                    !process.env.NEXT_PUBLIC_BSC_RPC_URL?.includes('testnet') &&
+                    !process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL?.includes('sepolia') &&
+                    !process.env.NEXT_PUBLIC_BSC_RPC_URL?.includes('bsc-testnet');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -253,8 +260,10 @@ export default function TopUpPage() {
                     <span>Deposit Addresses</span>
                   </h3>
                   <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                    <span className="text-green-400 font-medium">Active</span>
+                    <span className={`w-2 h-2 rounded-full animate-pulse ${isMainnet ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
+                    <span className={`font-medium ${isMainnet ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {isMainnet ? 'Mainnet' : 'Testnet'}
+                    </span>
                   </div>
                 </div>
 
@@ -279,7 +288,7 @@ export default function TopUpPage() {
                         />
                       </div>
                       <p className="text-xs sm:text-sm text-gray-400 font-semibold light:text-gray-600">
-                        ERC-20 & BEP-20 Address
+                        ERC-20 & BEP-20 Address (Send only USDT)
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-2">
@@ -305,13 +314,27 @@ export default function TopUpPage() {
 
                   {/* QR Code */}
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 text-center light:bg-blue-50 light:border-blue-200">
-                    <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-lg mx-auto mb-3 flex items-center justify-center overflow-hidden">
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-lg mx-auto mb-3 flex items-center justify-center overflow-hidden relative">
                       {qrCodeUrl ? (
-                        <img 
-                          src={qrCodeUrl} 
-                          alt="Wallet Address QR Code"
-                          className="w-full h-full object-contain"
-                        />
+                        <>
+                          <img 
+                            src={qrCodeUrl} 
+                            alt="Wallet Address QR Code"
+                            className="w-full h-full object-contain"
+                          />
+                          {/* USDT Logo in center of QR Code */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-white rounded-full p-2 shadow-lg">
+                              <Image
+                                src="/images/coin/usdt.png"
+                                alt="USDT"
+                                width={48}
+                                height={48}
+                                className="w-10 h-10 sm:w-12 sm:h-12"
+                              />
+                            </div>
+                          </div>
+                        </>
                       ) : (
                         <div className="text-xs text-gray-500">Generating QR...</div>
                       )}

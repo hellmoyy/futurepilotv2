@@ -399,6 +399,8 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
     startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
   } else if (period === '1m') {
     startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+  } else if (period === '2m') {
+    startDate = new Date(endDate.getTime() - 60 * 24 * 60 * 60 * 1000);
   } else if (period === '3m') {
     startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
   } else if (period === '6m') {
