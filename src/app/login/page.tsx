@@ -13,9 +13,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    twoFactorCode: '',
   });
 
   // Redirect if already logged in
@@ -46,9 +48,18 @@ export default function LoginPage() {
         redirect: false,
         email: formData.email,
         password: formData.password,
+        twoFactorCode: formData.twoFactorCode,
       });
 
       if (result?.error) {
+        // Check if 2FA is required
+        if (result.error === '2FA_REQUIRED') {
+          setRequires2FA(true);
+          setError('Please enter your 2FA code from your authenticator app');
+          setIsLoading(false);
+          return;
+        }
+        
         setError(result.error);
         setIsLoading(false);
         return;
@@ -140,6 +151,31 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
+
+            {/* 2FA Code Input - Only show when 2FA is required */}
+            {requires2FA && (
+              <div className="animate-fadeIn">
+                <label htmlFor="twoFactorCode" className="block text-sm font-semibold text-gray-200 dark:text-gray-200 light:text-gray-700 mb-2">
+                  🔐 Two-Factor Authentication Code
+                </label>
+                <input
+                  type="text"
+                  id="twoFactorCode"
+                  name="twoFactorCode"
+                  value={formData.twoFactorCode}
+                  onChange={handleChange}
+                  required={requires2FA}
+                  maxLength={6}
+                  placeholder="123456"
+                  autoComplete="off"
+                  autoFocus
+                  className="w-full px-4 py-3 bg-blue-500/10 backdrop-blur-xl border-2 border-blue-400/50 rounded-xl text-white dark:text-white light:text-gray-900 placeholder-gray-400 dark:placeholder-gray-400 light:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all text-center text-2xl tracking-widest font-mono"
+                />
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">
+                  Enter the 6-digit code from your authenticator app or use a backup code
+                </p>
+              </div>
+            )}
 
             <button
               type="submit"

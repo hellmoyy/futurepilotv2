@@ -2,6 +2,8 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { verifyTwoFactorToken } from '@/lib/twoFactor';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -10,6 +12,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        twoFactorCode: { label: '2FA Code', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -18,8 +21,9 @@ export const authOptions: NextAuthOptions = {
 
         await connectDB();
 
-        // Find user with password field
-        const user = await User.findOne({ email: credentials.email }).select('+password');
+        // Find user with password and 2FA fields
+        const user = await User.findOne({ email: credentials.email })
+          .select('+password +twoFactorEnabled +twoFactorSecret +twoFactorBackupCodes');
 
         if (!user) {
           throw new Error('Invalid email or password');
@@ -40,6 +44,51 @@ export const authOptions: NextAuthOptions = {
 
         if (!isPasswordValid) {
           throw new Error('Invalid email or password');
+        }
+
+        // Check if 2FA is enabled for this user
+        if (user.twoFactorEnabled) {
+          if (!credentials.twoFactorCode) {
+            throw new Error('2FA_REQUIRED');
+          }
+
+          // Check if it's a backup code first
+          let isValid = false;
+          let usedBackupCode = false;
+
+          if (user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0) {
+            // Try to match backup code (hashed)
+            for (let i = 0; i < user.twoFactorBackupCodes.length; i++) {
+              const isBackupCodeValid = await bcrypt.compare(
+                credentials.twoFactorCode,
+                user.twoFactorBackupCodes[i]
+              );
+
+              if (isBackupCodeValid) {
+                isValid = true;
+                usedBackupCode = true;
+                // Remove used backup code
+                user.twoFactorBackupCodes.splice(i, 1);
+                await user.save();
+                console.log(`✅ Backup code used for user: ${user.email}`);
+                break;
+              }
+            }
+          }
+
+          // If not a valid backup code, try TOTP
+          if (!isValid && user.twoFactorSecret) {
+            isValid = verifyTwoFactorToken(credentials.twoFactorCode, user.twoFactorSecret);
+          }
+
+          if (!isValid) {
+            throw new Error('Invalid 2FA code. Please check your authenticator app or use a backup code.');
+          }
+
+          // If backup code was used, add flag to session
+          if (usedBackupCode) {
+            console.log(`⚠️ User ${user.email} has ${user.twoFactorBackupCodes?.length || 0} backup codes remaining`);
+          }
         }
 
         return {
