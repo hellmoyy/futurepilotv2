@@ -200,7 +200,19 @@ export async function POST(request: NextRequest) {
     if (tokenType === 'USDT') {
       tokenContract = new ethers.Contract(config.usdtContract!, TOKEN_ABI, provider);
       tokenSymbol = 'USDT';
-      tokenDecimals = 6;
+      
+      // Get decimals from env based on network
+      if (network === 'BSC_TESTNET') {
+        tokenDecimals = parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18');
+      } else if (network === 'ETHEREUM_TESTNET') {
+        tokenDecimals = parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18');
+      } else if (network === 'BSC_MAINNET') {
+        tokenDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+      } else if (network === 'ETHEREUM_MAINNET') {
+        tokenDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+      } else {
+        tokenDecimals = 6; // Default fallback
+      }
     } else if (tokenType === 'CUSTOM') {
       tokenContract = new ethers.Contract(customTokenAddress, TOKEN_ABI, provider);
       try {

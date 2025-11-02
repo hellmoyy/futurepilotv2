@@ -125,7 +125,20 @@ export async function GET(request: NextRequest) {
             for (const transfer of transfers) {
               const eventLog = transfer as ethers.EventLog;
               const txHash = transfer.transactionHash;
-              const amount = eventLog.args?.[2] ? ethers.formatUnits(eventLog.args[2], 6) : '0'; // USDT has 6 decimals
+              
+              // Get decimals from env based on network
+              let usdtDecimals = 6; // Default
+              if (networkKey === 'bsc') {
+                usdtDecimals = NETWORK_MODE === 'testnet' 
+                  ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
+                  : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+              } else if (networkKey === 'ethereum') {
+                usdtDecimals = NETWORK_MODE === 'testnet'
+                  ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
+                  : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+              }
+              
+              const amount = eventLog.args?.[2] ? ethers.formatUnits(eventLog.args[2], usdtDecimals) : '0';
               
               networkDeposits++;
 

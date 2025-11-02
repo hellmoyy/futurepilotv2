@@ -74,7 +74,19 @@ export async function GET(request: NextRequest) {
           // Get USDT balance
           const usdtContract = new ethers.Contract(net.usdt, USDT_ABI, provider);
           const usdtBalance = await usdtContract.balanceOf(masterWalletAddress);
-          const usdtDecimals = await usdtContract.decimals();
+          
+          // Get decimals from env based on network
+          let usdtDecimals = 6; // Default
+          if (net.name === 'BSC_TESTNET') {
+            usdtDecimals = parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18');
+          } else if (net.name === 'ETHEREUM_TESTNET') {
+            usdtDecimals = parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18');
+          } else if (net.name === 'BSC_MAINNET') {
+            usdtDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+          } else if (net.name === 'ETHEREUM_MAINNET') {
+            usdtDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+          }
+          
           const usdtFormatted = parseFloat(ethers.formatUnits(usdtBalance, usdtDecimals)).toFixed(2);
 
           return {

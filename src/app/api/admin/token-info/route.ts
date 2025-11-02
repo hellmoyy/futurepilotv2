@@ -92,6 +92,29 @@ export async function GET(request: NextRequest) {
     // Determine token address
     if (tokenType === 'USDT') {
       tokenAddress = config.usdtContract!;
+      
+      // Get decimals from env based on network
+      let decimals = 6; // Default
+      if (network === 'BSC_TESTNET') {
+        decimals = parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18');
+      } else if (network === 'ETHEREUM_TESTNET') {
+        decimals = parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18');
+      } else if (network === 'BSC_MAINNET') {
+        decimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+      } else if (network === 'ETHEREUM_MAINNET') {
+        decimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+      }
+      
+      return NextResponse.json({
+        network,
+        tokenAddress,
+        tokenType,
+        symbol: 'USDT',
+        name: 'Tether USD',
+        decimals,
+        isVerified: true,
+        isCached: false,
+      });
     } else if (tokenType === 'CUSTOM') {
       if (!customTokenAddress) {
         return NextResponse.json(
