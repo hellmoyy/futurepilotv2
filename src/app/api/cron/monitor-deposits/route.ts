@@ -95,7 +95,11 @@ export async function GET(request: NextRequest) {
         const provider = new ethers.JsonRpcProvider(config.rpc);
         const contract = new ethers.Contract(config.contract, USDT_ABI, provider);
         const currentBlock = await provider.getBlockNumber();
-        const fromBlock = Math.max(0, currentBlock - 100); // Check last 100 blocks (~20 minutes)
+        
+        // Reduce block window to 50 blocks (~2.5 minutes on BSC, ~10 minutes on ETH)
+        // This is more reliable and less likely to hit rate limits
+        // Webhook handles real-time, cron is just backup for missed webhooks
+        const fromBlock = Math.max(0, currentBlock - 50);
 
         // Collect all user addresses for this network
         const userAddresses = users
@@ -112,15 +116,26 @@ export async function GET(request: NextRequest) {
         let networkDeposits = 0;
         let networkProcessed = 0;
 
-        // Check deposits for each user address
-        for (const { address, user } of userAddresses) {
+        // Process users one by one with delay to avoid rate limits
+        for (let i = 0; i < userAddresses.length; i++) {
+          const { address, user } = userAddresses[i];
+          
           try {
+            // Add small delay between queries to avoid rate limiting (except for first query)
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
+            }
+            
             // Get incoming transfers to this address
             const transfers = await contract.queryFilter(
               contract.filters.Transfer(null, address),
               fromBlock,
               currentBlock
             );
+
+            if (transfers.length > 0) {
+              console.log(`   📨 Found ${transfers.length} transfer(s) for ${user.email}`);
+            }
 
             for (const transfer of transfers) {
               const eventLog = transfer as ethers.EventLog;
@@ -184,9 +199,17 @@ export async function GET(request: NextRequest) {
             }
 
           } catch (error) {
-            const errorMsg = `Error checking ${address}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-            console.error(`❌ ${errorMsg}`);
-            results.errors.push(errorMsg);
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            
+            // Check if it's a rate limit error
+            if (errorMsg.includes('rate limit') || errorMsg.includes('-32005')) {
+              console.warn(`⚠️ Rate limit hit for ${user.email}, skipping remaining users on this network`);
+              console.log('💡 Relying on webhook for real-time detection');
+              break; // Exit loop for this network, webhook will handle it
+            }
+            
+            console.error(`❌ Error checking ${address}: ${errorMsg}`);
+            results.errors.push(`${user.email}: ${errorMsg}`);
           }
         }
 
