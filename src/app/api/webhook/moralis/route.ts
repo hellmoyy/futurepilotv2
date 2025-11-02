@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { getUserBalance } from '@/lib/network-balance';
+import { Web3 } from 'web3';
 
 /**
  * Moralis Webhook Handler
@@ -11,7 +12,92 @@ import { getUserBalance } from '@/lib/network-balance';
  * Moralis will POST to this endpoint when:
  * - User receives USDT on their ERC-20 address
  * - User receives USDT on their BEP-20 address
+ * 
+ * ✅ Security: Webhook signature verification enabled (Keccak-256)
  */
+
+// Initialize Web3 for signature verification
+const web3 = new Web3();
+
+// Cache for Moralis secret key (avoid fetching on every request)
+let cachedSecretKey: string | null = null;
+
+/**
+ * Fetch Moralis account secret key from API
+ * This secret is used to verify webhook signatures
+ * Cached to avoid repeated API calls
+ */
+async function getMoralisSecretKey(): Promise<string> {
+  if (cachedSecretKey) {
+    return cachedSecretKey;
+  }
+
+  const apiKey = process.env.MORALIS_API_KEY;
+  if (!apiKey) {
+    throw new Error('MORALIS_API_KEY not configured');
+  }
+
+  try {
+    console.log('🔑 Fetching Moralis secret key from API...');
+    const response = await fetch('https://api.moralis-streams.com/settings', {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'X-API-Key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Moralis secret: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    cachedSecretKey = data.secretKey;
+    console.log('✅ Moralis secret key cached');
+    return cachedSecretKey as string;
+  } catch (error) {
+    console.error('❌ Error fetching Moralis secret:', error);
+    throw error;
+  }
+}
+
+/**
+ * ✅ WEBHOOK SIGNATURE VERIFICATION (Moralis Official Method)
+ * 
+ * Algorithm: Keccak-256 (web3.utils.sha3)
+ * Formula: sha3(JSON.stringify(body) + secret)
+ * 
+ * Docs: https://docs.moralis.com/streams-api/evm/webhook-security
+ */
+async function verifyMoralisSignature(
+  payload: string, 
+  signature: string | null
+): Promise<boolean> {
+  if (!signature) {
+    console.warn('⚠️ No signature provided in webhook');
+    return false;
+  }
+
+  try {
+    // Get the secret key from Moralis API
+    const secret = await getMoralisSecretKey();
+
+    // Generate signature using Keccak-256
+    // Formula: web3.utils.sha3(JSON.stringify(body) + secret)
+    const generatedSignature = web3.utils.sha3(payload + secret);
+
+    console.log('🔐 Signature verification:', {
+      provided: signature.substring(0, 20) + '...',
+      generated: generatedSignature?.substring(0, 20) + '...',
+      match: generatedSignature === signature,
+    });
+
+    return generatedSignature === signature;
+  } catch (error) {
+    console.error('❌ Signature verification error:', error);
+    return false;
+  }
+}
 
 interface MoralisERC20Transfer {
   transactionHash: string;
@@ -63,8 +149,27 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔔 Moralis webhook received');
 
-    // Parse webhook payload
-    const payload: MoralisWebhookPayload = await request.json();
+    // ✅ WEBHOOK SIGNATURE VERIFICATION (Keccak-256)
+    const signature = request.headers.get('x-signature');
+    
+    // Get raw body for signature verification
+    const rawBody = await request.text();
+    
+    // Verify signature (required for security)
+    const isValid = await verifyMoralisSignature(rawBody, signature);
+    
+    if (!isValid) {
+      console.error('❌ Invalid webhook signature');
+      return NextResponse.json(
+        { error: 'Invalid webhook signature' },
+        { status: 403 }
+      );
+    }
+    
+    console.log('✅ Webhook signature verified');
+    
+    // Parse the body after verification
+    const payload: MoralisWebhookPayload = JSON.parse(rawBody);
     
     console.log('📦 Webhook payload:', {
       confirmed: payload.confirmed,

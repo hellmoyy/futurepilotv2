@@ -11,6 +11,22 @@ const USDT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ];
 
+// ✅ RATE LIMITING: 1 request per 5 seconds per user
+const rateLimitMap = new Map<string, number>();
+const RATE_LIMIT_WINDOW = 5000; // 5 seconds in milliseconds
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const lastRequest = rateLimitMap.get(userId);
+  
+  if (lastRequest && (now - lastRequest) < RATE_LIMIT_WINDOW) {
+    return false; // Rate limit exceeded
+  }
+  
+  rateLimitMap.set(userId, now);
+  return true; // Allowed
+}
+
 const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
 
 const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
@@ -45,6 +61,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    // ✅ RATE LIMITING CHECK
+    if (!checkRateLimit(session.user.email)) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded. Please wait 5 seconds before trying again.',
+          rateLimitExceeded: true 
+        },
+        { status: 429 }
       );
     }
 
