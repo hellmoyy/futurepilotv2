@@ -151,29 +151,47 @@ export default function TopUpPage() {
     }, 1000);
 
     try {
-      // Refresh wallet data and transactions
-      const [walletResponse, txResponse] = await Promise.all([
-        fetch('/api/wallet/get'),
-        fetch('/api/wallet/transactions')
-      ]);
+      // Call the new check-deposit API that scans blockchain
+      const checkResponse = await fetch('/api/wallet/check-deposit', {
+        method: 'POST',
+      });
 
-      if (walletResponse.ok) {
-        const walletDataNew = await walletResponse.json();
-        const balanceChanged = walletDataNew.balance !== walletData?.balance;
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
         
-        setWalletData(walletDataNew);
-        
-        if (txResponse.ok) {
-          const txData = await txResponse.json();
-          setTransactions(txData);
-        }
+        // Refresh wallet data and transactions
+        const [walletResponse, txResponse] = await Promise.all([
+          fetch('/api/wallet/get'),
+          fetch('/api/wallet/transactions')
+        ]);
 
-        // Show success message
-        if (balanceChanged) {
-          alert(`✅ Balance updated! New balance: $${walletDataNew.balance.toFixed(2)}`);
-        } else {
-          alert('✅ Checked! No new deposits found.');
+        if (walletResponse.ok) {
+          const walletDataNew = await walletResponse.json();
+          setWalletData(walletDataNew);
+          
+          if (txResponse.ok) {
+            const txData = await txResponse.json();
+            setTransactions(txData);
+          }
+
+          // Show detailed result message
+          if (checkData.newDepositsCount > 0) {
+            const depositDetails = checkData.deposits
+              .map((d: any) => `${d.amount} USDT on ${d.network}`)
+              .join('\n');
+            alert(
+              `✅ Found ${checkData.newDepositsCount} new deposit(s)!\n\n` +
+              depositDetails +
+              `\n\nNew balance: $${walletDataNew.balance.toFixed(2)}`
+            );
+          } else {
+            const networks = checkData.networksChecked?.join(' & ') || 'networks';
+            alert(`✅ Checked ${networks}\n\nNo new deposits found.`);
+          }
         }
+      } else {
+        const errorData = await checkResponse.json();
+        alert(`❌ ${errorData.error || 'Failed to check deposit'}`);
       }
     } catch (error) {
       console.error('Error checking deposit:', error);
