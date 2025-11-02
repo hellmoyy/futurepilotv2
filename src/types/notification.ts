@@ -7,6 +7,7 @@ export type NotificationType =
   | 'trading_commission'      // Commission deducted from gas fee
   | 'trading_autoclose'        // Position auto-closed to prevent negative balance
   | 'trading_low_gas'          // Gas fee < $10 warning
+  | 'trading_profit'           // Trading profit alert
   | 'position_opened'          // Trading position opened
   | 'position_closed'          // Trading position closed
   | 'tier_upgrade'             // User tier upgraded
@@ -15,6 +16,7 @@ export type NotificationType =
   | 'withdrawal_requested'     // Withdrawal request submitted
   | 'withdrawal_approved'      // Withdrawal request approved
   | 'withdrawal_rejected'      // Withdrawal request rejected
+  | 'low_gas_balance'          // Low gas fee balance warning
   | 'system_alert'             // System-wide alerts
   | 'account_update';          // Account-related updates
 

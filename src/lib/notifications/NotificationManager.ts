@@ -6,6 +6,8 @@
 
 import Notification from '@/models/Notification';
 import connectDB from '@/lib/mongodb';
+import { emailService } from '@/lib/email/EmailService';
+import { User } from '@/models/User';
 import type {
   NotificationPayload,
   NotificationChannel,
@@ -71,33 +73,113 @@ class NotificationManager {
    */
   private async sendEmail(payload: NotificationPayload): Promise<void> {
     try {
-      // Import email service dynamically to avoid circular dependencies
-      const EmailServiceModule = await import('@/lib/notifications/EmailService');
-      const EmailService = EmailServiceModule.default || EmailServiceModule.EmailService;
-      const emailService = new EmailService();
+      await connectDB();
+      
+      // Get user details
+      const user = await User.findById(payload.userId);
+      if (!user || !user.email) {
+        console.warn(`[Notification] No email found for user ${payload.userId}`);
+        return;
+      }
+
+      const userName = user.name || user.email.split('@')[0];
+      const userEmail = user.email;
 
       // Route to appropriate email template based on type
       switch (payload.type) {
+        case 'withdrawal_requested':
+          await emailService.sendWithdrawalRequest({
+            to: userEmail,
+            userName,
+            amount: payload.metadata?.amount || 0,
+            network: payload.metadata?.network || 'Unknown',
+            walletAddress: payload.metadata?.walletAddress || ''
+          });
+          break;
+
+        case 'withdrawal_approved':
+          await emailService.sendWithdrawalApproved({
+            to: userEmail,
+            userName,
+            amount: payload.metadata?.amount || 0,
+            network: payload.metadata?.network || 'Unknown',
+            walletAddress: payload.metadata?.walletAddress || '',
+            txHash: payload.metadata?.txHash || ''
+          });
+          break;
+
+        case 'withdrawal_rejected':
+          await emailService.sendWithdrawalRejected({
+            to: userEmail,
+            userName,
+            amount: payload.metadata?.amount || 0,
+            network: payload.metadata?.network || 'Unknown',
+            reason: payload.metadata?.reason || 'No reason provided'
+          });
+          break;
+
+        case 'deposit_confirmed':
+          await emailService.sendDepositConfirmed({
+            to: userEmail,
+            userName,
+            amount: payload.metadata?.amount || 0,
+            network: payload.metadata?.network || 'Unknown',
+            txHash: payload.metadata?.txHash || '',
+            newBalance: payload.metadata?.newBalance || 0
+          });
+          break;
+
         case 'tier_upgrade':
-          await emailService.sendTierUpgradeEmail(payload);
+          await emailService.sendTierUpgrade({
+            to: userEmail,
+            userName,
+            oldTier: payload.metadata?.oldTier || 'Bronze',
+            newTier: payload.metadata?.newTier || 'Silver',
+            newRates: payload.metadata?.newRates || { level1: 10, level2: 5, level3: 5 },
+            totalDeposit: payload.metadata?.totalDeposit || 0
+          });
           break;
-        
-        case 'trading_commission':
-        case 'trading_autoclose':
-        case 'trading_low_gas':
-          await emailService.sendTradingAlertEmail(payload);
+
+        case 'trading_profit':
+          await emailService.sendTradingProfit({
+            to: userEmail,
+            userName,
+            profit: payload.metadata?.profit || 0,
+            position: payload.metadata?.position || 'Unknown',
+            entryPrice: payload.metadata?.entryPrice || 0,
+            exitPrice: payload.metadata?.exitPrice || 0,
+            commission: payload.metadata?.commission || 0,
+            netProfit: payload.metadata?.netProfit || 0
+          });
           break;
-        
-        case 'position_opened':
-        case 'position_closed':
-          await emailService.sendPositionNotificationEmail(payload);
+
+        case 'referral_commission':
+          await emailService.sendReferralCommission({
+            to: userEmail,
+            userName,
+            referralName: payload.metadata?.referralName || 'Unknown',
+            amount: payload.metadata?.amount || 0,
+            level: payload.metadata?.level || 1,
+            rate: payload.metadata?.rate || 0,
+            totalEarnings: payload.metadata?.totalEarnings || 0
+          });
           break;
-        
+
+        case 'low_gas_balance':
+          await emailService.sendLowBalanceWarning({
+            to: userEmail,
+            userName,
+            currentBalance: payload.metadata?.currentBalance || 0,
+            minimumRequired: payload.metadata?.minimumRequired || 10
+          });
+          break;
+
         default:
-          await emailService.sendGenericEmail(payload);
+          // For other types, use a simple text email (fallback)
+          console.log(`[Notification] No template for type: ${payload.type}, skipping email`);
       }
 
-      console.log(`[Notification] Email sent: ${payload.type} for user ${payload.userId}`);
+      console.log(`[Notification] Email sent: ${payload.type} to ${userEmail}`);
     } catch (error) {
       console.error('[Notification] Email send failed:', error);
       // Don't throw - email failure shouldn't break the flow
