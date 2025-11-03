@@ -6,6 +6,9 @@ import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { ethers } from 'ethers';
 import { createBalanceUpdate, getUserBalance } from '@/lib/network-balance';
+import { calculateReferralCommission } from '@/lib/referralCommission';
+import { notificationManager } from '@/lib/notifications/NotificationManager';
+import { Settings } from '@/models/Settings';
 
 const USDT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -228,6 +231,98 @@ async function checkNetwork(
       // Update user balance for current network
       const balanceUpdate = createBalanceUpdate(amount);
       await User.findByIdAndUpdate(user._id, balanceUpdate);
+
+      // ✅ CRITICAL: Track total personal deposit for tier upgrade
+      const previousDeposit = user.totalPersonalDeposit || 0;
+      const newTotalDeposit = previousDeposit + amount;
+      
+      // Calculate previous tier before update
+      const previousTier = !user.tierSetManually 
+        ? (previousDeposit >= 10000 ? 'platinum' 
+          : previousDeposit >= 2000 ? 'gold' 
+          : previousDeposit >= 1000 ? 'silver' 
+          : 'bronze')
+        : user.membershipLevel;
+
+      // Auto-upgrade tier based on total deposit (only if NOT manually set by admin)
+      let tierUpgraded = false;
+      let newTier = previousTier;
+      
+      if (!user.tierSetManually) {
+        if (newTotalDeposit >= 10000) {
+          newTier = 'platinum';
+        } else if (newTotalDeposit >= 2000) {
+          newTier = 'gold';
+        } else if (newTotalDeposit >= 1000) {
+          newTier = 'silver';
+        } else {
+          newTier = 'bronze';
+        }
+        
+        // Check if tier changed
+        if (newTier !== previousTier) {
+          tierUpgraded = true;
+        }
+      }
+
+      // Update totalPersonalDeposit and tier (if upgraded)
+      const updateData: any = { totalPersonalDeposit: newTotalDeposit };
+      if (tierUpgraded) {
+        updateData.membershipLevel = newTier;
+      }
+      await User.findByIdAndUpdate(user._id, { $set: updateData });
+
+      // Update user object for commission calculation
+      user.totalPersonalDeposit = newTotalDeposit;
+      if (tierUpgraded) {
+        user.membershipLevel = newTier;
+      }
+
+      // Send tier upgrade notification if tier changed
+      if (tierUpgraded) {
+        try {
+          // Get commission rates from settings
+          const settings = await Settings.findOne();
+          const tierRates = settings?.tierCommissionRates || {
+            bronze: { level1: 10, level2: 5, level3: 5 },
+            silver: { level1: 20, level2: 5, level3: 5 },
+            gold: { level1: 30, level2: 5, level3: 5 },
+            platinum: { level1: 40, level2: 5, level3: 5 },
+          };
+
+          const oldRates = tierRates[previousTier as keyof typeof tierRates] || { level1: 10, level2: 5, level3: 5 };
+          const newRates = tierRates[newTier as keyof typeof tierRates] || { level1: 10, level2: 5, level3: 5 };
+
+          await notificationManager.notifyTierUpgrade(
+            (user._id as any).toString(),
+            previousTier || 'bronze',
+            newTier || 'bronze',
+            newTotalDeposit,
+            oldRates,
+            newRates
+          );
+          
+          console.log(`✅ Tier upgrade notification sent: ${previousTier} → ${newTier}`);
+        } catch (notificationError) {
+          console.error('❌ Error sending tier upgrade notification:', notificationError);
+          // Don't fail the deposit if notification fails
+        }
+      }
+
+      // ✅ CRITICAL: Calculate referral commission from FULL deposit amount
+      try {
+        await calculateReferralCommission({
+          userId: user._id as any,
+          amount: amount, // Full deposit amount
+          source: 'gas_fee_topup',
+          sourceTransactionId: newTransaction._id as any,
+          notes: `Gas fee topup commission from $${amount.toFixed(2)} deposit (${config.name})`,
+        });
+        console.log(`✅ Referral commission calculated for deposit: $${amount.toFixed(2)}`);
+      } catch (commissionError) {
+        console.error('❌ Error calculating referral commission:', commissionError);
+        // Don't fail the deposit if commission calculation fails
+      }
 
       deposits.push({
         txHash,
