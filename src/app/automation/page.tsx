@@ -3,6 +3,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import Lottie to avoid SSR issues
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 // Interface for Trading Bot Configuration from database
 interface TradingBotConfig {
@@ -39,6 +43,71 @@ export default function AutomationPage() {
   const [selectedBotForSettings, setSelectedBotForSettings] = useState<any>(null);
   const [botSettings, setBotSettings] = useState<{[key: number]: any}>({});
   const [expandedSettings, setExpandedSettings] = useState<{[key: number]: boolean}>({});
+  const [lottieAnimation, setLottieAnimation] = useState<any>(null);
+  
+  // TEMPORARY: Demo state for UI testing (bypass exchange validation)
+  const [demoActive, setDemoActive] = useState(true);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [launchCountdown, setLaunchCountdown] = useState(3);
+  const [isShuttingDown, setIsShuttingDown] = useState(false);
+  
+  // Trading activity logs (terminal-style)
+  const [tradingLogs, setTradingLogs] = useState<Array<{
+    id: number;
+    time: string;
+    type: 'signal' | 'open' | 'close' | 'profit' | 'loss';
+    message: string;
+    color: string;
+  }>>([
+    { id: 1, time: '10:30:45', type: 'signal', message: '⏳ Waiting for entry signal...', color: 'text-gray-400' },
+    { id: 2, time: '10:31:12', type: 'open', message: '📈 OPEN LONG BTC/USDT @ $67,234', color: 'text-blue-400' },
+    { id: 3, time: '10:31:15', type: 'signal', message: '👁️ Monitoring position...', color: 'text-gray-400' },
+    { id: 4, time: '10:35:28', type: 'profit', message: '✅ CLOSE BTC/USDT - Profit: +$245.30 (+3.64%)', color: 'text-green-400' },
+    { id: 5, time: '10:35:30', type: 'signal', message: '⏳ Waiting for entry signal...', color: 'gray-400' },
+  ]);
+
+  // Simulate new trading activities
+  useEffect(() => {
+    if (!demoActive) return;
+
+    const activities = [
+      { type: 'signal' as const, message: '⏳ Waiting for entry signal...', color: 'text-gray-400' },
+      { type: 'open' as const, message: '📈 OPEN LONG BTC/USDT @ $67,234', color: 'text-blue-400' },
+      { type: 'open' as const, message: '📈 OPEN LONG ETH/USDT @ $3,456', color: 'text-blue-400' },
+      { type: 'signal' as const, message: '👁️ Monitoring position...', color: 'text-gray-400' },
+      { type: 'signal' as const, message: '📊 Trailing stop activated...', color: 'text-yellow-400' },
+      { type: 'profit' as const, message: '✅ CLOSE BTC/USDT - Profit: +$245.30 (+3.64%)', color: 'text-green-400' },
+      { type: 'profit' as const, message: '✅ CLOSE ETH/USDT - Profit: +$89.50 (+2.59%)', color: 'text-green-400' },
+      { type: 'loss' as const, message: '❌ CLOSE BTC/USDT - Loss: -$52.10 (-0.77%)', color: 'text-red-400' },
+    ];
+
+    const interval = setInterval(() => {
+      const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+      const now = new Date();
+      const time = now.toLocaleTimeString('en-US', { hour12: false });
+      
+      setTradingLogs(prev => {
+        const newLog = {
+          id: Date.now(),
+          time,
+          ...randomActivity
+        };
+        // Keep only last 20 logs
+        const updated = [newLog, ...prev].slice(0, 20);
+        return updated;
+      });
+    }, 3000); // New activity every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [demoActive]);
+
+  // Load Lottie animation
+  useEffect(() => {
+    fetch('/lottie/crypto-bitcoin.json')
+      .then(res => res.json())
+      .then(data => setLottieAnimation(data))
+      .catch(err => console.error('Failed to load animation:', err));
+  }, []);
 
   // Fetch trading bot configurations from database
   const fetchTradingBots = useCallback(async () => {
@@ -350,15 +419,131 @@ export default function AutomationPage() {
 
   // Get Alpha Pilot bot
   const alphaPilotBot = tradingBots.find((bot) => bot.name === 'Alpha Pilot');
-  const isBotActive = alphaPilotBot ? activeBots.includes(alphaPilotBot.botId) : false;
+  
+  // TEMPORARILY USE DEMO STATE FOR UI (bypass exchange validation)
+  const isBotActive = demoActive; // Toggle via button
+  // const isBotActive = alphaPilotBot ? activeBots.includes(alphaPilotBot.botId) : false;
+  
   const botInstance = isBotActive && alphaPilotBot ? getBotInstance(alphaPilotBot.botId) : null;
+  
+  // Handle launch animation
+  const handleStartBot = () => {
+    setIsLaunching(true);
+    setLaunchCountdown(3);
+    
+    // Countdown 3, 2, 1, Lift Off!
+    const countdownInterval = setInterval(() => {
+      setLaunchCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setTimeout(() => {
+            setIsLaunching(false);
+            setDemoActive(true);
+          }, 1500); // Show "LIFT OFF!" for 1.5s
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 800); // Count every 800ms
+  };
+  
+  const handleStopBot = () => {
+    setIsShuttingDown(true);
+    
+    setTimeout(() => {
+      setDemoActive(false);
+      setIsShuttingDown(false);
+    }, 2000); // Show shutdown animation for 2 seconds
+  };
 
   return (
-    <div className="space-y-4 sm:space-y-5 lg:space-y-6 p-4 sm:p-5 lg:p-6">
+    <div className="space-y-4 sm:space-y-5 lg:space-y-6 p-4 sm:p-5 lg:p-6 relative">
+      
+      {/* Launch Animation Overlay */}
+      {isLaunching && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
+          <div className="text-center">
+            {/* Rocket Animation */}
+            <div className="relative mb-8">
+              <div className={`text-9xl transition-all duration-500 ${launchCountdown === 0 ? 'animate-rocket-launch' : ''}`}>
+                🚀
+              </div>
+              {launchCountdown === 0 && (
+                <div className="absolute inset-x-0 top-full mt-4">
+                  <div className="animate-pulse text-6xl">💨</div>
+                </div>
+              )}
+            </div>
+            
+            {/* Countdown / Lift Off Text */}
+            <div className="mb-4">
+              {launchCountdown > 0 ? (
+                <div className="text-8xl font-black text-blue-400 animate-bounce">
+                  {launchCountdown}
+                </div>
+              ) : (
+                <div className="text-6xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent animate-pulse">
+                  LIFT OFF! 🎉
+                </div>
+              )}
+            </div>
+            
+            {/* Loading Text */}
+            <div className="space-y-2">
+              <p className="text-xl text-gray-400 font-mono">
+                {launchCountdown > 0 ? 'Preparing bot...' : 'Bot launched successfully!'}
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-ping delay-75"></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping delay-150"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Shutdown Animation Overlay */}
+      {isShuttingDown && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm animate-fade-in">
+          <div className="text-center">
+            {/* Power Down Icon */}
+            <div className="relative mb-8">
+              <div className="text-9xl animate-power-down opacity-80">
+                🔴
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-6xl animate-fade-out">⚡</div>
+              </div>
+            </div>
+            
+            {/* Shutdown Text */}
+            <div className="mb-4">
+              <div className="text-5xl font-black bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent animate-pulse">
+                Shutting Down...
+              </div>
+            </div>
+            
+            {/* Progress Text */}
+            <div className="space-y-3">
+              <p className="text-lg text-gray-400 font-mono animate-fade-out">
+                Closing positions safely...
+              </p>
+              <p className="text-lg text-gray-400 font-mono animate-fade-out delay-500">
+                Disconnecting from exchange...
+              </p>
+              <p className="text-lg text-gray-400 font-mono animate-fade-out delay-1000">
+                Bot stopped successfully ✓
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="text-center mb-6 sm:mb-7 lg:mb-8">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
-            Bitcoin Pro Trading Bot
+            FuturePilot Pro Trading Bot
           </span>
         </h1>
         <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm sm:text-base lg:text-lg px-4">
@@ -366,7 +551,8 @@ export default function AutomationPage() {
         </p>
       </div>
 
-      {/* Exchange Selection - Same width as bot cards */}
+      {/* TEMPORARILY DISABLED - Exchange Selection & Warnings for UI Demo */}
+      {/* 
       {exchangeConnections.length > 0 && (
         <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
           <div className="bg-white/5 dark:bg-white/5 light:bg-white border border-white/10 dark:border-white/10 light:border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
@@ -388,7 +574,6 @@ export default function AutomationPage() {
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
@@ -405,7 +590,6 @@ export default function AutomationPage() {
         </div>
       )}
 
-      {/* No Exchange Connection Warning */}
       {exchangeConnections.length === 0 && (
         <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
           <div className="bg-yellow-500/10 dark:bg-yellow-500/10 light:bg-yellow-50 border border-yellow-500/30 dark:border-yellow-500/30 light:border-yellow-300 rounded-lg sm:rounded-xl p-3 sm:p-4">
@@ -423,9 +607,10 @@ export default function AutomationPage() {
           </div>
         </div>
       )}
+      */}
 
       {/* Alpha Pilot Bot Not Found */}
-      {!loadingBots && !alphaPilotBot && (
+      {false && !loadingBots && !alphaPilotBot && (
         <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
             <div className="flex gap-2 sm:gap-3">
@@ -448,11 +633,11 @@ export default function AutomationPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
             
-            {/* Left: Bot Status & Control (60% = 3/5 columns) */}
-            <div className="lg:col-span-3">
+            {/* Left: Bot Status & Control (60% = 3/5 columns) - Order 2 on mobile, 1 on desktop */}
+            <div className="lg:col-span-3 order-2 lg:order-1">
               <div className={`relative rounded-2xl sm:rounded-3xl border-2 transition-all duration-500 h-full ${
                 isBotActive
-                  ? 'border-green-500 bg-gradient-to-br from-green-500/20 to-emerald-500/20 shadow-xl shadow-green-500/30'
+                  ? 'border-blue-500 bg-gradient-to-br from-blue-500/20 via-cyan-500/20 to-purple-500/20 shadow-xl shadow-blue-500/30'
                   : 'border-white/10 bg-gradient-to-br from-white/5 to-blue-500/5 hover:border-blue-400/50'
               }`}>
                 
@@ -466,8 +651,8 @@ export default function AutomationPage() {
                 <div className="p-6">
                   {/* Bot Header */}
                   <div className="flex items-center gap-4 mb-6">
-                    <div className={`w-16 h-16 flex-shrink-0 transition-transform duration-1000 ${isBotActive ? 'animate-spin-slow' : ''}`}>
-                      {/* Alpha Pilot Custom Logo */}
+                    <div className="w-16 h-16 flex-shrink-0">
+                      {/* Alpha Pilot Logo - Always show "A" text */}
                       <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-500 via-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/50">
                         <span className="text-3xl font-black text-white">A</span>
                       </div>
@@ -564,13 +749,14 @@ export default function AutomationPage() {
 
                   {/* Start/Stop Button */}
                   <button
-                    onClick={() => toggleBot(alphaPilotBot.botId)}
-                    disabled={loading || exchangeConnections.length === 0}
+                    onClick={isBotActive ? handleStopBot : handleStartBot} // Launch animation on start
+                    // onClick={() => toggleBot(alphaPilotBot.botId)} // Real function (commented for demo)
+                    disabled={loading || exchangeConnections.length === 0 || isLaunching || isShuttingDown}
                     className={`w-full py-5 rounded-xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 ${
                       isBotActive
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105'
                         : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105'
-                    } ${(loading || exchangeConnections.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${(loading || exchangeConnections.length === 0 || isLaunching || isShuttingDown) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {loading ? (
                       <>
@@ -578,6 +764,22 @@ export default function AutomationPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         {isBotActive ? 'Stopping Bot...' : 'Starting Bot...'}
+                      </>
+                    ) : isLaunching ? (
+                      <>
+                        <svg className="w-7 h-7 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" className="opacity-25"></circle>
+                          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
+                        </svg>
+                        Launching...
+                      </>
+                    ) : isShuttingDown ? (
+                      <>
+                        <svg className="w-7 h-7 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" className="opacity-25"></circle>
+                          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
+                        </svg>
+                        Shutting Down...
                       </>
                     ) : isBotActive ? (
                       <>
@@ -601,35 +803,55 @@ export default function AutomationPage() {
               </div>
             </div>
 
-            {/* Right: Advanced Configuration (40% = 2/5 columns) */}
-            <div className="lg:col-span-2">
-              <div className="rounded-2xl sm:rounded-3xl border-2 border-white/10 bg-gradient-to-br from-white/5 to-purple-500/5 h-full">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">
-                      ⚙️ Advanced Config
-                    </h3>
-                    <button
-                      onClick={() => {
-                        setSelectedBotForSettings({
-                          id: alphaPilotBot.botId,
-                          name: alphaPilotBot.name,
-                          leverage: alphaPilotBot.defaultSettings.leverage,
-                          stopLoss: alphaPilotBot.defaultSettings.stopLoss,
-                          takeProfit: alphaPilotBot.defaultSettings.takeProfit,
-                          supportedCurrencies: alphaPilotBot.supportedCurrencies || ['BTC'],
-                        });
-                        setShowSettingsModal(true);
-                      }}
-                      className="text-sm px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors border border-purple-500/30"
-                    >
-                      Edit Settings
-                    </button>
+            {/* Right: Trading Animation when active / Advanced Config when stopped - Order 1 on mobile, 2 on desktop */}
+            <div className="lg:col-span-2 order-1 lg:order-2">
+              {isBotActive ? (
+                // Show Lottie Animation when bot is running
+                <div className="rounded-2xl sm:rounded-3xl border-2 border-blue-500/50 bg-gradient-to-br from-blue-500/20 via-cyan-500/20 to-purple-500/20 h-full flex items-center justify-center p-8">
+                  <div className="text-center w-full">
+                    {lottieAnimation ? (
+                      <Lottie 
+                        animationData={lottieAnimation}
+                        loop={true}
+                        style={{ width: '100%', maxWidth: '400px', height: 'auto', margin: '0 auto' }}
+                      />
+                    ) : (
+                      <div className="w-full max-w-md mx-auto">
+                        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="text-blue-400 mt-4">Loading animation...</p>
+                      </div>
+                    )}
                   </div>
+                </div>
+              ) : (
+                // Show Advanced Config when bot is stopped
+                <div className="rounded-2xl sm:rounded-3xl border-2 border-white/10 bg-gradient-to-br from-white/5 to-purple-500/5 h-full">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold text-white">
+                        ⚙️ Advanced Config
+                      </h3>
+                      <button
+                        onClick={() => {
+                          setSelectedBotForSettings({
+                            id: alphaPilotBot.botId,
+                            name: alphaPilotBot.name,
+                            leverage: alphaPilotBot.defaultSettings.leverage,
+                            stopLoss: alphaPilotBot.defaultSettings.stopLoss,
+                            takeProfit: alphaPilotBot.defaultSettings.takeProfit,
+                            supportedCurrencies: alphaPilotBot.supportedCurrencies || ['BTC'],
+                          });
+                          setShowSettingsModal(true);
+                        }}
+                        className="text-sm px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors border border-purple-500/30"
+                      >
+                        Edit Settings
+                      </button>
+                    </div>
 
-                  <p className="text-xs text-gray-400 mb-6">
-                    Customize trading parameters
-                  </p>
+                    <p className="text-xs text-gray-400 mb-6">
+                      Customize trading parameters
+                    </p>
 
                   {/* Quick Settings */}
                   <div className="space-y-4">
@@ -710,25 +932,59 @@ export default function AutomationPage() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
 
           </div>
         </div>
       )}
 
-      {/* Active Bot Banner */}
+      {/* Live Trading Activity Terminal */}
       {isBotActive && (
         <div className="max-w-6xl mx-auto mt-6">
-          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500 rounded-xl p-6">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <svg className="w-6 h-6 text-green-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-xl font-bold text-green-500">Bot is Trading</h3>
+          <div className="bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-purple-500/20 border-2 border-blue-500 rounded-xl overflow-hidden">
+            {/* Terminal Header */}
+            <div className="bg-black/30 border-b border-blue-500/30 px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <span className="text-sm font-mono text-green-400">trading@futurepilot:~$</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-400 font-mono">LIVE</span>
+              </div>
             </div>
-            <p className="text-center text-sm text-gray-300">
-              Your Alpha Pilot bot is actively monitoring the market 24/7
-            </p>
+            
+            {/* Terminal Body - Scrollable Logs */}
+            <div className="bg-black/50 p-4 font-mono text-sm max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500/50 scrollbar-track-transparent">
+              <div className="space-y-1">
+                {tradingLogs.map((log, index) => (
+                  <div 
+                    key={log.id} 
+                    className={`flex items-start gap-3 ${index === 0 ? 'animate-fadeIn' : ''}`}
+                    style={{
+                      animation: index === 0 ? 'fadeIn 0.3s ease-in' : 'none'
+                    }}
+                  >
+                    <span className="text-gray-600 text-xs flex-shrink-0">[{log.time}]</span>
+                    <span className={`${log.color} flex-1`}>{log.message}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Terminal Footer - Stats */}
+            <div className="bg-black/30 border-t border-blue-500/30 px-4 py-2 flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-4">
+                <span className="text-gray-400">Total Trades: <span className="text-green-400">127</span></span>
+                <span className="text-gray-400">Win Rate: <span className="text-green-400">82%</span></span>
+              </div>
+              <span className="text-gray-400">P&L Today: <span className="text-green-400">+$487.60</span></span>
+            </div>
           </div>
         </div>
       )}
@@ -1087,10 +1343,10 @@ export default function AutomationPage() {
                 <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <h3 className="text-xl font-bold text-yellow-500">Bitcoin Pro Bot Not Found</h3>
+                <h3 className="text-xl font-bold text-yellow-500">FuturePilot Pro Bot Not Found</h3>
               </div>
               <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 mb-4">
-                The Bitcoin Pro trading bot is not available in the database. Please contact administrator.
+                The FuturePilot Pro trading bot is not available in the database. Please contact administrator.
               </p>
             </div>
           </div>
@@ -1871,6 +2127,76 @@ export default function AutomationPage() {
           </div>
         </div>
       )}
+      
+      {/* Custom styles for terminal animation */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes rocketLaunch {
+          0% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-500px) scale(0.5);
+            opacity: 0;
+          }
+        }
+        .animate-rocket-launch {
+          animation: rocketLaunch 1.5s ease-in forwards;
+        }
+        
+        @keyframes powerDown {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 0.5;
+          }
+          100% {
+            transform: scale(0.8);
+            opacity: 0.3;
+          }
+        }
+        .animate-power-down {
+          animation: powerDown 2s ease-in-out infinite;
+        }
+        
+        @keyframes fadeOut {
+          0% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+        }
+        .animate-fade-out {
+          animation: fadeOut 2s ease-out forwards;
+        }
+        .delay-500 {
+          animation-delay: 0.5s;
+        }
+        .delay-1000 {
+          animation-delay: 1s;
+        }
+      `}</style>
     </div>
   );
 }
+
