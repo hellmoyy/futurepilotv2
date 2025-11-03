@@ -102,8 +102,10 @@ export async function getWebhookRetryStats() {
 }
 
 // Export for use in API routes or other cron systems
-export default {
+const webhookRetryCron = {
   processWebhookRetries,
   cleanupOldWebhookRetries,
   getWebhookRetryStats
 };
+
+export default webhookRetryCron;

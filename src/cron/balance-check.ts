@@ -231,7 +231,9 @@ export async function getBalanceStatistics() {
 }
 
 // Export for use in API routes or other cron systems
-export default {
+const balanceCheckCron = {
   checkUserBalances,
   getBalanceStatistics
 };
+
+export default balanceCheckCron;

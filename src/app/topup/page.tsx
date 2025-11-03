@@ -73,6 +73,7 @@ export default function TopUpPage() {
       fetchWalletData();
       fetchTransactions();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, pagination.page, pagination.limit]);
 
   // Auto-refresh every 10 seconds to detect new deposits (Always ON)
@@ -130,6 +131,7 @@ export default function TopUpPage() {
     }, 10000); // Refresh every 10 seconds
 
     return () => clearInterval(refreshInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, walletData]);
 
   // Request notification permission on mount
