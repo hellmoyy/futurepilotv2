@@ -268,7 +268,15 @@ export default function TopUpPage() {
           
           if (txResponse.ok) {
             const txData = await txResponse.json();
-            setTransactions(txData);
+            // Handle both old format (array) and new format (object with pagination)
+            if (Array.isArray(txData)) {
+              setTransactions(txData);
+            } else {
+              setTransactions(txData.transactions || []);
+              if (txData.pagination) {
+                setPagination(txData.pagination);
+              }
+            }
           }
 
           // Show detailed result message
@@ -666,7 +674,7 @@ export default function TopUpPage() {
                 <span>Transaction History</span>
               </h3>
               
-              {transactions.length === 0 ? (
+              {!Array.isArray(transactions) || transactions.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-white/5 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:bg-gray-100">
                     <svg className="w-8 h-8 text-gray-500 light:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -689,7 +697,7 @@ export default function TopUpPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {transactions.map((tx) => (
+                      {Array.isArray(transactions) && transactions.map((tx) => (
                         <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-gray-100 light:hover:bg-gray-50">
                           <td className="py-4 px-4">
                             <div className="flex items-center space-x-2">
@@ -736,7 +744,7 @@ export default function TopUpPage() {
               )}
 
               {/* Pagination Controls */}
-              {transactions.length > 0 && pagination.total > 0 && (
+              {Array.isArray(transactions) && transactions.length > 0 && pagination.total > 0 && (
                 <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/10 pt-6 light:border-gray-200">
                   {/* Pagination Info */}
                   <div className="text-sm text-gray-400 light:text-gray-600">
