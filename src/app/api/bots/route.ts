@@ -75,14 +75,41 @@ export async function POST(request: NextRequest) {
 
     if (!exchangeConnection) {
       return NextResponse.json(
-        { error: 'Exchange connection not found' },
+        { error: 'Exchange connection not found. Please connect your Binance account first.' },
         { status: 404 }
       );
     }
 
+    // Check if API keys exist
+    if (!exchangeConnection.apiKey || !exchangeConnection.apiSecret) {
+      return NextResponse.json(
+        { error: 'API credentials are missing. Please reconnect your Binance account.' },
+        { status: 400 }
+      );
+    }
+
     // Decrypt API credentials
-    const apiKey = decryptApiKey(exchangeConnection.apiKey);
-    const apiSecret = decryptApiKey(exchangeConnection.apiSecret);
+    let apiKey: string;
+    let apiSecret: string;
+    
+    try {
+      apiKey = decryptApiKey(exchangeConnection.apiKey);
+      apiSecret = decryptApiKey(exchangeConnection.apiSecret);
+      
+      // Validate decrypted keys are not empty
+      if (!apiKey || !apiSecret || apiKey.trim() === '' || apiSecret.trim() === '') {
+        throw new Error('Decrypted keys are empty');
+      }
+    } catch (error) {
+      console.error('❌ Failed to decrypt API keys:', error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to decrypt API credentials. Please reconnect your Binance account.',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
+    }
 
     // Get bot configuration based on botId
     let botName = '';

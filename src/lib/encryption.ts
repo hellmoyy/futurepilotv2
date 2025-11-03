@@ -30,12 +30,17 @@ export function encryptApiKey(apiKey: string): string {
  * @returns Decrypted plain text API key
  */
 export function decryptApiKey(encryptedKey: string): string {
+  // Check if the key is empty or undefined
+  if (!encryptedKey || encryptedKey.trim() === '') {
+    throw new Error('Encrypted key is empty or undefined');
+  }
+
   // Try with current key
   try {
     const decrypted = CryptoJS.AES.decrypt(encryptedKey, ENCRYPTION_KEY);
     const plainText = decrypted.toString(CryptoJS.enc.Utf8);
     
-    if (plainText) {
+    if (plainText && plainText.length > 0) {
       return plainText;
     }
   } catch (error) {
@@ -50,7 +55,7 @@ export function decryptApiKey(encryptedKey: string): string {
       const decryptedLegacy = CryptoJS.AES.decrypt(encryptedKey, ENCRYPTION_KEY_LEGACY);
       const plainTextLegacy = decryptedLegacy.toString(CryptoJS.enc.Utf8);
       
-      if (plainTextLegacy) {
+      if (plainTextLegacy && plainTextLegacy.length > 0) {
         console.log('✅ Successfully decrypted with legacy key');
         return plainTextLegacy;
       }

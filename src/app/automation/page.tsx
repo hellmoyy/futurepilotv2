@@ -236,7 +236,14 @@ export default function AutomationPage() {
         
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || 'Failed to start bot');
+          const errorMsg = data.error || 'Failed to start bot';
+          
+          // Show user-friendly error for encryption issues
+          if (errorMsg.includes('decrypt') || errorMsg.includes('credentials')) {
+            throw new Error('⚠️ Your Binance connection expired. Please reconnect your exchange account in Settings → Trading Account');
+          }
+          
+          throw new Error(errorMsg);
         }
         
         await fetchBotInstances();
@@ -341,18 +348,25 @@ export default function AutomationPage() {
     }
   };
 
+  // Get Alpha Pilot bot
+  const alphaPilotBot = tradingBots.find((bot) => bot.name === 'Alpha Pilot');
+  const isBotActive = alphaPilotBot ? activeBots.includes(alphaPilotBot.botId) : false;
+  const botInstance = isBotActive && alphaPilotBot ? getBotInstance(alphaPilotBot.botId) : null;
+
   return (
     <div className="space-y-4 sm:space-y-5 lg:space-y-6 p-4 sm:p-5 lg:p-6">
       <div className="text-center mb-6 sm:mb-7 lg:mb-8">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
-            Auto Trading Bots
+            Bitcoin Pro Trading Bot
           </span>
         </h1>
-        <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm sm:text-base lg:text-lg px-4">Choose your bot and start trading instantly</p>
+        <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-sm sm:text-base lg:text-lg px-4">
+          AI-powered Bitcoin trading with proven track record
+        </p>
       </div>
 
-      {/* Exchange Selection */}
+      {/* Exchange Selection - Same width as bot cards */}
       {exchangeConnections.length > 0 && (
         <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
           <div className="bg-white/5 dark:bg-white/5 light:bg-white border border-white/10 dark:border-white/10 light:border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
@@ -410,8 +424,332 @@ export default function AutomationPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 max-w-6xl mx-auto">
-        {tradingBots.map((bot) => {
+      {/* Alpha Pilot Bot Not Found */}
+      {!loadingBots && !alphaPilotBot && (
+        <div className="max-w-6xl mx-auto mb-4 sm:mb-5 lg:mb-6">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
+            <div className="flex gap-2 sm:gap-3">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-xs sm:text-sm font-semibold text-red-400 mb-0.5 sm:mb-1">Alpha Pilot Bot Not Found</p>
+                <p className="text-xs text-red-300">
+                  Please run: <code className="bg-black/30 px-2 py-0.5 rounded">node scripts/seed-trading-bots.js</code>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content: 60% Bot Card + 40% Advanced Config */}
+      {!loadingBots && alphaPilotBot && (
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
+            
+            {/* Left: Bot Status & Control (60% = 3/5 columns) */}
+            <div className="lg:col-span-3">
+              <div className={`relative rounded-2xl sm:rounded-3xl border-2 transition-all duration-500 h-full ${
+                isBotActive
+                  ? 'border-green-500 bg-gradient-to-br from-green-500/20 to-emerald-500/20 shadow-xl shadow-green-500/30'
+                  : 'border-white/10 bg-gradient-to-br from-white/5 to-blue-500/5 hover:border-blue-400/50'
+              }`}>
+                
+                {/* Status Badge */}
+                {isBotActive && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-sm font-bold text-white shadow-lg z-10 animate-pulse">
+                    🟢 Bot Active
+                  </div>
+                )}
+                
+                <div className="p-6">
+                  {/* Bot Header */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className={`w-16 h-16 flex-shrink-0 transition-transform duration-1000 ${isBotActive ? 'animate-spin-slow' : ''}`}>
+                      {/* Alpha Pilot Custom Logo */}
+                      <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-500 via-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/50">
+                        <span className="text-3xl font-black text-white">A</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-white mb-1">
+                        {alphaPilotBot.name}
+                      </h2>
+                      <p className="text-sm text-gray-400">
+                        {alphaPilotBot.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bot Statistics */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                      <p className="text-xs text-gray-500 mb-1">Win Rate</p>
+                      <p className="text-2xl font-bold text-green-400">
+                        {botInstance?.statistics?.winRate 
+                          ? `${botInstance.statistics.winRate.toFixed(1)}%` 
+                          : alphaPilotBot.winRate}
+                      </p>
+                    </div>
+                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                      <p className="text-xs text-gray-500 mb-1">
+                        {isBotActive ? 'Total P&L' : 'Avg Profit'}
+                      </p>
+                      <p className={`text-2xl font-bold ${
+                        isBotActive && botInstance?.statistics 
+                          ? (botInstance.statistics.totalProfit + botInstance.statistics.totalLoss) >= 0 
+                            ? 'text-green-400' 
+                            : 'text-red-400'
+                          : 'text-blue-400'
+                      }`}>
+                        {isBotActive && botInstance?.statistics
+                          ? `${(botInstance.statistics.totalProfit + botInstance.statistics.totalLoss) >= 0 ? '+' : ''}$${(botInstance.statistics.totalProfit + botInstance.statistics.totalLoss).toFixed(2)}`
+                          : alphaPilotBot.avgProfit}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Trading Animation */}
+                  {isBotActive && (
+                    <div className="mb-6 bg-black/20 rounded-xl p-4 border border-green-500/30">
+                      <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="relative">
+                          <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute"></div>
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        </div>
+                        <p className="text-sm font-semibold text-green-400">Analyzing market...</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Active Positions</span>
+                          <span className="text-white font-bold">{botInstance?.statistics?.totalTrades || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Wins / Losses</span>
+                          <span className="text-white font-bold">
+                            <span className="text-green-400">{botInstance?.statistics?.winningTrades || 0}</span>
+                            {' / '}
+                            <span className="text-red-400">{botInstance?.statistics?.losingTrades || 0}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Current Settings Preview */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 mb-6">
+                    <p className="text-xs text-gray-500 font-semibold mb-3">CURRENT SETTINGS</p>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <p className="text-gray-500 mb-1">Leverage</p>
+                        <p className="font-bold text-white">
+                          {botSettings[alphaPilotBot.botId]?.leverage || alphaPilotBot.defaultSettings.leverage}x
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 mb-1">Stop Loss</p>
+                        <p className="font-bold text-red-400">
+                          -{botSettings[alphaPilotBot.botId]?.stopLoss || alphaPilotBot.defaultSettings.stopLoss}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 mb-1">Take Profit</p>
+                        <p className="font-bold text-green-400">
+                          +{botSettings[alphaPilotBot.botId]?.takeProfit || alphaPilotBot.defaultSettings.takeProfit}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Start/Stop Button */}
+                  <button
+                    onClick={() => toggleBot(alphaPilotBot.botId)}
+                    disabled={loading || exchangeConnections.length === 0}
+                    className={`w-full py-5 rounded-xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 ${
+                      isBotActive
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105'
+                        : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105'
+                    } ${(loading || exchangeConnections.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="w-7 h-7 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {isBotActive ? 'Stopping Bot...' : 'Starting Bot...'}
+                      </>
+                    ) : isBotActive ? (
+                      <>
+                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                        </svg>
+                        Stop Bot
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Start Bot
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Advanced Configuration (40% = 2/5 columns) */}
+            <div className="lg:col-span-2">
+              <div className="rounded-2xl sm:rounded-3xl border-2 border-white/10 bg-gradient-to-br from-white/5 to-purple-500/5 h-full">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">
+                      ⚙️ Advanced Config
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setSelectedBotForSettings({
+                          id: alphaPilotBot.botId,
+                          name: alphaPilotBot.name,
+                          leverage: alphaPilotBot.defaultSettings.leverage,
+                          stopLoss: alphaPilotBot.defaultSettings.stopLoss,
+                          takeProfit: alphaPilotBot.defaultSettings.takeProfit,
+                          supportedCurrencies: alphaPilotBot.supportedCurrencies || ['BTC'],
+                        });
+                        setShowSettingsModal(true);
+                      }}
+                      className="text-sm px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors border border-purple-500/30"
+                    >
+                      Edit Settings
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-400 mb-6">
+                    Customize trading parameters
+                  </p>
+
+                  {/* Quick Settings */}
+                  <div className="space-y-4">
+                    {/* Trailing Stop Loss */}
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                          <span className="text-sm font-semibold text-white">Trailing Stop</span>
+                        </div>
+                        <span className={`text-sm font-bold ${
+                          botSettings[alphaPilotBot.botId]?.trailingStopLoss?.enabled 
+                            ? 'text-green-400' 
+                            : 'text-gray-600'
+                        }`}>
+                          {botSettings[alphaPilotBot.botId]?.trailingStopLoss?.enabled ? 'ON' : 'OFF'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Max Position Size */}
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Max Position Size</span>
+                        <span className="text-sm font-bold text-yellow-400">
+                          ${botSettings[alphaPilotBot.botId]?.maxPositionSize || 100}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Max Concurrent */}
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Max Positions</span>
+                        <span className="text-sm font-bold text-blue-400">
+                          {botSettings[alphaPilotBot.botId]?.maxConcurrentPositions || 3}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Max Daily Trades */}
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Max Daily Trades</span>
+                        <span className="text-sm font-bold text-cyan-400">
+                          {botSettings[alphaPilotBot.botId]?.maxDailyTrades || 10}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Break Even Stop */}
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Break Even Stop</span>
+                        <span className={`text-sm font-bold ${
+                          botSettings[alphaPilotBot.botId]?.breakEvenStop?.enabled 
+                            ? 'text-green-400' 
+                            : 'text-gray-600'
+                        }`}>
+                          {botSettings[alphaPilotBot.botId]?.breakEvenStop?.enabled ? 'ON' : 'OFF'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                    <div className="flex gap-2">
+                      <svg className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-xs text-gray-400">
+                        Click <strong className="text-purple-400">"Edit Settings"</strong> to customize all parameters
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Active Bot Banner */}
+      {isBotActive && (
+        <div className="max-w-6xl mx-auto mt-6">
+          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500 rounded-xl p-6">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <svg className="w-6 h-6 text-green-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-xl font-bold text-green-500">Bot is Trading</h3>
+            </div>
+            <p className="text-center text-sm text-gray-300">
+              Your Alpha Pilot bot is actively monitoring the market 24/7
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loadingBots && (
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading bot...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {false && ( // OLD HIDDEN CODE - DO NOT RENDER
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:gap-6 max-w-3xl mx-auto">
+        {tradingBots
+          .filter((bot) => bot.name === 'Alpha Pilot') // Only show Alpha Pilot bot
+          .map((bot) => {
           const active = isActive(bot.botId);
           
           return (
@@ -740,7 +1078,25 @@ export default function AutomationPage() {
             </div>
           );
         })}
+        
+        {/* Show message if Alpha Pilot bot not found */}
+        {tradingBots.length > 0 && tradingBots.filter((bot) => bot.name === 'Alpha Pilot').length === 0 && (
+          <div className="col-span-full">
+            <div className="bg-yellow-500/10 border-2 border-yellow-500/30 rounded-2xl p-6 text-center">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 className="text-xl font-bold text-yellow-500">Bitcoin Pro Bot Not Found</h3>
+              </div>
+              <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 mb-4">
+                The Bitcoin Pro trading bot is not available in the database. Please contact administrator.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
+      )} {/* END OF OLD HIDDEN CODE */}
 
       {activeBots.length > 0 && (
         <div className="max-w-6xl mx-auto mt-6">
@@ -767,12 +1123,10 @@ export default function AutomationPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={selectedBotForSettings.icon} 
-                      alt={selectedBotForSettings.name}
-                      className="w-full h-full object-contain"
-                    />
+                    {/* Alpha Pilot Logo */}
+                    <div className="w-full h-full rounded-lg bg-gradient-to-br from-blue-500 via-cyan-500 to-purple-600 flex items-center justify-center shadow-lg">
+                      <span className="text-2xl font-black text-white">A</span>
+                    </div>
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-white">Bot Settings</h3>
@@ -908,16 +1262,16 @@ export default function AutomationPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-cyan-400 dark:text-cyan-400 light:text-cyan-600">
-                      {botSettings[selectedBotForSettings.id]?.currency || selectedBotForSettings.supportedCurrencies[0]}
+                      {botSettings[selectedBotForSettings.id]?.currency || selectedBotForSettings.supportedCurrencies?.[0] || 'BTC'}
                     </p>
                   </div>
                 </div>
                 <select
-                  value={botSettings[selectedBotForSettings.id]?.currency || selectedBotForSettings.supportedCurrencies[0]}
+                  value={botSettings[selectedBotForSettings.id]?.currency || selectedBotForSettings.supportedCurrencies?.[0] || 'BTC'}
                   onChange={(e) => updateBotSettings(selectedBotForSettings.id, 'currency', e.target.value)}
                   className="w-full px-4 py-3 bg-gray-800/50 dark:bg-gray-800/50 light:bg-white border border-gray-700 dark:border-gray-700 light:border-blue-300 rounded-lg text-white dark:text-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 >
-                  {selectedBotForSettings.supportedCurrencies.map((currency: string) => (
+                  {(selectedBotForSettings.supportedCurrencies || ['BTC']).map((currency: string) => (
                     <option key={currency} value={currency} className="bg-gray-800 dark:bg-gray-800 light:bg-white">
                       {currency}
                     </option>
@@ -973,7 +1327,7 @@ export default function AutomationPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-orange-400 dark:text-orange-400 light:text-orange-600">
-                      ${botSettings[selectedBotForSettings.id]?.maxDailyLoss || 100}
+                      ${botSettings[selectedBotForSettings.id]?.maxDailyLoss?.amount || botSettings[selectedBotForSettings.id]?.maxDailyLoss || 100}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">
                       Default: $100
@@ -985,7 +1339,7 @@ export default function AutomationPage() {
                   min="10"
                   max="500"
                   step="10"
-                  value={botSettings[selectedBotForSettings.id]?.maxDailyLoss || 100}
+                  value={botSettings[selectedBotForSettings.id]?.maxDailyLoss?.amount || botSettings[selectedBotForSettings.id]?.maxDailyLoss || 100}
                   onChange={(e) => updateBotSettings(selectedBotForSettings.id, 'maxDailyLoss', parseInt(e.target.value))}
                   className="w-full h-2 bg-gray-700 dark:bg-gray-700 light:bg-blue-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
                 />

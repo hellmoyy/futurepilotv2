@@ -74,9 +74,9 @@ const TradingBotConfig = mongoose.models.TradingBotConfig || mongoose.model('Tra
 const defaultBotConfigs = [
   {
     botId: 1,
-    name: 'Bitcoin Pro',
-    icon: '/images/icon-coin/bitcoin.webp',
-    description: 'AI-powered Bitcoin trading with proven track record',
+    name: 'Alpha Pilot',
+    icon: '/images/icon-coin/alpha-pilot.svg', // Custom "A" logo (rendered via CSS)
+    description: 'AI-powered automated trading with proven track record',
     risk: 'Medium',
     riskColor: 'blue',
     winRate: '71%',
@@ -88,7 +88,7 @@ const defaultBotConfigs = [
       stopLoss: 3,
       takeProfit: 6,
     },
-    supportedCurrencies: ['BTC'], // Bitcoin Pro - Only Bitcoin trading
+    supportedCurrencies: ['BTC'], // Alpha Pilot - Bitcoin trading
     features: {
       trailingStopLoss: {
         available: true,

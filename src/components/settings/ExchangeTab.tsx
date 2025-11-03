@@ -63,9 +63,7 @@ export default function ExchangeTab() {
     apiKey: '',
     apiSecret: '',
     nickname: '',
-    testnet: false,
-    spot: false,
-    futures: false,
+    futures: true, // Default enabled for Futures only
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -139,9 +137,9 @@ export default function ExchangeTab() {
           apiKey: formData.apiKey,
           apiSecret: formData.apiSecret,
           nickname: formData.nickname || `${exchangeInfo[selectedExchange].name} Account`,
-          testnet: formData.testnet,
+          testnet: false, // Always mainnet
           permissions: {
-            spot: formData.spot,
+            spot: false, // Futures only
             futures: formData.futures,
           },
         }),
@@ -167,9 +165,7 @@ export default function ExchangeTab() {
         apiKey: '',
         apiSecret: '',
         nickname: '',
-        testnet: false,
-        spot: false,
-        futures: false,
+        futures: true, // Default enabled
       });
       
       // Fetch connections and balance for new connection
@@ -213,16 +209,20 @@ export default function ExchangeTab() {
     if (!confirm('Are you sure you want to remove this connection?')) return;
 
     try {
-      const response = await fetch(`/api/exchange/connections/${connectionId}`, {
+      const response = await fetch(`/api/exchange/connections?id=${connectionId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         setConnections(prev => prev.filter(conn => conn._id !== connectionId));
         setSuccess('Connection removed successfully');
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete connection');
       }
     } catch (error) {
       console.error('Error deleting connection:', error);
+      setError('Failed to delete connection');
     }
   };
 
@@ -538,21 +538,12 @@ export default function ExchangeTab() {
                     />
                   </div>
 
-                  {/* Permissions */}
+                  {/* Permissions - Futures Only */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-200 light:text-gray-700 mb-3">
                       Trading Permissions
                     </label>
                     <div className="space-y-2">
-                      <label className="flex items-center space-x-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.spot}
-                          onChange={(e) => setFormData({ ...formData, spot: e.target.checked })}
-                          className="w-5 h-5 rounded bg-white/5 light:bg-white border-white/20 light:border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-400"
-                        />
-                        <span className="text-gray-300 light:text-gray-700">Spot Trading</span>
-                      </label>
                       <label className="flex items-center space-x-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -563,19 +554,6 @@ export default function ExchangeTab() {
                         <span className="text-gray-300 light:text-gray-700">Futures Trading</span>
                       </label>
                     </div>
-                  </div>
-
-                  {/* Testnet */}
-                  <div>
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.testnet}
-                        onChange={(e) => setFormData({ ...formData, testnet: e.target.checked })}
-                        className="w-5 h-5 rounded bg-white/5 light:bg-white border-white/20 light:border-gray-300 text-blue-500 focus:ring-2 focus:ring-blue-400"
-                      />
-                      <span className="text-gray-300 light:text-gray-700">Use Testnet (for testing)</span>
-                    </label>
                   </div>
 
                   {/* Security Tips */}
@@ -604,9 +582,7 @@ export default function ExchangeTab() {
                           apiKey: '',
                           apiSecret: '',
                           nickname: '',
-                          testnet: false,
-                          spot: false,
-                          futures: false,
+                          futures: true, // Default to enabled
                         });
                         setError('');
                       }}
