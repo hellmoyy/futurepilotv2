@@ -183,8 +183,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       </nav>
 
       {/* Gas Fee Wallet */}
-      <div className="px-4 py-4 border-t border-white/10 dark:border-white/10 light:border-gray-200">
-        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-white/10 light:border-blue-200 p-4 light:bg-blue-50">
+      <div className="px-4 py-4 pb-8 sm:pb-4 border-t border-white/10 dark:border-white/10 light:border-gray-200">
+        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl border border-white/10 dark:border-white/10 light:border-blue-200 p-4 light:bg-blue-50 mb-6 sm:mb-0">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
