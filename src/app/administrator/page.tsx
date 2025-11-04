@@ -4,6 +4,9 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import TurnstileCaptcha from '@/components/TurnstileCaptcha';
 
+// Get Turnstile site key from environment
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -150,19 +153,27 @@ export default function AdminLoginPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Security Verification
               </label>
-              <TurnstileCaptcha
-                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-                onSuccess={(token) => setCaptchaSolution(token)}
-                onError={() => {
-                  setError('Security check error. Please refresh the page.');
-                  setCaptchaSolution('');
-                }}
-                onExpire={() => {
-                  setError('Security check expired. Please try again.');
-                  setCaptchaSolution('');
-                }}
-                theme="auto"
-              />
+              {TURNSTILE_SITE_KEY ? (
+                <TurnstileCaptcha
+                  sitekey={TURNSTILE_SITE_KEY}
+                  onSuccess={(token) => setCaptchaSolution(token)}
+                  onError={() => {
+                    setError('Security check error. Please refresh the page.');
+                    setCaptchaSolution('');
+                  }}
+                  onExpire={() => {
+                    setError('Security check expired. Please try again.');
+                    setCaptchaSolution('');
+                  }}
+                  theme="dark"
+                />
+              ) : (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                  <p className="text-sm text-red-400">
+                    ⚠️ Security verification unavailable. Please contact support.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}

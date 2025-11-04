@@ -9,6 +9,9 @@ import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import TurnstileCaptcha from '@/components/TurnstileCaptcha';
 import HoneypotFields from '@/components/HoneypotFields';
 
+// Get Turnstile site key from environment
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
+
 export default function RegisterPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -415,19 +418,27 @@ export default function RegisterPage() {
 
             {/* CAPTCHA */}
             <div>
-              <TurnstileCaptcha
-                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-                onSuccess={(token) => setCaptchaSolution(token)}
-                onError={() => {
-                  setError('Security check error. Please refresh the page.');
-                  setCaptchaSolution('');
-                }}
-                onExpire={() => {
-                  setError('Security check expired. Please try again.');
-                  setCaptchaSolution('');
-                }}
-                theme="auto"
-              />
+              {TURNSTILE_SITE_KEY ? (
+                <TurnstileCaptcha
+                  sitekey={TURNSTILE_SITE_KEY}
+                  onSuccess={(token) => setCaptchaSolution(token)}
+                  onError={() => {
+                    setError('Security check error. Please refresh the page.');
+                    setCaptchaSolution('');
+                  }}
+                  onExpire={() => {
+                    setError('Security check expired. Please try again.');
+                    setCaptchaSolution('');
+                  }}
+                  theme="auto"
+                />
+              ) : (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                  <p className="text-sm text-red-400">
+                    ⚠️ Security verification unavailable. Please contact support.
+                  </p>
+                </div>
+              )}
             </div>
 
             <button
