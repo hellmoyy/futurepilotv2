@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyFriendlyCaptcha } from '@/lib/friendlyCaptcha';
+import { verifyTurnstile } from '@/lib/turnstile';
+import { getClientIP } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { solution } = body;
+    const { token } = body;
 
-    if (!solution) {
+    if (!token) {
       return NextResponse.json(
-        { error: 'CAPTCHA solution is required' },
+        { error: 'CAPTCHA token is required' },
         { status: 400 }
       );
     }
 
-    // Verify CAPTCHA
-    const result = await verifyFriendlyCaptcha(solution);
+    // Get client IP for additional verification
+    const clientIP = getClientIP(request);
+
+    // Verify CAPTCHA with Cloudflare Turnstile
+    const result = await verifyTurnstile(token, undefined, clientIP);
 
     if (!result.success) {
       return NextResponse.json(
@@ -23,9 +27,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      challengeTs: result.challengeTs,
+      hostname: result.hostname,
+    });
   } catch (error) {
-    console.error('❌ CAPTCHA verification error:', error);
+    console.error('❌ Turnstile verification error:', error);
     return NextResponse.json(
       { error: 'CAPTCHA verification failed' },
       { status: 500 }

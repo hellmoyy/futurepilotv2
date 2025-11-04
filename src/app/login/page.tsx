@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
-import FriendlyCaptcha from '@/components/FriendlyCaptcha';
+import TurnstileCaptcha from '@/components/TurnstileCaptcha';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function LoginPage() {
       const captchaResponse = await fetch('/api/auth/verify-captcha', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solution: captchaSolution }),
+        body: JSON.stringify({ token: captchaSolution }),
       });
 
       if (!captchaResponse.ok) {
@@ -202,9 +202,9 @@ export default function LoginPage() {
 
             {/* CAPTCHA */}
             <div>
-              <FriendlyCaptcha
-                sitekey={process.env.NEXT_PUBLIC_FRIENDLY_CAPTCHA_SITEKEY || 'FCMST8MFCRS9G9JB'}
-                onComplete={(solution) => setCaptchaSolution(solution)}
+              <TurnstileCaptcha
+                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                onSuccess={(token) => setCaptchaSolution(token)}
                 onError={() => {
                   setError('Security check error. Please refresh the page.');
                   setCaptchaSolution('');
@@ -213,7 +213,7 @@ export default function LoginPage() {
                   setError('Security check expired. Please try again.');
                   setCaptchaSolution('');
                 }}
-                className="captcha-login"
+                theme="auto"
               />
             </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import FriendlyCaptcha from '@/components/FriendlyCaptcha';
+import TurnstileCaptcha from '@/components/TurnstileCaptcha';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
       const captchaResponse = await fetch('/api/auth/verify-captcha', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solution: captchaSolution }),
+        body: JSON.stringify({ token: captchaSolution }),
       });
 
       if (!captchaResponse.ok) {
@@ -148,11 +148,11 @@ export default function AdminLoginPage() {
             {/* CAPTCHA */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Security Check
+                Security Verification
               </label>
-              <FriendlyCaptcha
-                sitekey={process.env.NEXT_PUBLIC_FRIENDLY_CAPTCHA_SITEKEY || 'FCMST8MFCRS9G9JB'}
-                onComplete={(solution) => setCaptchaSolution(solution)}
+              <TurnstileCaptcha
+                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                onSuccess={(token) => setCaptchaSolution(token)}
                 onError={() => {
                   setError('Security check error. Please refresh the page.');
                   setCaptchaSolution('');
@@ -161,7 +161,7 @@ export default function AdminLoginPage() {
                   setError('Security check expired. Please try again.');
                   setCaptchaSolution('');
                 }}
-                className="captcha-admin"
+                theme="auto"
               />
             </div>
 
