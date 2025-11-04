@@ -458,28 +458,6 @@ export default function CustodialWalletPage() {
             </div>
           </div>
         </div>
-
-        {/* Info Box */}
-        <div className="mt-4 bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="space-y-2 text-sm text-gray-300">
-              <p><strong className="text-green-400">How It Works:</strong></p>
-              <ul className="list-disc list-inside space-y-1 text-xs text-gray-400">
-                <li>When admin approves withdrawal → <strong>Automatic USDT transfer</strong> to user wallet</li>
-                <li>Uses <strong>ERC20 network</strong> (Ethereum/Sepolia) with gas fee estimation</li>
-                <li>Balance deducted <strong>ONLY AFTER successful blockchain transfer</strong></li>
-                <li>Automatic rollback if transfer fails (gas issue, network error, etc)</li>
-                <li>Email notifications sent to user upon completion</li>
-              </ul>
-              <p className="text-yellow-400 text-xs mt-2">
-                ⚠️ <strong>Important:</strong> Keep this wallet funded with ETH for gas fees and USDT for withdrawals
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* User Accounts Summary Card */}
