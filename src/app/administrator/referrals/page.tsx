@@ -42,6 +42,10 @@ export default function AdminReferralsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Fetch referrals
   const fetchReferrals = async () => {
@@ -76,6 +80,17 @@ export default function AdminReferralsPage() {
     
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredReferrals.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedReferrals = filteredReferrals.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm, itemsPerPage]);
 
   // Calculate stats
   const stats = {
@@ -184,13 +199,13 @@ export default function AdminReferralsPage() {
 
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-blue-200">Total Earnings</p>
+            <p className="text-blue-200">Total Commission</p>
             <svg className="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <p className="text-3xl font-bold">${stats.totalEarnings.toFixed(2)}</p>
-          <p className="text-sm text-blue-200 mt-1">Generated</p>
+          <p className="text-sm text-blue-200 mt-1">Paid to referrers</p>
         </div>
 
         <div className="bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-xl p-6 text-white">
@@ -246,21 +261,21 @@ export default function AdminReferralsPage() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Referrer</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Referred User</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Membership</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Total Earnings</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Commission Earned</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Status</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Joined</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {filteredReferrals.length === 0 ? (
+                  {paginatedReferrals.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
-                        No referrals found
+                        {filteredReferrals.length === 0 ? 'No referrals found' : 'No results for current page'}
                       </td>
                     </tr>
                   ) : (
-                    filteredReferrals.map((referral) => (
+                    paginatedReferrals.map((referral) => (
                       <tr key={referral._id} className="hover:bg-gray-700/50">
                         <td className="px-6 py-4">
                           <div>
@@ -284,7 +299,7 @@ export default function AdminReferralsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-green-500 font-bold text-lg">${(referral.totalEarnings || 0).toFixed(2)}</p>
-                          <p className="text-gray-400 text-xs">Paid: ${(referral.commissionsPaid || 0).toFixed(2)}</p>
+                          <p className="text-gray-400 text-xs">From this referral</p>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full border ${getStatusBadge(referral.status || 'active')}`}>
@@ -314,6 +329,92 @@ export default function AdminReferralsPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {filteredReferrals.length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-700 flex items-center justify-between">
+                {/* Items per page selector */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-400">Show:</label>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-sm text-gray-400">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredReferrals.length)} of {filteredReferrals.length}
+                  </span>
+                </div>
+
+                {/* Page navigation */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    First
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  {/* Page numbers */}
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 rounded text-sm ${
+                            currentPage === pageNum
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Last
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -354,7 +455,7 @@ export default function AdminReferralsPage() {
                         <p className="text-green-500 font-bold text-2xl">{referrer.activeReferrals}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-gray-400 text-xs">Total Earnings</p>
+                        <p className="text-gray-400 text-xs">Total Commission</p>
                         <p className="text-blue-500 font-bold text-2xl">${referrer.totalEarnings.toFixed(2)}</p>
                       </div>
                       <div className="text-center">
@@ -418,12 +519,14 @@ export default function AdminReferralsPage() {
               {/* Earnings Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Total Earnings</p>
+                  <p className="text-gray-400 text-sm mb-1">Commission Earned</p>
                   <p className="text-green-500 font-bold text-2xl">${(selectedReferral.totalEarnings || 0).toFixed(2)}</p>
+                  <p className="text-gray-500 text-xs mt-1">By referrer from this user</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Commissions Paid</p>
+                  <p className="text-gray-400 text-sm mb-1">Commission Paid</p>
                   <p className="text-blue-500 font-bold text-2xl">${(selectedReferral.commissionsPaid || 0).toFixed(2)}</p>
+                  <p className="text-gray-500 text-xs mt-1">Already withdrawn</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">Status</p>

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { ReferralCommission } from '@/models/ReferralCommission';
 import mongoose from 'mongoose';
 
 // Verify admin token
@@ -58,9 +59,34 @@ export async function GET(request: NextRequest) {
       referrers.map((r: any) => [r._id.toString(), r])
     );
 
-    // Build referrals array
+    // Fetch actual commission data from ReferralCommission collection
+    // Group by referralUserId (the referred user)
+    const commissionsByReferredUser = await ReferralCommission.aggregate([
+      {
+        $match: {
+          status: 'paid', // Only count paid commissions
+          referralLevel: 1, // Only direct referrals (Level 1)
+        }
+      },
+      {
+        $group: {
+          _id: '$referralUserId', // Group by referred user
+          totalCommission: { $sum: '$amount' },
+          commissionCount: { $sum: 1 },
+        }
+      }
+    ]);
+
+    // Create map for quick lookup
+    const commissionMap = new Map(
+      commissionsByReferredUser.map((c: any) => [c._id.toString(), c.totalCommission])
+    );
+
+    // Build referrals array with actual commission data
     const referrals = referredUsers.map((user: any) => {
       const referrerInfo = referrerMapLookup.get(user.referredBy?.toString()) || {};
+      const totalCommissionEarned = commissionMap.get(user._id.toString()) || 0;
+      
       return {
         _id: new mongoose.Types.ObjectId().toString(),
         referrer: referrerInfo,
@@ -71,22 +97,39 @@ export async function GET(request: NextRequest) {
           membershipLevel: user.membershipLevel,
           createdAt: user.createdAt,
         },
-        totalEarnings: user.totalEarnings || 0,
-        commissionsPaid: user.totalEarnings ? user.totalEarnings * 0.1 : 0, // 10% commission example
-        status: user.totalEarnings > 0 ? 'active' : 'inactive',
+        totalEarnings: totalCommissionEarned, // Commission earned by referrer from this referred user
+        commissionsPaid: totalCommissionEarned, // Same as totalEarnings (already paid)
+        status: totalCommissionEarned > 0 ? 'active' : 'inactive',
         createdAt: user.createdAt,
       };
     });
 
-    // Calculate top referrers
+    // Calculate top referrers with actual commission data
+    const commissionsByReferrer = await ReferralCommission.aggregate([
+      {
+        $match: {
+          status: 'paid', // Only count paid commissions
+        }
+      },
+      {
+        $group: {
+          _id: '$userId', // Group by referrer (who receives the commission)
+          totalEarnings: { $sum: '$amount' },
+          totalCommissions: { $sum: 1 },
+        }
+      }
+    ]);
+
+    // Create referrer stats map
     const referrerMap = new Map();
     
+    // Initialize referrer stats from referred users
     referredUsers.forEach((user: any) => {
       if (user.referredBy) {
-        const referrerId = user.referredBy.toString(); // referredBy is ObjectId
+        const referrerId = user.referredBy.toString();
         const referrerInfo = referrerMapLookup.get(referrerId);
         
-        if (!referrerInfo) return; // Skip if referrer not found
+        if (!referrerInfo) return;
         
         if (!referrerMap.has(referrerId)) {
           referrerMap.set(referrerId, {
@@ -102,10 +145,20 @@ export async function GET(request: NextRequest) {
         const stats = referrerMap.get(referrerId);
         stats.totalReferrals++;
         
-        if (user.totalEarnings > 0) {
+        // Check if this referred user has generated commissions
+        const userCommission = commissionMap.get(user._id.toString()) || 0;
+        if (userCommission > 0) {
           stats.activeReferrals++;
-          stats.totalEarnings += user.totalEarnings * 0.1; // 10% commission
         }
+      }
+    });
+
+    // Add actual earnings data from ReferralCommission
+    commissionsByReferrer.forEach((commission: any) => {
+      const referrerId = commission._id.toString();
+      if (referrerMap.has(referrerId)) {
+        const stats = referrerMap.get(referrerId);
+        stats.totalEarnings = commission.totalEarnings;
       }
     });
 

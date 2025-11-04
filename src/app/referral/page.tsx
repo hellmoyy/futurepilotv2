@@ -56,6 +56,12 @@ export default function ReferralPage() {
   const [transactionStats, setTransactionStats] = useState<any>(null);
   const [transactionLoading, setTransactionLoading] = useState(false);
   
+  // Pagination states
+  const [networkPage, setNetworkPage] = useState(1);
+  const [networkPerPage, setNetworkPerPage] = useState(10);
+  const [withdrawPage, setWithdrawPage] = useState(1);
+  const [withdrawPerPage, setWithdrawPerPage] = useState(10);
+  
   // Commission rates from admin settings
   const [commissionRates, setCommissionRates] = useState<any>(null);
 
@@ -80,6 +86,12 @@ export default function ReferralPage() {
       fetchTransactions();
     }
   }, [activeTab, status]);
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setNetworkPage(1);
+    setWithdrawPage(1);
+  }, [activeTab]);
 
   const fetchReferralStats = async () => {
     try {
@@ -259,6 +271,18 @@ export default function ReferralPage() {
   }
 
   const currentLevel = membershipLevels[stats.membershipLevel as keyof typeof membershipLevels];
+
+  // Pagination calculations for network tab
+  const totalNetworkPages = Math.ceil(stats.referrals.length / networkPerPage);
+  const networkStartIndex = (networkPage - 1) * networkPerPage;
+  const networkEndIndex = networkStartIndex + networkPerPage;
+  const paginatedReferrals = stats.referrals.slice(networkStartIndex, networkEndIndex);
+
+  // Pagination calculations for withdraw tab
+  const totalWithdrawPages = Math.ceil(withdrawals.length / withdrawPerPage);
+  const withdrawStartIndex = (withdrawPage - 1) * withdrawPerPage;
+  const withdrawEndIndex = withdrawStartIndex + withdrawPerPage;
+  const paginatedWithdrawals = withdrawals.slice(withdrawStartIndex, withdrawEndIndex);
 
   return (
     <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
@@ -748,20 +772,21 @@ export default function ReferralPage() {
                       <p className="text-gray-500 text-sm light:text-gray-600">Share your referral link to start earning commissions!</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto -mx-4 sm:mx-0">
-                      <div className="inline-block min-w-full align-middle">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-white/10 light:border-blue-200">
-                              <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700">Level</th>
-                              <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700">User</th>
-                              <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700 hidden md:table-cell">Email</th>
-                              <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700">Earnings</th>
-                              <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700 hidden sm:table-cell">Joined</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {stats.referrals.map((referral, index) => (
+                    <>
+                      <div className="overflow-x-auto -mx-4 sm:mx-0">
+                        <div className="inline-block min-w-full align-middle">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-white/10 light:border-blue-200">
+                                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700">Level</th>
+                                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700">User</th>
+                                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700 hidden md:table-cell">Email</th>
+                                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700">Earnings</th>
+                                <th className="text-left py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-400 light:text-gray-700 hidden sm:table-cell">Joined</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {paginatedReferrals.map((referral, index) => (
                               <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-blue-100 light:hover:bg-blue-50">
                                 <td className="py-3 sm:py-4 px-3 sm:px-4">
                                   <span className={`inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold ${
@@ -786,6 +811,89 @@ export default function ReferralPage() {
                         </table>
                       </div>
                     </div>
+
+                    {/* Pagination Controls for Network */}
+                    {stats.referrals.length > 0 && (
+                      <div className="mt-6 px-6 py-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 flex items-center justify-between light:bg-blue-50 light:border-blue-200">
+                        <div className="flex items-center space-x-2">
+                          <label className="text-sm text-gray-400 light:text-gray-700">Show:</label>
+                          <select
+                            value={networkPerPage}
+                            onChange={(e) => setNetworkPerPage(Number(e.target.value))}
+                            className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 light:bg-white light:border-gray-300 light:text-gray-900"
+                          >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                          </select>
+                          <span className="text-sm text-gray-400 light:text-gray-700">
+                            Showing {networkStartIndex + 1}-{Math.min(networkEndIndex, stats.referrals.length)} of {stats.referrals.length}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setNetworkPage(1)}
+                            disabled={networkPage === 1}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            First
+                          </button>
+                          <button
+                            onClick={() => setNetworkPage(prev => Math.max(1, prev - 1))}
+                            disabled={networkPage === 1}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            Previous
+                          </button>
+                          
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: Math.min(5, totalNetworkPages) }, (_, i) => {
+                              let pageNum;
+                              if (totalNetworkPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (networkPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (networkPage >= totalNetworkPages - 2) {
+                                pageNum = totalNetworkPages - 4 + i;
+                              } else {
+                                pageNum = networkPage - 2 + i;
+                              }
+                              
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => setNetworkPage(pageNum)}
+                                  className={`px-3 py-1 rounded text-sm ${
+                                    networkPage === pageNum
+                                      ? 'bg-purple-600 text-white'
+                                      : 'bg-white/10 text-gray-300 hover:bg-white/20 light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300'
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <button
+                            onClick={() => setNetworkPage(prev => Math.min(totalNetworkPages, prev + 1))}
+                            disabled={networkPage === totalNetworkPages}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            Next
+                          </button>
+                          <button
+                            onClick={() => setNetworkPage(totalNetworkPages)}
+                            disabled={networkPage === totalNetworkPages}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            Last
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                   )}
                 </div>
               )}
@@ -854,20 +962,21 @@ export default function ReferralPage() {
                       <p className="text-gray-500 text-sm light:text-gray-600">Your withdrawal requests will appear here</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto -mx-4 sm:mx-0">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-white/10 light:border-blue-200">
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Date</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Amount</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Network</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700 hidden md:table-cell">Wallet</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Status</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700 hidden lg:table-cell">TX Hash</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {withdrawals.map((withdrawal: any) => (
+                    <>
+                      <div className="overflow-x-auto -mx-4 sm:mx-0">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-white/10 light:border-blue-200">
+                              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Date</th>
+                              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Amount</th>
+                              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Network</th>
+                              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700 hidden md:table-cell">Wallet</th>
+                              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Status</th>
+                              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700 hidden lg:table-cell">TX Hash</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedWithdrawals.map((withdrawal: any) => (
                             <tr key={withdrawal._id} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-blue-100 light:hover:bg-blue-50">
                               <td className="py-4 px-4">
                                 <p className="text-sm text-white light:text-gray-900">
@@ -924,6 +1033,89 @@ export default function ReferralPage() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Pagination Controls for Withdraw */}
+                    {withdrawals.length > 0 && (
+                      <div className="mt-6 px-6 py-4 bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 flex items-center justify-between light:bg-blue-50 light:border-blue-200">
+                        <div className="flex items-center space-x-2">
+                          <label className="text-sm text-gray-400 light:text-gray-700">Show:</label>
+                          <select
+                            value={withdrawPerPage}
+                            onChange={(e) => setWithdrawPerPage(Number(e.target.value))}
+                            className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 light:bg-white light:border-gray-300 light:text-gray-900"
+                          >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                          </select>
+                          <span className="text-sm text-gray-400 light:text-gray-700">
+                            Showing {withdrawStartIndex + 1}-{Math.min(withdrawEndIndex, withdrawals.length)} of {withdrawals.length}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setWithdrawPage(1)}
+                            disabled={withdrawPage === 1}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            First
+                          </button>
+                          <button
+                            onClick={() => setWithdrawPage(prev => Math.max(1, prev - 1))}
+                            disabled={withdrawPage === 1}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            Previous
+                          </button>
+                          
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: Math.min(5, totalWithdrawPages) }, (_, i) => {
+                              let pageNum;
+                              if (totalWithdrawPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (withdrawPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (withdrawPage >= totalWithdrawPages - 2) {
+                                pageNum = totalWithdrawPages - 4 + i;
+                              } else {
+                                pageNum = withdrawPage - 2 + i;
+                              }
+                              
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => setWithdrawPage(pageNum)}
+                                  className={`px-3 py-1 rounded text-sm ${
+                                    withdrawPage === pageNum
+                                      ? 'bg-purple-600 text-white'
+                                      : 'bg-white/10 text-gray-300 hover:bg-white/20 light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300'
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <button
+                            onClick={() => setWithdrawPage(prev => Math.min(totalWithdrawPages, prev + 1))}
+                            disabled={withdrawPage === totalWithdrawPages}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            Next
+                          </button>
+                          <button
+                            onClick={() => setWithdrawPage(totalWithdrawPages)}
+                            disabled={withdrawPage === totalWithdrawPages}
+                            className="px-3 py-1 bg-white/10 text-white rounded text-sm hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed light:bg-gray-200 light:text-gray-900 light:hover:bg-gray-300"
+                          >
+                            Last
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                   )}
                 </div>
               )}

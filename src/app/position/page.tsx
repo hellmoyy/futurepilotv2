@@ -59,6 +59,12 @@ export default function PositionPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPrices, setCurrentPrices] = useState<{ [key: string]: number }>({});
+  
+  // Pagination states
+  const [positionsPage, setPositionsPage] = useState(1);
+  const [positionsPerPage, setPositionsPerPage] = useState(10);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPerPage, setHistoryPerPage] = useState(10);
 
   // Fetch current price from Binance
   const fetchCurrentPrice = async (symbol: string) => {
@@ -333,6 +339,25 @@ export default function PositionPage() {
     return trades.reduce((sum, t) => sum + (t.fees || 0), 0);
   };
 
+  // Pagination calculations for positions
+  const activePositions = positions.filter(p => p.currentPosition);
+  const totalPositionsPages = Math.ceil(activePositions.length / positionsPerPage);
+  const positionsStartIndex = (positionsPage - 1) * positionsPerPage;
+  const positionsEndIndex = positionsStartIndex + positionsPerPage;
+  const paginatedPositions = activePositions.slice(positionsStartIndex, positionsEndIndex);
+
+  // Pagination calculations for history
+  const totalHistoryPages = Math.ceil(trades.length / historyPerPage);
+  const historyStartIndex = (historyPage - 1) * historyPerPage;
+  const historyEndIndex = historyStartIndex + historyPerPage;
+  const paginatedTrades = trades.slice(historyStartIndex, historyEndIndex);
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setPositionsPage(1);
+    setHistoryPage(1);
+  }, [activeTab]);
+
   // Get performance metrics
   const performanceMetrics = {
     sharpeRatio: calculateSharpeRatio(),
@@ -496,11 +521,12 @@ export default function PositionPage() {
               </a>
             </div>
           ) : (
-            <div className="space-y-4">
-              {positions.map((position) => {
-                if (!position.currentPosition) return null;
-                
-                const currentPrice = currentPrices[position.currentPosition.symbol] || position.currentPosition.entryPrice;
+            <>
+              <div className="space-y-4">
+                {paginatedPositions.map((position) => {
+                  if (!position.currentPosition) return null;
+                  
+                  const currentPrice = currentPrices[position.currentPosition.symbol] || position.currentPosition.entryPrice;
                 const { pnl, pnlPercent } = calculateLivePnL(position.currentPosition, currentPrice);
                 const liquidationPrice = calculateLiquidationPrice(position.currentPosition);
                 const margin = position.currentPosition.entryPrice * position.currentPosition.quantity;
@@ -602,6 +628,89 @@ export default function PositionPage() {
                 );
               })}
             </div>
+
+            {/* Pagination Controls for Positions */}
+            {activePositions.length > 0 && (
+              <div className="mt-6 px-6 py-4 bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700">Show:</label>
+                  <select
+                    value={positionsPerPage}
+                    onChange={(e) => setPositionsPerPage(Number(e.target.value))}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-300 rounded text-white dark:text-white light:text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700">
+                    Showing {positionsStartIndex + 1}-{Math.min(positionsEndIndex, activePositions.length)} of {activePositions.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setPositionsPage(1)}
+                    disabled={positionsPage === 1}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    First
+                  </button>
+                  <button
+                    onClick={() => setPositionsPage(prev => Math.max(1, prev - 1))}
+                    disabled={positionsPage === 1}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPositionsPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPositionsPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (positionsPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (positionsPage >= totalPositionsPages - 2) {
+                        pageNum = totalPositionsPages - 4 + i;
+                      } else {
+                        pageNum = positionsPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPositionsPage(pageNum)}
+                          className={`px-3 py-1 rounded text-sm ${
+                            positionsPage === pageNum
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-gray-300 dark:text-gray-300 light:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setPositionsPage(prev => Math.min(totalPositionsPages, prev + 1))}
+                    disabled={positionsPage === totalPositionsPages}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={() => setPositionsPage(totalPositionsPages)}
+                    disabled={positionsPage === totalPositionsPages}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Last
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
           )}
         </div>
       )}
@@ -636,8 +745,9 @@ export default function PositionPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {trades.map((trade) => (
+            <>
+              <div className="space-y-4">
+                {paginatedTrades.map((trade) => (
                 <div
                   key={trade._id}
                   className="bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 p-6 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all"
@@ -696,6 +806,89 @@ export default function PositionPage() {
                 </div>
               ))}
             </div>
+
+            {/* Pagination Controls for History */}
+            {trades.length > 0 && (
+              <div className="mt-6 px-6 py-4 bg-gradient-to-br from-black/60 to-blue-900/20 dark:from-black/60 dark:to-blue-900/20 light:from-white light:to-blue-50 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/20 light:border-blue-200 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700">Show:</label>
+                  <select
+                    value={historyPerPage}
+                    onChange={(e) => setHistoryPerPage(Number(e.target.value))}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-300 rounded text-white dark:text-white light:text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700">
+                    Showing {historyStartIndex + 1}-{Math.min(historyEndIndex, trades.length)} of {trades.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setHistoryPage(1)}
+                    disabled={historyPage === 1}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    First
+                  </button>
+                  <button
+                    onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                    disabled={historyPage === 1}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalHistoryPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalHistoryPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (historyPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (historyPage >= totalHistoryPages - 2) {
+                        pageNum = totalHistoryPages - 4 + i;
+                      } else {
+                        pageNum = historyPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setHistoryPage(pageNum)}
+                          className={`px-3 py-1 rounded text-sm ${
+                            historyPage === pageNum
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-gray-300 dark:text-gray-300 light:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setHistoryPage(prev => Math.min(totalHistoryPages, prev + 1))}
+                    disabled={historyPage === totalHistoryPages}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                  <button
+                    onClick={() => setHistoryPage(totalHistoryPages)}
+                    disabled={historyPage === totalHistoryPages}
+                    className="px-3 py-1 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-900 rounded text-sm hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Last
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
           )}
         </div>
       )}

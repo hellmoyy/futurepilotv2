@@ -15,15 +15,8 @@ export default function NotificationsTab() {
       newsAlerts: true,
       weeklyReport: true,
     },
-    telegram: {
-      enabled: false,
-      chatId: '',
-      tradeAlerts: true,
-      priceAlerts: true,
-      newsAlerts: false,
-    },
     push: {
-      enabled: false,
+      enabled: true,
       tradeAlerts: true,
       priceAlerts: true,
     },
@@ -31,6 +24,11 @@ export default function NotificationsTab() {
 
   useEffect(() => {
     fetchNotificationSettings();
+    
+    // Request notification permission on mount if not already granted
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }, []);
 
   const fetchNotificationSettings = async () => {
@@ -182,110 +180,6 @@ export default function NotificationsTab() {
           )}
         </div>
 
-        {/* Telegram Notifications */}
-        <div className="p-6 bg-white/5 rounded-xl light:bg-gray-50 border border-white/10 light:border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                notifications.telegram.enabled 
-                  ? 'bg-cyan-500/20 border border-cyan-500/30' 
-                  : 'bg-gray-500/20 border border-gray-500/30'
-              }`}>
-                <svg className={`w-5 h-5 ${notifications.telegram.enabled ? 'text-cyan-400' : 'text-gray-400'}`} 
-                     fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white light:text-gray-900">
-                  Telegram Notifications
-                </h3>
-                <p className="text-sm text-gray-400 light:text-gray-600">
-                  Get instant alerts on Telegram
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setNotifications({
-                ...notifications,
-                telegram: { ...notifications.telegram, enabled: !notifications.telegram.enabled }
-              })}
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                notifications.telegram.enabled ? 'bg-cyan-500' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                  notifications.telegram.enabled ? 'translate-x-7' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          {notifications.telegram.enabled && (
-            <div className="space-y-4 ml-13">
-              <div>
-                <label className="block text-sm font-semibold text-gray-200 light:text-gray-700 mb-2">
-                  Telegram Chat ID
-                </label>
-                <input
-                  type="text"
-                  value={notifications.telegram.chatId}
-                  onChange={(e) => setNotifications({
-                    ...notifications,
-                    telegram: { ...notifications.telegram, chatId: e.target.value }
-                  })}
-                  placeholder="Enter your Telegram Chat ID"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white light:bg-white light:border-gray-300 light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Message our bot <span className="font-mono text-cyan-400">@FuturePilotBot</span> to get your Chat ID
-                </p>
-              </div>
-
-              <div className="space-y-3 pl-4 border-l-2 border-cyan-500/30">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm text-gray-300 light:text-gray-700">Trade Execution Alerts</span>
-                  <input
-                    type="checkbox"
-                    checked={notifications.telegram.tradeAlerts}
-                    onChange={(e) => setNotifications({
-                      ...notifications,
-                      telegram: { ...notifications.telegram, tradeAlerts: e.target.checked }
-                    })}
-                    className="w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-2 focus:ring-cyan-500"
-                  />
-                </label>
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm text-gray-300 light:text-gray-700">Price Alerts</span>
-                  <input
-                    type="checkbox"
-                    checked={notifications.telegram.priceAlerts}
-                    onChange={(e) => setNotifications({
-                      ...notifications,
-                      telegram: { ...notifications.telegram, priceAlerts: e.target.checked }
-                    })}
-                    className="w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-2 focus:ring-cyan-500"
-                  />
-                </label>
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm text-gray-300 light:text-gray-700">Market News Alerts</span>
-                  <input
-                    type="checkbox"
-                    checked={notifications.telegram.newsAlerts}
-                    onChange={(e) => setNotifications({
-                      ...notifications,
-                      telegram: { ...notifications.telegram, newsAlerts: e.target.checked }
-                    })}
-                    className="w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-2 focus:ring-cyan-500"
-                  />
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Push Notifications */}
         <div className="p-6 bg-white/5 rounded-xl light:bg-gray-50 border border-white/10 light:border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -303,27 +197,94 @@ export default function NotificationsTab() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white light:text-gray-900">
-                  Push Notifications
+                  Browser Push Notifications
                 </h3>
                 <p className="text-sm text-gray-400 light:text-gray-600">
-                  Browser notifications (Coming Soon)
+                  Instant browser notifications
                 </p>
               </div>
             </div>
             <button
               type="button"
-              disabled
-              className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-600 opacity-50 cursor-not-allowed"
+              onClick={async () => {
+                const newEnabled = !notifications.push.enabled;
+                
+                // Request permission if enabling and permission not granted
+                if (newEnabled && 'Notification' in window) {
+                  if (Notification.permission === 'default') {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                      alert('Please allow notifications in your browser settings to enable this feature.');
+                      return;
+                    }
+                  } else if (Notification.permission === 'denied') {
+                    alert('Notifications are blocked. Please enable them in your browser settings.');
+                    return;
+                  }
+                }
+                
+                setNotifications({
+                  ...notifications,
+                  push: { ...notifications.push, enabled: newEnabled }
+                });
+              }}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                notifications.push.enabled ? 'bg-green-500' : 'bg-gray-600'
+              }`}
             >
-              <span className="inline-block h-6 w-6 transform rounded-full bg-white translate-x-1" />
+              <span
+                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                  notifications.push.enabled ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
             </button>
           </div>
 
-          <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <p className="text-sm text-blue-300 light:text-blue-700">
-              Push notifications will be available soon. You can enable email and Telegram notifications for now.
-            </p>
-          </div>
+          {notifications.push.enabled ? (
+            <>
+              <div className="space-y-3 ml-13 pl-4 border-l-2 border-green-500/30 mb-4">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-sm text-gray-300 light:text-gray-700">Trade Execution Alerts</span>
+                  <input
+                    type="checkbox"
+                    checked={notifications.push.tradeAlerts}
+                    onChange={(e) => setNotifications({
+                      ...notifications,
+                      push: { ...notifications.push, tradeAlerts: e.target.checked }
+                    })}
+                    className="w-5 h-5 rounded border-gray-600 text-green-500 focus:ring-2 focus:ring-green-500"
+                  />
+                </label>
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-sm text-gray-300 light:text-gray-700">Price Alerts</span>
+                  <input
+                    type="checkbox"
+                    checked={notifications.push.priceAlerts}
+                    onChange={(e) => setNotifications({
+                      ...notifications,
+                      push: { ...notifications.push, priceAlerts: e.target.checked }
+                    })}
+                    className="w-5 h-5 rounded border-gray-600 text-green-500 focus:ring-2 focus:ring-green-500"
+                  />
+                </label>
+              </div>
+              
+              <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <p className="text-sm text-green-300 light:text-green-700 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Browser notifications are enabled. You&apos;ll receive instant alerts for important events.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="p-3 bg-gray-500/10 border border-gray-500/30 rounded-lg">
+              <p className="text-sm text-gray-400 light:text-gray-600">
+                Enable browser notifications to receive instant alerts for trades, deposits, and important updates.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Messages */}

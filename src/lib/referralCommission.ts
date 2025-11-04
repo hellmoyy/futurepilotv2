@@ -66,6 +66,10 @@ export async function calculateReferralCommission(input: CommissionInput): Promi
       const commissionAmount = amount * (commissionRate / 100);
 
       if (commissionAmount > 0) {
+        // Determine status: gas_fee_topup is auto-paid, others are pending
+        const commissionStatus = source === 'gas_fee_topup' ? 'paid' : 'pending';
+        const paidAtDate = source === 'gas_fee_topup' ? new Date() : undefined;
+
         // Create commission record
         const commission = await ReferralCommission.create({
           userId: referrer._id,
@@ -75,7 +79,8 @@ export async function calculateReferralCommission(input: CommissionInput): Promi
           commissionRate: commissionRate,
           source,
           sourceTransactionId,
-          status: 'pending', // Will be paid automatically or require approval
+          status: commissionStatus, // 'paid' for gas_fee_topup, 'pending' for others
+          paidAt: paidAtDate,
           notes: notes || `Level ${level} commission from ${source}`,
         });
 
