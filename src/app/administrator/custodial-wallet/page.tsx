@@ -6,9 +6,11 @@ export default function CustodialWalletPage() {
   const [sweepLoading, setSweepLoading] = useState(false);
   const [sweepResults, setSweepResults] = useState<any>(null);
   const [masterWalletBalances, setMasterWalletBalances] = useState<any>(null);
+  const [commissionWalletBalance, setCommissionWalletBalance] = useState<any>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET'>('BSC_TESTNET');
   const [minAmount, setMinAmount] = useState(10);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [commissionBalanceLoading, setCommissionBalanceLoading] = useState(false);
   const [networkMode, setNetworkMode] = useState<'testnet' | 'mainnet'>('testnet');
   const [tokenType, setTokenType] = useState<'USDT' | 'NATIVE' | 'CUSTOM'>('USDT');
   const [customTokenAddress, setCustomTokenAddress] = useState('');
@@ -33,6 +35,7 @@ export default function CustodialWalletPage() {
     }
     
     fetchMasterWalletBalance();
+    fetchCommissionWalletBalance();
   }, []);
 
   // Fetch token info when token type or network changes
@@ -117,6 +120,24 @@ export default function CustodialWalletPage() {
       console.error('Failed to fetch master wallet balance:', error);
     } finally {
       setBalanceLoading(false);
+    }
+  };
+
+  const fetchCommissionWalletBalance = async () => {
+    setCommissionBalanceLoading(true);
+    try {
+      const response = await fetch(`/api/admin/commission-wallet-balance`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setCommissionWalletBalance(data);
+      } else {
+        console.error('Failed to fetch commission wallet balance:', data.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch commission wallet balance:', error);
+    } finally {
+      setCommissionBalanceLoading(false);
     }
   };
 
@@ -316,6 +337,146 @@ export default function CustodialWalletPage() {
               ) : (
                 <p className="text-gray-500 text-xs">Loading...</p>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Commission Wallet Info Card */}
+      <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-500/30 rounded-xl p-6 mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="bg-green-600 rounded-lg p-3">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Commission Wallet</h2>
+              <p className="text-gray-400 text-sm">Automatic withdrawal processor (ERC20 only)</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={fetchCommissionWalletBalance}
+              disabled={commissionBalanceLoading}
+              className="bg-green-600/20 hover:bg-green-600/30 text-green-300 px-4 py-2 rounded-lg text-sm transition flex items-center space-x-2 disabled:opacity-50"
+            >
+              <svg className={`w-4 h-4 ${commissionBalanceLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{commissionBalanceLoading ? 'Loading...' : 'Refresh Balance'}</span>
+            </button>
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              networkMode === 'mainnet' 
+                ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
+                : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+            }`}>
+              {networkMode === 'mainnet' ? '🟢 MAINNET' : '🟡 TESTNET'}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
+          <div className="grid grid-cols-10 gap-4">
+            {/* Wallet Address - 40% */}
+            <div className="col-span-4">
+              <p className="text-gray-400 text-xs mb-2 font-semibold uppercase tracking-wide">Wallet Address</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-white font-mono text-xs break-all">
+                  {networkMode === 'mainnet' 
+                    ? (process.env.NEXT_PUBLIC_COMMISSION_WALLET_ADDRESS || 'Not configured')
+                    : (process.env.NEXT_PUBLIC_COMMISSION_WALLET_ADDRESS || 'Not configured')
+                  }
+                </p>
+                <button
+                  onClick={() => {
+                    const address = process.env.NEXT_PUBLIC_COMMISSION_WALLET_ADDRESS;
+                    if (address) {
+                      navigator.clipboard.writeText(address);
+                      alert('✅ Copied to clipboard!');
+                    }
+                  }}
+                  className="text-green-400 hover:text-green-300 flex-shrink-0"
+                  title="Copy address"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* ETH Balance - 20% */}
+            <div className="col-span-2">
+              <p className="text-gray-400 text-xs mb-2 font-semibold uppercase tracking-wide">ETH Balance</p>
+              {commissionWalletBalance ? (
+                <div className="space-y-1">
+                  <p className="text-xl font-bold text-blue-400">
+                    {commissionWalletBalance.ethBalance} ETH
+                  </p>
+                  <p className="text-gray-600 text-[10px]">
+                    (For gas fees)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-xs">
+                  {commissionBalanceLoading ? 'Loading...' : 'Click Refresh'}
+                </p>
+              )}
+            </div>
+
+            {/* USDT Balance - 20% */}
+            <div className="col-span-2">
+              <p className="text-gray-400 text-xs mb-2 font-semibold uppercase tracking-wide">USDT Balance</p>
+              {commissionWalletBalance ? (
+                <div className="space-y-1">
+                  <p className="text-xl font-bold text-green-400">
+                    ${commissionWalletBalance.usdtBalance}
+                  </p>
+                  <p className="text-gray-600 text-[10px]">
+                    (ERC20 only)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-xs">
+                  {commissionBalanceLoading ? 'Loading...' : 'Click Refresh'}
+                </p>
+              )}
+            </div>
+
+            {/* Status - 20% */}
+            <div className="col-span-2">
+              <p className="text-gray-400 text-xs mb-2 font-semibold uppercase tracking-wide">Status</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <p className="text-green-400 text-xs font-semibold">Active</p>
+              </div>
+              <p className="text-gray-600 text-[10px] mt-1">
+                Auto-withdrawal enabled
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Box */}
+        <div className="mt-4 bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="space-y-2 text-sm text-gray-300">
+              <p><strong className="text-green-400">How It Works:</strong></p>
+              <ul className="list-disc list-inside space-y-1 text-xs text-gray-400">
+                <li>When admin approves withdrawal → <strong>Automatic USDT transfer</strong> to user wallet</li>
+                <li>Uses <strong>ERC20 network</strong> (Ethereum/Sepolia) with gas fee estimation</li>
+                <li>Balance deducted <strong>ONLY AFTER successful blockchain transfer</strong></li>
+                <li>Automatic rollback if transfer fails (gas issue, network error, etc)</li>
+                <li>Email notifications sent to user upon completion</li>
+              </ul>
+              <p className="text-yellow-400 text-xs mt-2">
+                ⚠️ <strong>Important:</strong> Keep this wallet funded with ETH for gas fees and USDT for withdrawals
+              </p>
             </div>
           </div>
         </div>
