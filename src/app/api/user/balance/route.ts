@@ -155,9 +155,14 @@ export async function POST(request: NextRequest) {
         source: 'gas_fee_topup',
         notes: `Gas fee topup commission from $${amount.toFixed(2)} deposit`,
       });
-    } catch (commissionError) {
-      console.error('Error calculating referral commission:', commissionError);
+      console.log(`✅ Referral commission calculated for manual credit: $${amount.toFixed(2)}`);
+    } catch (commissionError: any) {
+      console.error('❌ CRITICAL: Error calculating referral commission:', commissionError);
+      console.error('   User:', user.email);
+      console.error('   Amount:', amount);
+      console.error('   Stack:', commissionError.stack);
       // Don't fail the topup if commission calculation fails
+      // But log extensively for debugging
     }
 
     return NextResponse.json({

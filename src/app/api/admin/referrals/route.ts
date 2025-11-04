@@ -82,14 +82,17 @@ export async function GET(request: NextRequest) {
     const referrerMap = new Map();
     
     referredUsers.forEach((user: any) => {
-      if (user.referredBy && user.referredBy._id) {
-        const referrerId = user.referredBy._id.toString();
+      if (user.referredBy) {
+        const referrerId = user.referredBy.toString(); // referredBy is ObjectId
+        const referrerInfo = referrerMapLookup.get(referrerId);
+        
+        if (!referrerInfo) return; // Skip if referrer not found
         
         if (!referrerMap.has(referrerId)) {
           referrerMap.set(referrerId, {
             userId: referrerId,
-            userName: user.referredBy.name,
-            userEmail: user.referredBy.email,
+            userName: referrerInfo.name || 'Unknown',
+            userEmail: referrerInfo.email || 'Unknown',
             totalReferrals: 0,
             activeReferrals: 0,
             totalEarnings: 0,

@@ -319,9 +319,14 @@ async function checkNetwork(
           notes: `Gas fee topup commission from $${amount.toFixed(2)} deposit (${config.name})`,
         });
         console.log(`✅ Referral commission calculated for deposit: $${amount.toFixed(2)}`);
-      } catch (commissionError) {
-        console.error('❌ Error calculating referral commission:', commissionError);
+      } catch (commissionError: any) {
+        console.error('❌ CRITICAL: Error calculating referral commission:', commissionError);
+        console.error('   User:', user.email);
+        console.error('   Amount:', amount);
+        console.error('   TxHash:', txHash);
+        console.error('   Stack:', commissionError.stack);
         // Don't fail the deposit if commission calculation fails
+        // But log extensively for debugging
       }
 
       deposits.push({
