@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import FriendlyCaptcha from '@/components/FriendlyCaptcha';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -9,19 +10,41 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [captchaSolution, setCaptchaSolution] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    // Check CAPTCHA
+    if (!captchaSolution) {
+      setError('Please complete the security check');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Verify CAPTCHA first
+      const captchaResponse = await fetch('/api/auth/verify-captcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solution: captchaSolution }),
+      });
+
+      if (!captchaResponse.ok) {
+        setError('Security check failed. Please try again.');
+        setCaptchaSolution('');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaSolution }),
       });
 
       const data = await response.json();
@@ -120,6 +143,26 @@ export default function AdminLoginPage() {
                   placeholder="••••••••••••"
                 />
               </div>
+            </div>
+
+            {/* CAPTCHA */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Security Check
+              </label>
+              <FriendlyCaptcha
+                sitekey={process.env.NEXT_PUBLIC_FRIENDLY_CAPTCHA_SITEKEY || 'FCMST8MFCRS9G9JB'}
+                onComplete={(solution) => setCaptchaSolution(solution)}
+                onError={() => {
+                  setError('Security check error. Please refresh the page.');
+                  setCaptchaSolution('');
+                }}
+                onExpire={() => {
+                  setError('Security check expired. Please try again.');
+                  setCaptchaSolution('');
+                }}
+                className="captcha-admin"
+              />
             </div>
 
             {/* Submit Button */}

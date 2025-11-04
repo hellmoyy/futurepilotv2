@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import FriendlyCaptcha from '@/components/FriendlyCaptcha';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function RegisterPage() {
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [captchaSolution, setCaptchaSolution] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -61,7 +63,28 @@ export default function RegisterPage() {
       return;
     }
 
+    // Check CAPTCHA
+    if (!captchaSolution) {
+      setError('Please complete the security check');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // Verify CAPTCHA first
+      const captchaResponse = await fetch('/api/auth/verify-captcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solution: captchaSolution }),
+      });
+
+      if (!captchaResponse.ok) {
+        setError('Security check failed. Please try again.');
+        setCaptchaSolution('');
+        setIsLoading(false);
+        return;
+      }
+
       // Register user
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -71,6 +94,7 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           referralCode: referralCode || undefined,
+          captchaSolution,
         }),
       });
 
@@ -205,6 +229,23 @@ export default function RegisterPage() {
                 required
                 className="w-full px-4 py-3 bg-white/5 dark:bg-white/5 light:bg-gray-50 backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-gray-300 rounded-xl text-white dark:text-white light:text-gray-900 placeholder-gray-400 dark:placeholder-gray-400 light:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all"
                 placeholder="••••••••"
+              />
+            </div>
+
+            {/* CAPTCHA */}
+            <div>
+              <FriendlyCaptcha
+                sitekey={process.env.NEXT_PUBLIC_FRIENDLY_CAPTCHA_SITEKEY || 'FCMST8MFCRS9G9JB'}
+                onComplete={(solution) => setCaptchaSolution(solution)}
+                onError={() => {
+                  setError('Security check error. Please refresh the page.');
+                  setCaptchaSolution('');
+                }}
+                onExpire={() => {
+                  setError('Security check expired. Please try again.');
+                  setCaptchaSolution('');
+                }}
+                className="captcha-register"
               />
             </div>
 

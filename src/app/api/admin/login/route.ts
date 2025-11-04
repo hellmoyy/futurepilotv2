@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminCredentials } from '@/lib/adminAuth';
+import rateLimiter, { RateLimitConfigs, getClientIP } from '@/lib/rateLimit';
 import { sign } from 'jsonwebtoken';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - admin login should be strictly limited
+    const clientIP = getClientIP(request);
+    const rateLimitCheck = rateLimiter.check(
+      `admin-login:${clientIP}`,
+      RateLimitConfigs.LOGIN
+    );
+
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many admin login attempts. Please try again in ${Math.ceil(rateLimitCheck.retryAfter! / 60)} minutes.`,
+          retryAfter: rateLimitCheck.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitCheck.retryAfter?.toString() || '1800',
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -18,11 +41,15 @@ export async function POST(request: NextRequest) {
     const isValid = await verifyAdminCredentials(email, password);
 
     if (!isValid) {
+      // Don't reset rate limit on failed login
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
+
+    // Reset rate limit on successful login
+    rateLimiter.reset(`admin-login:${clientIP}`);
 
     // Create JWT token for admin session
     const secret = process.env.NEXTAUTH_SECRET || 'fallback-secret-key';

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import FriendlyCaptcha from '@/components/FriendlyCaptcha';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
+  const [captchaSolution, setCaptchaSolution] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -43,7 +45,28 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
+    // Check CAPTCHA
+    if (!captchaSolution) {
+      setError('Please complete the security check');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // Verify CAPTCHA first
+      const captchaResponse = await fetch('/api/auth/verify-captcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solution: captchaSolution }),
+      });
+
+      if (!captchaResponse.ok) {
+        setError('Security check failed. Please try again.');
+        setCaptchaSolution('');
+        setIsLoading(false);
+        return;
+      }
+
       const result = await signIn('credentials', {
         redirect: false,
         email: formData.email,
@@ -176,6 +199,23 @@ export default function LoginPage() {
                 </p>
               </div>
             )}
+
+            {/* CAPTCHA */}
+            <div>
+              <FriendlyCaptcha
+                sitekey={process.env.NEXT_PUBLIC_FRIENDLY_CAPTCHA_SITEKEY || 'FCMST8MFCRS9G9JB'}
+                onComplete={(solution) => setCaptchaSolution(solution)}
+                onError={() => {
+                  setError('Security check error. Please refresh the page.');
+                  setCaptchaSolution('');
+                }}
+                onExpire={() => {
+                  setError('Security check expired. Please try again.');
+                  setCaptchaSolution('');
+                }}
+                className="captcha-login"
+              />
+            </div>
 
             <button
               type="submit"

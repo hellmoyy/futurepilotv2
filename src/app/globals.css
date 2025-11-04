@@ -110,3 +110,49 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Friendly Captcha Styling */
+.friendly-captcha-container {
+  @apply w-full;
+}
+
+.frc-captcha {
+  @apply w-full !important;
+}
+
+.frc-banner {
+  @apply bg-white/5 dark:bg-white/5 light:bg-gray-100 backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-gray-300 rounded-xl !important;
+  @apply shadow-lg !important;
+}
+
+.frc-banner.frc-success {
+  @apply bg-green-500/10 border-green-500/50 !important;
+}
+
+.frc-banner.frc-error {
+  @apply bg-red-500/10 border-red-500/50 !important;
+}
+
+.frc-icon {
+  @apply text-blue-400 dark:text-blue-400 light:text-blue-600 !important;
+}
+
+.frc-icon.frc-success {
+  @apply text-green-400 !important;
+}
+
+.frc-icon.frc-error {
+  @apply text-red-400 !important;
+}
+
+.frc-text {
+  @apply text-gray-200 dark:text-gray-200 light:text-gray-700 !important;
+}
+
+.frc-button {
+  @apply bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors !important;
+}
+
+.frc-progress {
+  @apply bg-blue-500 !important;
+}
