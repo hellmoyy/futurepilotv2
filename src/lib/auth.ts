@@ -72,6 +72,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error(`Invalid email or password. ${remainingAttempts} attempt(s) remaining before account lockout.`);
         }
 
+        // Check if email is verified
+        if (!user.emailVerified) {
+          throw new Error('EMAIL_NOT_VERIFIED');
+        }
+
         // Reset failed login attempts on successful password validation
         if (user.failedLoginAttempts && user.failedLoginAttempts > 0) {
           user.failedLoginAttempts = 0;

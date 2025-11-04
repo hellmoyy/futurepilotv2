@@ -26,6 +26,13 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
   });
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    isValid: false,
+  });
 
   const { theme } = useTheme();
 
@@ -57,8 +64,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!passwordStrength.isValid) {
+      setError('Password must contain uppercase, lowercase, number, and be at least 8 characters');
       setIsLoading(false);
       return;
     }
@@ -106,9 +113,8 @@ export default function RegisterPage() {
         return;
       }
 
-      // Show verification popup instead of auto-login
-      setUserEmail(formData.email);
-      setShowVerificationPopup(true);
+      // Redirect to verification page
+      router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
       setIsLoading(false);
     } catch (error) {
       setError('An unexpected error occurred');
@@ -117,9 +123,39 @@ export default function RegisterPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    });
+
+    // Check password strength when password field changes
+    if (name === 'password') {
+      checkPasswordStrength(value);
+    }
+  };
+
+  const checkPasswordStrength = (password: string) => {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const minLength = password.length >= 8;
+
+    // Calculate score (0-4)
+    let score = 0;
+    if (hasUpperCase) score++;
+    if (hasLowerCase) score++;
+    if (hasNumber) score++;
+    if (minLength) score++;
+
+    const isValid = hasUpperCase && hasLowerCase && hasNumber && minLength;
+
+    setPasswordStrength({
+      score,
+      hasUpperCase,
+      hasLowerCase,
+      hasNumber,
+      isValid,
     });
   };
 
@@ -209,11 +245,132 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                minLength={6}
+                minLength={8}
                 className="w-full px-4 py-3 bg-white/5 dark:bg-white/5 light:bg-gray-50 backdrop-blur-xl border border-white/10 dark:border-white/10 light:border-gray-300 rounded-xl text-white dark:text-white light:text-gray-900 placeholder-gray-400 dark:placeholder-gray-400 light:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 hover:border-white/20 dark:hover:border-white/20 light:hover:border-blue-400 transition-all"
                 placeholder="••••••••"
               />
-              <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-500 mt-1.5 ml-1">Minimum 6 characters</p>
+              
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="mt-3 space-y-2">
+                  {/* Progress Bar */}
+                  <div className="relative h-2 bg-white/10 dark:bg-white/10 light:bg-gray-200 rounded-full overflow-hidden backdrop-blur-xl">
+                    <div
+                      className={`absolute top-0 left-0 h-full transition-all duration-300 rounded-full ${
+                        passwordStrength.score === 4
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 w-full'
+                          : passwordStrength.score === 3
+                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 w-3/4'
+                          : passwordStrength.score === 2
+                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 w-1/2'
+                          : 'bg-gradient-to-r from-red-500 to-orange-500 w-1/4'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Strength Label */}
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`text-xs font-semibold ${
+                        passwordStrength.score === 4
+                          ? 'text-green-400'
+                          : passwordStrength.score === 3
+                          ? 'text-blue-400'
+                          : passwordStrength.score === 2
+                          ? 'text-yellow-400'
+                          : 'text-red-400'
+                      }`}
+                    >
+                      {passwordStrength.score === 4
+                        ? '✓ Strong Password'
+                        : passwordStrength.score === 3
+                        ? 'Good Password'
+                        : passwordStrength.score === 2
+                        ? 'Fair Password'
+                        : 'Weak Password'}
+                    </span>
+                  </div>
+
+                  {/* Requirements Checklist */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordStrength.hasUpperCase
+                            ? 'bg-green-500/20 border border-green-500'
+                            : 'bg-white/5 border border-white/20'
+                        }`}
+                      >
+                        {passwordStrength.hasUpperCase && (
+                          <svg className="w-2.5 h-2.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-xs ${passwordStrength.hasUpperCase ? 'text-green-400' : 'text-gray-400 dark:text-gray-400 light:text-gray-500'}`}>
+                        At least one uppercase letter (A-Z)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordStrength.hasLowerCase
+                            ? 'bg-green-500/20 border border-green-500'
+                            : 'bg-white/5 border border-white/20'
+                        }`}
+                      >
+                        {passwordStrength.hasLowerCase && (
+                          <svg className="w-2.5 h-2.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-xs ${passwordStrength.hasLowerCase ? 'text-green-400' : 'text-gray-400 dark:text-gray-400 light:text-gray-500'}`}>
+                        At least one lowercase letter (a-z)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          passwordStrength.hasNumber
+                            ? 'bg-green-500/20 border border-green-500'
+                            : 'bg-white/5 border border-white/20'
+                        }`}
+                      >
+                        {passwordStrength.hasNumber && (
+                          <svg className="w-2.5 h-2.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-xs ${passwordStrength.hasNumber ? 'text-green-400' : 'text-gray-400 dark:text-gray-400 light:text-gray-500'}`}>
+                        At least one number (0-9)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          formData.password.length >= 8
+                            ? 'bg-green-500/20 border border-green-500'
+                            : 'bg-white/5 border border-white/20'
+                        }`}
+                      >
+                        {formData.password.length >= 8 && (
+                          <svg className="w-2.5 h-2.5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`text-xs ${formData.password.length >= 8 ? 'text-green-400' : 'text-gray-400 dark:text-gray-400 light:text-gray-500'}`}>
+                        Minimum 8 characters
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

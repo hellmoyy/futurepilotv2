@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
@@ -10,9 +10,11 @@ import TurnstileCaptcha from '@/components/TurnstileCaptcha';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
   const [captchaSolution, setCaptchaSolution] = useState('');
@@ -21,6 +23,15 @@ export default function LoginPage() {
     password: '',
     twoFactorCode: '',
   });
+
+  // Check for verified parameter
+  useEffect(() => {
+    if (searchParams?.get('verified') === 'true') {
+      setSuccessMessage('✅ Email verified successfully! You can now sign in.');
+      // Remove query param from URL
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -75,6 +86,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
+        // Check if email not verified
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          // Redirect to verification page
+          router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
+          return;
+        }
+        
         // Check if 2FA is required
         if (result.error === '2FA_REQUIRED') {
           setRequires2FA(true);
@@ -128,6 +146,14 @@ export default function LoginPage() {
         <div className="relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white backdrop-blur-3xl rounded-[2rem] border border-white/10 dark:border-white/10 light:border-blue-200 p-8 shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 dark:from-blue-500/5 dark:to-cyan-500/5 light:from-blue-100/50 light:to-cyan-100/50 rounded-[2rem]"></div>
           <form onSubmit={handleSubmit} className="relative space-y-6">
+            {/* Success Message */}
+            {successMessage && (
+              <div className="bg-green-500/10 backdrop-blur-xl border border-green-500/50 rounded-xl p-4 animate-fadeIn">
+                <p className="text-green-400 text-sm font-medium">{successMessage}</p>
+              </div>
+            )}
+
+            {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/50 rounded-xl p-4">
                 <p className="text-red-400 text-sm font-medium">{error}</p>
