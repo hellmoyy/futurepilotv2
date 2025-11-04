@@ -8,6 +8,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import TurnstileCaptcha from '@/components/TurnstileCaptcha';
 
+// Feature flag: Enable/Disable CAPTCHA
+const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED === 'true';
 // Get Turnstile site key from environment
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
@@ -59,26 +61,28 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
-    // Check CAPTCHA
-    if (!captchaSolution) {
+    // Check CAPTCHA (only if enabled)
+    if (CAPTCHA_ENABLED && !captchaSolution) {
       setError('Please complete the security check');
       setIsLoading(false);
       return;
     }
 
     try {
-      // Verify CAPTCHA first
-      const captchaResponse = await fetch('/api/auth/verify-captcha', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: captchaSolution }),
-      });
+      // Verify CAPTCHA first (only if enabled)
+      if (CAPTCHA_ENABLED) {
+        const captchaResponse = await fetch('/api/auth/verify-captcha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaSolution }),
+        });
 
-      if (!captchaResponse.ok) {
-        setError('Security check failed. Please try again.');
-        setCaptchaSolution('');
-        setIsLoading(false);
-        return;
+        if (!captchaResponse.ok) {
+          setError('Security check failed. Please try again.');
+          setCaptchaSolution('');
+          setIsLoading(false);
+          return;
+        }
       }
 
       const result = await signIn('credentials', {
@@ -230,29 +234,31 @@ export default function LoginPage() {
             )}
 
             {/* CAPTCHA */}
-            <div>
-              {TURNSTILE_SITE_KEY ? (
-                <TurnstileCaptcha
-                  sitekey={TURNSTILE_SITE_KEY}
-                  onSuccess={(token) => setCaptchaSolution(token)}
-                  onError={() => {
-                    setError('Security check error. Please refresh the page.');
-                    setCaptchaSolution('');
-                  }}
-                  onExpire={() => {
-                    setError('Security check expired. Please try again.');
-                    setCaptchaSolution('');
-                  }}
-                  theme="auto"
-                />
-              ) : (
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                  <p className="text-sm text-red-400">
-                    ⚠️ Security verification unavailable. Please contact support.
-                  </p>
-                </div>
-              )}
-            </div>
+            {CAPTCHA_ENABLED && (
+              <div>
+                {TURNSTILE_SITE_KEY ? (
+                  <TurnstileCaptcha
+                    sitekey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setCaptchaSolution(token)}
+                    onError={() => {
+                      setError('Security check error. Please refresh the page.');
+                      setCaptchaSolution('');
+                    }}
+                    onExpire={() => {
+                      setError('Security check expired. Please try again.');
+                      setCaptchaSolution('');
+                    }}
+                    theme="auto"
+                  />
+                ) : (
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                    <p className="text-sm text-red-400">
+                      ⚠️ Security verification unavailable. Please contact support.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               type="submit"

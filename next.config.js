@@ -18,6 +18,7 @@ const nextConfig = {
   },
   // Explicitly expose public env vars to client-side (for Railway compatibility)
   env: {
+    NEXT_PUBLIC_CAPTCHA_ENABLED: process.env.NEXT_PUBLIC_CAPTCHA_ENABLED,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
