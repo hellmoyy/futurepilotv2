@@ -101,9 +101,11 @@ async function backfillCommissions() {
 
         if (commissionAmount > 0) {
           // Create commission record
+          // IMPORTANT: referralUserId should ALWAYS be the original deposit user (user._id),
+          // NOT currentUserId which changes during the loop
           const commission = new ReferralCommission({
             userId: referrer._id,
-            referralUserId: currentUserId,
+            referralUserId: user._id, // ✅ FIX: Always use original user who made the deposit
             amount: commissionAmount,
             level: level,
             depositAmount: depositAmount,
