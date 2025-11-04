@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import TurnstileCaptcha from '@/components/TurnstileCaptcha';
+import HoneypotFields from '@/components/HoneypotFields';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,6 +21,8 @@ export default function RegisterPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [captchaSolution, setCaptchaSolution] = useState('');
+  const [honeypotTriggered, setHoneypotTriggered] = useState(false);
+  const [formStartTime] = useState(Date.now());
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -66,6 +69,21 @@ export default function RegisterPage() {
 
     if (!passwordStrength.isValid) {
       setError('Password must contain uppercase, lowercase, number, and be at least 8 characters');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check honeypot (bot detection)
+    if (honeypotTriggered) {
+      setError('Security check failed. Please try again.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if submitted too fast (bot-like behavior)
+    const timeElapsed = (Date.now() - formStartTime) / 1000;
+    if (timeElapsed < 3) {
+      setError('Please take your time to fill the form.');
       setIsLoading(false);
       return;
     }
@@ -183,6 +201,12 @@ export default function RegisterPage() {
         <div className="relative bg-white/[0.03] dark:bg-white/[0.03] light:bg-white backdrop-blur-3xl rounded-[2rem] border border-white/10 dark:border-white/10 light:border-blue-200 p-8 shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 dark:from-blue-500/5 dark:to-cyan-500/5 light:from-blue-100/50 light:to-cyan-100/50 rounded-[2rem]"></div>
           <form onSubmit={handleSubmit} className="relative space-y-5">
+            {/* Honeypot fields for bot detection */}
+            <HoneypotFields 
+              onTrigger={() => setHoneypotTriggered(true)}
+              onChange={(triggered) => setHoneypotTriggered(triggered)}
+            />
+
             {error && (
               <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/50 rounded-xl p-4">
                 <p className="text-red-400 text-sm font-medium">{error}</p>
