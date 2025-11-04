@@ -101,7 +101,26 @@ export async function GET(request: NextRequest) {
     ]);
     const totalEarnings = earningsAggregate.length > 0 ? earningsAggregate[0].totalEarnings : 0;
 
-    // 8. Users by membership level
+    // 8. Total withdrawals (confirmed withdrawal transactions)
+    const withdrawalAggregate = await Transaction.aggregate([
+      {
+        $match: {
+          type: 'withdrawal',
+          status: 'confirmed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalWithdrawals: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    const totalWithdrawals = withdrawalAggregate.length > 0 ? withdrawalAggregate[0].totalWithdrawals : 0;
+    const withdrawalCount = withdrawalAggregate.length > 0 ? withdrawalAggregate[0].count : 0;
+
+    // 9. Users by membership level
     const membershipBreakdown = await User.aggregate([
       {
         $group: {
@@ -111,13 +130,13 @@ export async function GET(request: NextRequest) {
       }
     ]);
 
-    // 9. Recent transactions (last 10)
+    // 10. Recent transactions (last 10)
     const recentTransactions = await Transaction.find()
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
 
-    // 10. New users today
+    // 11. New users today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const newUsersToday = await User.countDocuments({
@@ -134,6 +153,8 @@ export async function GET(request: NextRequest) {
         totalDepositAmount: totalDepositAmount.toFixed(2),
         totalBalance: totalBalance.toFixed(2),
         totalEarnings: totalEarnings.toFixed(2),
+        totalWithdrawals: totalWithdrawals.toFixed(2),
+        withdrawalCount,
         newUsersToday,
         networkMode,
       },

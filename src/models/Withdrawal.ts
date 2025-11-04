@@ -5,14 +5,17 @@ export interface IWithdrawal extends mongoose.Document {
   amount: number;
   walletAddress: string;
   network: 'ERC20' | 'BEP20';
-  status: 'pending' | 'processing' | 'completed' | 'rejected';
+  status: 'pending' | 'processing' | 'completed' | 'rejected' | 'failed';
   transactionHash?: string;
   rejectionReason?: string;
+  failureReason?: string;
   requestedAt: Date;
   processedAt?: Date;
+  processedBy?: string;
   completedAt?: Date;
   type: 'referral' | 'trading';
   notes?: string;
+  gasUsed?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,7 +51,7 @@ const withdrawalSchema = new mongoose.Schema<IWithdrawal>(
     },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'rejected'],
+      enum: ['pending', 'processing', 'completed', 'rejected', 'failed'],
       default: 'pending',
       index: true,
     },
@@ -63,11 +66,13 @@ const withdrawalSchema = new mongoose.Schema<IWithdrawal>(
       }
     },
     rejectionReason: String,
+    failureReason: String,
     requestedAt: {
       type: Date,
       default: Date.now,
     },
     processedAt: Date,
+    processedBy: String,
     completedAt: Date,
     type: {
       type: String,
@@ -76,6 +81,7 @@ const withdrawalSchema = new mongoose.Schema<IWithdrawal>(
       required: true,
     },
     notes: String,
+    gasUsed: String,
   },
   {
     timestamps: true,

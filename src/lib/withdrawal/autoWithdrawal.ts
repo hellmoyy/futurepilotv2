@@ -20,6 +20,7 @@ import mongoose from 'mongoose';
 import { sendCommissionWithdrawal } from '@/lib/blockchain/commissionWallet';
 import { Withdrawal } from '@/models/Withdrawal';
 import { User } from '@/models/User';
+import { Transaction } from '@/models/Transaction';
 import { notificationManager } from '@/lib/notifications/NotificationManager';
 
 export interface WithdrawalResult {
@@ -164,7 +165,7 @@ export async function processAutoWithdrawal(
       
       await session.commitTransaction();
       
-      // Send failure notification to admin
+      // Send failure notification to admin (email optional, won't fail withdrawal)
       try {
         await notificationManager.send({
           userId: (user._id as any).toString(),
@@ -172,10 +173,10 @@ export async function processAutoWithdrawal(
           priority: 'error',
           title: 'Withdrawal Failed',
           message: `Blockchain transfer failed for $${withdrawal.amount} to ${withdrawal.walletAddress}: ${transferResult.error}`,
-          channels: ['database', 'email'],
+          channels: ['database'], // Only database, skip email if domain not verified
         });
-      } catch (emailError) {
-        console.error('Failed to send failure notification:', emailError);
+      } catch (notificationError: any) {
+        console.error('⚠️  Failed to send failure notification (non-critical):', notificationError.message || notificationError);
       }
       
       return {
@@ -213,6 +214,23 @@ export async function processAutoWithdrawal(
     console.log(`   Previous Balance: $${availableBalance}`);
     console.log(`   New Balance: $${updatedUser.totalEarnings}`);
 
+    // Create transaction record for withdrawal
+    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    await Transaction.create([
+      {
+        userId: user._id,
+        type: 'withdrawal',
+        amount: withdrawal.amount,
+        status: 'confirmed',
+        txHash: transferResult.txHash,
+        network: withdrawal.network || networkMode, // Use withdrawal network or fallback to env
+        source: 'commission_withdrawal',
+        description: `Commission withdrawal to ${withdrawal.walletAddress}`,
+      }
+    ], { session });
+
+    console.log(`   ✅ Transaction record created`);
+
     // Update withdrawal to completed
     const completedWithdrawal = await Withdrawal.findByIdAndUpdate(
       withdrawal._id,
@@ -245,7 +263,7 @@ export async function processAutoWithdrawal(
     // PHASE 6: POST-TRANSACTION NOTIFICATIONS
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    // Send success notification to user
+    // Send success notification to user (email optional, won't fail withdrawal)
     try {
       const networkMode = process.env.NETWORK_MODE || 'testnet';
       const explorerUrl = networkMode === 'mainnet'
@@ -258,10 +276,10 @@ export async function processAutoWithdrawal(
         priority: 'success',
         title: 'Withdrawal Completed',
         message: `Your withdrawal of $${withdrawal.amount} USDT has been completed! TxHash: ${transferResult.txHash}. View: ${explorerUrl}`,
-        channels: ['database', 'email'],
+        channels: ['database'], // Only database, skip email if domain not verified
       });
-    } catch (emailError) {
-      console.error('Failed to send success notification:', emailError);
+    } catch (notificationError: any) {
+      console.error('⚠️  Failed to send success notification (non-critical):', notificationError.message || notificationError);
     }
 
     return {
