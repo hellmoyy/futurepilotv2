@@ -14,6 +14,11 @@ interface WalletData {
   balance: number;
 }
 
+interface UserData {
+  totalPersonalDeposit: number;
+  membershipLevel: string;
+}
+
 interface Transaction {
   id: string;
   network: 'ERC20' | 'BEP20';
@@ -36,6 +41,7 @@ export default function TopUpPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [walletData, setWalletData] = useState<WalletData | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
@@ -71,6 +77,7 @@ export default function TopUpPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchWalletData();
+      fetchUserData();
       fetchTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,12 +161,22 @@ export default function TopUpPage() {
       if (response.ok) {
         const data = await response.json();
         setWalletData(data);
+        // Set user data from wallet response
+        setUserData({
+          totalPersonalDeposit: data.totalPersonalDeposit || 0,
+          membershipLevel: data.membershipLevel || 'bronze'
+        });
       }
     } catch (error) {
       console.error('Error fetching wallet data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchUserData = async () => {
+    // This function is no longer needed as data comes from fetchWalletData
+    // Keep it for backwards compatibility
   };
 
   const fetchTransactions = async () => {

@@ -48,7 +48,9 @@ export async function GET(request: NextRequest) {
       balance,
       networkMode, // Include network mode in response
       testnetBalance: user.walletData.balance || 0, // For debugging
-      mainnetBalance: user.walletData.mainnetBalance || 0 // For debugging
+      mainnetBalance: user.walletData.mainnetBalance || 0, // For debugging
+      totalPersonalDeposit: user.totalPersonalDeposit || 0, // For tier progress
+      membershipLevel: user.membershipLevel || 'bronze' // For tier display
     });
 
   } catch (error) {

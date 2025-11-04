@@ -12,6 +12,7 @@ interface ReferralStats {
   totalEarnings: number;
   totalWithdrawn: number;
   availableCommission: number;
+  totalPersonalDeposit?: number; // Add this field
   totalReferrals: {
     level1: number;
     level2: number;
@@ -84,6 +85,8 @@ export default function ReferralPage() {
     try {
       const response = await fetch('/api/referral/stats');
       const data = await response.json();
+      console.log('📊 Referral Stats:', data); // Debug log
+      console.log('💰 Total Personal Deposit:', data.totalPersonalDeposit); // Debug log
       setStats(data);
     } catch (error) {
       console.error('Error fetching referral stats:', error);
@@ -268,6 +271,127 @@ export default function ReferralPage() {
           <p className="text-sm sm:text-base text-gray-400 mt-1 light:text-gray-600">Earn commissions by inviting others</p>
         </div>
       </div>
+
+      {/* Membership Tier Progress */}
+      {stats && (
+        <div className="bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-3xl rounded-2xl border border-white/10 p-6 light:bg-gradient-to-br light:from-blue-50 light:to-purple-50 light:border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white light:text-gray-900">Membership Progress</h2>
+            <div className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold uppercase">
+              {stats.membershipLevel === 'bronze' && '🥉 Bronze'}
+              {stats.membershipLevel === 'silver' && '🥈 Silver'}
+              {stats.membershipLevel === 'gold' && '🥇 Gold'}
+              {stats.membershipLevel === 'platinum' && '💎 Platinum'}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Progress Bar */}
+            <div className="relative">
+              {(() => {
+                const tiers = [
+                  { name: 'Bronze', emoji: '🥉', min: 0, max: 999, color: 'from-amber-700 to-amber-900' },
+                  { name: 'Silver', emoji: '🥈', min: 1000, max: 1999, color: 'from-gray-400 to-gray-600' },
+                  { name: 'Gold', emoji: '🥇', min: 2000, max: 9999, color: 'from-yellow-400 to-yellow-600' },
+                  { name: 'Platinum', emoji: '💎', min: 10000, max: Infinity, color: 'from-cyan-400 to-blue-600' }
+                ];
+                
+                const totalPersonalDeposit = stats.totalPersonalDeposit || 0;
+                
+                const currentTier = tiers.find(t => 
+                  totalPersonalDeposit >= t.min && totalPersonalDeposit <= t.max
+                ) || tiers[0];
+                
+                const nextTier = tiers[tiers.indexOf(currentTier) + 1];
+                const progress = nextTier 
+                  ? ((totalPersonalDeposit - currentTier.min) / (nextTier.min - currentTier.min)) * 100
+                  : 100;
+                
+                const remaining = nextTier ? nextTier.min - totalPersonalDeposit : 0;
+
+                return (
+                  <>
+                    {/* Two-Step Progress Indicator (Current → Next) */}
+                    {nextTier ? (
+                      <div className="flex items-center mb-6">
+                        {/* Current Tier */}
+                        <div className="flex flex-col items-center">
+                          <div className={`
+                            w-16 h-16 rounded-full flex items-center justify-center text-2xl
+                            bg-gradient-to-br ${currentTier.color} shadow-lg animate-pulse
+                          `}>
+                            {currentTier.emoji}
+                          </div>
+                          <div className="text-center mt-2">
+                            <p className="text-sm font-bold text-blue-400 light:text-blue-600">
+                              {currentTier.name}
+                            </p>
+                            <p className="text-xs text-gray-500 light:text-gray-600">
+                              ${currentTier.min.toLocaleString()}+
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Progress Line */}
+                        <div className="flex-1 mx-4">
+                          <div className="relative">
+                            <div className="h-4 bg-white/10 light:bg-gray-300 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full bg-gradient-to-r ${currentTier.color} transition-all duration-500`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-center mt-2">
+                              <span className="text-sm font-bold text-gray-400 light:text-gray-600">
+                                {progress.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Next Tier */}
+                        <div className="flex flex-col items-center">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-white/10 light:bg-gray-200">
+                            {nextTier.emoji}
+                          </div>
+                          <div className="text-center mt-2">
+                            <p className="text-sm font-bold text-gray-500 light:text-gray-600">
+                              {nextTier.name}
+                            </p>
+                            <p className="text-xs text-gray-500 light:text-gray-600">
+                              ${nextTier.min.toLocaleString()}+
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      // Platinum - Maximum Tier
+                      <div className="flex justify-center mb-6">
+                        <div className="flex flex-col items-center">
+                          <div className={`
+                            w-20 h-20 rounded-full flex items-center justify-center text-3xl
+                            bg-gradient-to-br ${currentTier.color} shadow-xl animate-pulse
+                          `}>
+                            {currentTier.emoji}
+                          </div>
+                          <div className="text-center mt-3">
+                            <p className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 light:from-cyan-600 light:to-blue-700">
+                              {currentTier.name}
+                            </p>
+                            <p className="text-sm text-gray-400 light:text-gray-600">
+                              Maximum Tier 🎉
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Available Commission & Membership Level Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

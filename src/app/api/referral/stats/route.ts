@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
       totalEarnings: user.totalEarnings || 0,
       totalWithdrawn: totalWithdrawn,
       availableCommission: availableCommission, // Already ensured non-negative above
+      totalPersonalDeposit: user.totalPersonalDeposit || 0, // ✅ For Membership Progress component
       totalReferrals: {
         level1: level1Referrals.length,
         level2: level2Referrals.length,
@@ -117,6 +118,13 @@ export async function GET(request: NextRequest) {
       },
       referrals: referralList,
     };
+
+    // 🔍 Debug log
+    console.log('📊 API Response - Referral Stats:', {
+      email: user.email,
+      totalPersonalDeposit: user.totalPersonalDeposit || 0,
+      membershipLevel: user.membershipLevel || 'bronze',
+    });
 
     return NextResponse.json(stats, { status: 200 });
   } catch (error: any) {
