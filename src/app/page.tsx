@@ -72,14 +72,14 @@ export default function Home() {
 
             {/* Liquid Glass CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-6 sm:pt-8 px-4">
-              <Link href="/auth/register" className="w-full sm:w-auto">
+              <Link href="/register" className="w-full sm:w-auto">
                 <button className="w-full group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-base sm:text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <span className="relative z-10">Get Started</span>
                   <div className="absolute inset-0 bg-white/20 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
               </Link>
-              <Link href="/auth/login" className="w-full sm:w-auto">
+              <Link href="/login" className="w-full sm:w-auto">
                 <button className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/20 light:border-blue-300 rounded-2xl font-semibold text-base sm:text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 shadow-xl text-white dark:text-white light:text-gray-900">
                   View Performance
                 </button>
@@ -301,13 +301,13 @@ export default function Home() {
                   Performance-based pricing • Low barrier to entry • Complete transparency
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
-                  <Link href="/auth/register" className="w-full sm:w-auto">
+                  <Link href="/register" className="w-full sm:w-auto">
                     <button className="w-full group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl font-semibold text-base sm:text-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <span className="relative z-10">Start Trading Today</span>
                     </button>
                   </Link>
-                  <Link href="/auth/login" className="w-full sm:w-auto">
+                  <Link href="/login" className="w-full sm:w-auto">
                     <button className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-white/10 dark:bg-white/10 light:bg-white backdrop-blur-xl text-white dark:text-white light:text-gray-900 border border-white/20 dark:border-white/20 light:border-blue-300 rounded-2xl font-semibold text-base sm:text-lg hover:bg-white/20 dark:hover:bg-white/20 light:hover:bg-white transition-all duration-300 shadow-xl">
                       View Performance
                     </button>

@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { WebhookRetry } from '@/models/WebhookRetry';
+import { withAdminAuth } from '@/lib/checkAdminAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,13 +19,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB();
+    // Admin authentication check
+    const auth = await withAdminAuth();
+    if (!auth.authorized) {
+      return auth.response;
+    }
     
-    // TODO: Add admin authentication check here
-    // const session = await getServerSession(authOptions);
-    // if (!session || !session.user?.isAdmin) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    await connectDB();
     
     const { id } = params;
     
