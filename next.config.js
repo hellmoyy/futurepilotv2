@@ -16,6 +16,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  // Explicitly expose public env vars to client-side (for Railway compatibility)
+  env: {
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  },
   // Webpack configuration
   webpack: (config, { isServer }) => {
     // Fix for SSL certificate issues in development (server-side only)
