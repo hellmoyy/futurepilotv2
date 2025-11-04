@@ -713,14 +713,12 @@ export default function ReferralPage() {
               <div className="flex bg-white/5 backdrop-blur-xl rounded-xl p-1 overflow-x-auto light:bg-blue-100">
                 {[
                   { id: 'network', label: 'Network', icon: '👥' },
-                  { id: 'history', label: 'History', icon: '📊' },
-                  { id: 'transaction', label: 'Transaction', icon: '💳' },
                   { id: 'withdraw', label: 'Withdraw', icon: '💰' },
                   { id: 'commission', label: 'Commission', icon: '💎' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as 'network' | 'history' | 'transaction' | 'withdraw' | 'commission')}
+                    onClick={() => setActiveTab(tab.id as 'network' | 'withdraw' | 'commission')}
                     className={`relative px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 sm:space-x-2 whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
@@ -787,158 +785,6 @@ export default function ReferralPage() {
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* History Tab */}
-              {activeTab === 'history' && (
-                <div className="animate-fadeIn">
-                  <div className="text-center py-8 sm:py-12">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-500/20 to-blue-500/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:from-green-200 light:to-blue-200">
-                      <span className="text-2xl sm:text-3xl">📊</span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-400 mb-2 light:text-gray-600">Referral History</p>
-                    <p className="text-xs sm:text-sm text-gray-500 light:text-gray-600">Track your referral performance over time</p>
-                    
-                    <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 light:bg-blue-50">
-                        <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">This Week</p>
-                        <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">0</p>
-                        <p className="text-xs text-gray-500 light:text-gray-600">New referrals</p>
-                      </div>
-                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 light:bg-blue-50">
-                        <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">This Month</p>
-                        <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">0</p>
-                        <p className="text-xs text-gray-500 light:text-gray-600">New referrals</p>
-                      </div>
-                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 light:bg-blue-50">
-                        <p className="text-xs sm:text-sm text-gray-400 light:text-gray-600">Total</p>
-                        <p className="text-xl sm:text-2xl font-bold text-white light:text-gray-900">{stats.totalReferrals.level1 + stats.totalReferrals.level2 + stats.totalReferrals.level3}</p>
-                        <p className="text-xs text-gray-500 light:text-gray-600">All time</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Transaction Tab */}
-              {activeTab === 'transaction' && (
-                <div className="animate-fadeIn space-y-6">
-                  {/* Transaction Statistics */}
-                  {transactionStats && (
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-                      <div className="bg-white/5 backdrop-blur-xl rounded-xl p-3 sm:p-4 light:bg-blue-50">
-                        <p className="text-xs text-gray-400 mb-1 light:text-gray-600">Total Earned</p>
-                        <p className="text-lg sm:text-xl font-bold text-white light:text-gray-900">${transactionStats.totalEarned.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-green-500/10 backdrop-blur-xl rounded-xl p-3 sm:p-4 border border-green-500/30">
-                        <p className="text-xs text-gray-400 mb-1 light:text-gray-600">Paid</p>
-                        <p className="text-lg sm:text-xl font-bold text-green-400">${transactionStats.paidAmount.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-yellow-500/10 backdrop-blur-xl rounded-xl p-3 sm:p-4 border border-yellow-500/30">
-                        <p className="text-xs text-gray-400 mb-1 light:text-gray-600">Pending</p>
-                        <p className="text-lg sm:text-xl font-bold text-yellow-400">${transactionStats.pendingAmount.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-blue-500/10 backdrop-blur-xl rounded-xl p-3 sm:p-4 border border-blue-500/30">
-                        <p className="text-xs text-gray-400 mb-1 light:text-gray-600">Level 1</p>
-                        <p className="text-lg sm:text-xl font-bold text-blue-400">${transactionStats.byLevel.level1.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-purple-500/10 backdrop-blur-xl rounded-xl p-3 sm:p-4 border border-purple-500/30">
-                        <p className="text-xs text-gray-400 mb-1 light:text-gray-600">Transactions</p>
-                        <p className="text-lg sm:text-xl font-bold text-purple-400">{transactionStats.totalTransactions}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Transaction History */}
-                  {transactionLoading ? (
-                    <div className="text-center py-12">
-                      <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-400 light:text-gray-600">Loading transactions...</p>
-                    </div>
-                  ) : transactions.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 bg-white/5 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 light:bg-purple-100">
-                        <svg className="w-10 h-10 text-gray-500 light:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-400 mb-2 light:text-gray-600">No commission transactions yet</p>
-                      <p className="text-gray-500 text-sm light:text-gray-600">Commissions will appear here when your referrals make trades</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto -mx-4 sm:mx-0">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-white/10 light:border-blue-200">
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Date</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Amount</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Level</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700 hidden md:table-cell">From</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700 hidden lg:table-cell">Source</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400 light:text-gray-700">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transactions.map((transaction: any) => (
-                            <tr key={transaction._id} className="border-b border-white/5 hover:bg-white/5 transition-colors light:border-blue-100 light:hover:bg-blue-50">
-                              <td className="py-4 px-4">
-                                <p className="text-sm text-white light:text-gray-900">
-                                  {new Date(transaction.createdAt).toLocaleDateString()}
-                                </p>
-                                <p className="text-xs text-gray-500 light:text-gray-600">
-                                  {new Date(transaction.createdAt).toLocaleTimeString()}
-                                </p>
-                              </td>
-                              <td className="py-4 px-4">
-                                <p className="text-sm font-bold text-green-400 light:text-green-600">
-                                  +${transaction.amount.toFixed(2)}
-                                </p>
-                                <p className="text-xs text-gray-500 light:text-gray-600">
-                                  {transaction.commissionRate}% rate
-                                </p>
-                              </td>
-                              <td className="py-4 px-4">
-                                <span className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold ${
-                                  transaction.referralLevel === 1 
-                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                    : transaction.referralLevel === 2
-                                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                    : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                }`}>
-                                  Level {transaction.referralLevel}
-                                </span>
-                              </td>
-                              <td className="py-4 px-4 hidden md:table-cell">
-                                <p className="text-sm text-white light:text-gray-900">
-                                  {transaction.referralUserId?.name || 'Unknown'}
-                                </p>
-                                <p className="text-xs text-gray-500 light:text-gray-600">
-                                  {transaction.referralUserId?.email || '-'}
-                                </p>
-                              </td>
-                              <td className="py-4 px-4 hidden lg:table-cell">
-                                <span className="text-xs text-gray-400 light:text-gray-600">
-                                  {transaction.source.replace('_', ' ').toUpperCase()}
-                                </span>
-                              </td>
-                              <td className="py-4 px-4">
-                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                                  transaction.status === 'pending' 
-                                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                    : transaction.status === 'paid'
-                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                                }`}>
-                                  {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
                     </div>
                   )}
                 </div>
