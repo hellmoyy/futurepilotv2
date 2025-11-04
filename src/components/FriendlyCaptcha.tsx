@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { WidgetInstance } from 'friendly-challenge';
 
+type SupportedLanguage = 
+  | 'ca' | 'tr' | 'th' | 'hr' | 'en' | 'de' | 'nl' | 'fr' | 'it' 
+  | 'pt' | 'es' | 'ja' | 'da' | 'ru' | 'sv' | 'el' | 'uk' | 'bg' 
+  | 'cs' | 'sk' | 'no' | 'fi' | 'lv' | 'lt' | 'pl' | 'et' | 'sr';
+
 interface FriendlyCaptchaProps {
   sitekey: string;
   onComplete?: (solution: string) => void;
@@ -10,7 +15,7 @@ interface FriendlyCaptchaProps {
   onExpire?: () => void;
   puzzleEndpoint?: string;
   className?: string;
-  language?: string;
+  language?: SupportedLanguage;
   startMode?: 'auto' | 'focus' | 'none';
 }
 
@@ -35,19 +40,15 @@ export default function FriendlyCaptcha({
     const widget = new WidgetInstance(containerRef.current, {
       sitekey,
       puzzleEndpoint,
-      language,
+      language: language as any,
       startMode,
       doneCallback: (solution: string) => {
         setIsReady(true);
         onComplete?.(solution);
       },
-      errorCallback: (error: Error) => {
+      errorCallback: (error: any) => {
         setIsReady(false);
         onError?.(error);
-      },
-      expiredCallback: () => {
-        setIsReady(false);
-        onExpire?.();
       },
     });
 
