@@ -48,7 +48,7 @@ export default function ReferralPage() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawWallet, setWithdrawWallet] = useState('');
-  const [withdrawNetwork, setWithdrawNetwork] = useState<'ERC20' | 'BEP20'>('ERC20');
+  const [withdrawNetwork, setWithdrawNetwork] = useState<'ERC20'>('ERC20');
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawError, setWithdrawError] = useState('');
   const [withdrawSuccess, setWithdrawSuccess] = useState('');
@@ -1064,7 +1064,7 @@ export default function ReferralPage() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">Withdraw Earnings</h3>
-                    <p className="text-sm text-green-100">USDT (ERC20/BEP20)</p>
+                    <p className="text-sm text-green-100">USDT (ERC20)</p>
                   </div>
                 </div>
                 <button
@@ -1128,31 +1128,14 @@ export default function ReferralPage() {
                 <label className="block text-sm font-bold text-gray-200 dark:text-gray-200 light:text-gray-800 mb-2">
                   Network *
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={() => setWithdrawNetwork('ERC20')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      withdrawNetwork === 'ERC20'
-                        ? 'border-green-500 bg-green-500/20 dark:border-green-500 dark:bg-green-500/20 light:border-green-600 light:bg-green-100'
-                        : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 dark:border-gray-700 dark:bg-gray-800/50 light:border-gray-300 light:bg-gray-50 light:hover:border-gray-400'
-                    }`}
+                    className="p-4 rounded-lg border-2 transition-all border-green-500 bg-green-500/20 dark:border-green-500 dark:bg-green-500/20 light:border-green-600 light:bg-green-100 cursor-default"
                   >
                     <div className="text-center">
                       <p className="font-bold text-white dark:text-white light:text-gray-900">ERC20</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mt-1">Ethereum</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setWithdrawNetwork('BEP20')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      withdrawNetwork === 'BEP20'
-                        ? 'border-green-500 bg-green-500/20 dark:border-green-500 dark:bg-green-500/20 light:border-green-600 light:bg-green-100'
-                        : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 dark:border-gray-700 dark:bg-gray-800/50 light:border-gray-300 light:bg-gray-50 light:hover:border-gray-400'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <p className="font-bold text-white dark:text-white light:text-gray-900">BEP20</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mt-1">BSC</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mt-1">Ethereum Network</p>
                     </div>
                   </button>
                 </div>
@@ -1161,7 +1144,7 @@ export default function ReferralPage() {
               {/* Wallet Address Input */}
               <div>
                 <label className="block text-sm font-bold text-gray-200 dark:text-gray-200 light:text-gray-800 mb-2">
-                  {withdrawNetwork} Wallet Address *
+                  ERC20 Wallet Address *
                 </label>
                 <input
                   type="text"
@@ -1171,7 +1154,7 @@ export default function ReferralPage() {
                   className="w-full bg-gray-800 dark:bg-gray-800 light:bg-white border border-gray-700 dark:border-gray-700 light:border-gray-300 rounded-lg px-4 py-3 text-white dark:text-white light:text-gray-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
                 <p className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600 mt-2">
-                  ⚠️ Make sure this wallet address supports USDT on {withdrawNetwork} network
+                  ⚠️ Make sure this wallet address supports USDT on ERC20 (Ethereum) network
                 </p>
               </div>
 
@@ -1186,7 +1169,7 @@ export default function ReferralPage() {
                     <ul className="list-disc list-inside space-y-1 ml-2">
                       <li>Processing time: 24-48 hours</li>
                       <li>Double-check wallet address - incorrect address = lost funds</li>
-                      <li>Ensure wallet supports USDT on selected network</li>
+                      <li>Ensure wallet supports USDT on ERC20 (Ethereum) network</li>
                       <li>Network fees will be deducted from withdrawal amount</li>
                     </ul>
                   </div>
