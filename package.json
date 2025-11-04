@@ -11,6 +11,7 @@
   "dependencies": {
     "@types/crypto-js": "^4.2.2",
     "@types/file-saver": "^2.0.7",
+    "@upstash/qstash": "^2.8.4",
     "bcryptjs": "^3.0.2",
     "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",

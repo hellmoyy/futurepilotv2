@@ -343,7 +343,7 @@ export default function ReferralPage() {
                             </div>
                             <div className="flex justify-center mt-2">
                               <span className="text-sm font-bold text-gray-400 light:text-gray-600">
-                                {progress.toFixed(1)}%
+                                TOTAL DEPOSIT ${totalPersonalDeposit.toLocaleString()} ({progress.toFixed(1)}%)
                               </span>
                             </div>
                           </div>

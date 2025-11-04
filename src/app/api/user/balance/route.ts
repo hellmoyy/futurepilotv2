@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { Transaction } from '@/models/Transaction';
 import { calculateReferralCommission } from '@/lib/referralCommission';
 import { notificationManager } from '@/lib/notifications/NotificationManager';
 import { Settings } from '@/models/Settings';
@@ -78,10 +79,36 @@ export async function POST(request: NextRequest) {
     // Update balance
     user.gasFeeBalance = (user.gasFeeBalance || 0) + amount;
 
-    // Track total personal deposit for tier upgrade
+    // Calculate TOTAL PERSONAL DEPOSIT from SUM of all deposit transactions
+    // This ensures accuracy even if manual credits were added multiple times
+    const Transaction = (await import('@/models/Transaction')).Transaction;
+    
+    const depositSum = await Transaction.aggregate([
+      {
+        $match: {
+          userId: user._id,
+          type: { $in: ['deposit', undefined] }, // Include undefined for old records
+          status: 'confirmed',
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' }
+        }
+      }
+    ]);
+
     const previousDeposit = user.totalPersonalDeposit || 0;
-    const newTotalDeposit = previousDeposit + amount;
+    const newTotalDeposit = depositSum.length > 0 ? depositSum[0].total : 0;
+    
+    // Update user's total personal deposit
     user.totalPersonalDeposit = newTotalDeposit;
+
+    console.log(`📊 [DEPOSIT SYNC] User: ${user.email}`);
+    console.log(`   Previous total: $${previousDeposit}`);
+    console.log(`   Calculated from DB: $${newTotalDeposit}`);
+    console.log(`   Current deposit: $${amount}`);
 
     // Calculate previous tier before update
     const previousTier = !user.tierSetManually 

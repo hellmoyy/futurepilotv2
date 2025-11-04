@@ -232,9 +232,31 @@ async function checkNetwork(
       const balanceUpdate = createBalanceUpdate(amount);
       await User.findByIdAndUpdate(user._id, balanceUpdate);
 
-      // ✅ CRITICAL: Track total personal deposit for tier upgrade
+      // ✅ CRITICAL: Calculate TOTAL PERSONAL DEPOSIT from SUM of all confirmed deposits
+      // This ensures accuracy even if webhook/cron missed some deposits
+      const depositSum = await Transaction.aggregate([
+        {
+          $match: {
+            userId: user._id,
+            type: { $in: ['deposit', undefined] }, // Include undefined for old records
+            status: 'confirmed',
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$amount' }
+          }
+        }
+      ]);
+
       const previousDeposit = user.totalPersonalDeposit || 0;
-      const newTotalDeposit = previousDeposit + amount;
+      const newTotalDeposit = depositSum.length > 0 ? depositSum[0].total : 0;
+      
+      console.log(`📊 [DEPOSIT DETECTION] User: ${user.email}`);
+      console.log(`   Previous total: $${previousDeposit}`);
+      console.log(`   Calculated from DB: $${newTotalDeposit}`);
+      console.log(`   Current deposit: $${amount}`);
       
       // Calculate previous tier before update
       const previousTier = !user.tierSetManually 

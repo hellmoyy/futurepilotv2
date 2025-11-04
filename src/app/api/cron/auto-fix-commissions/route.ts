@@ -90,7 +90,34 @@ export async function GET(request: NextRequest) {
 
     for (const user of usersNeedingCommission) {
       try {
-        const depositAmount = user.totalPersonalDeposit || 0;
+        // ✅ IMPORTANT: Sync totalPersonalDeposit from actual transactions first
+        // This ensures we use the correct deposit amount for commission calculation
+        const Transaction = (await import('@/models/Transaction')).Transaction;
+        const depositSum = await Transaction.aggregate([
+          {
+            $match: {
+              userId: user._id,
+              type: { $in: ['deposit', undefined, null] },
+              status: 'confirmed',
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$amount' }
+            }
+          }
+        ]);
+
+        const calculatedDeposit = depositSum.length > 0 ? depositSum[0].total : 0;
+        const depositAmount = calculatedDeposit;
+
+        // Update user's totalPersonalDeposit if different
+        if (calculatedDeposit !== user.totalPersonalDeposit) {
+          await User.findByIdAndUpdate(user._id, { totalPersonalDeposit: calculatedDeposit });
+          console.log(`📊 [SYNC] Updated ${user.email}: $${user.totalPersonalDeposit} → $${calculatedDeposit}`);
+        }
+
         let currentUserId: any = user._id;
         let currentReferrerId: any = user.referredBy;
         let level = 1;

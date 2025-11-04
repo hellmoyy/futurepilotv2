@@ -186,6 +186,42 @@ export async function GET(request: NextRequest) {
               const balanceUpdate = createBalanceUpdate(parseFloat(amount));
               await User.findByIdAndUpdate(user._id, balanceUpdate);
 
+              // ✅ CRITICAL: Calculate TOTAL PERSONAL DEPOSIT from SUM of all confirmed deposits
+              // This ensures progress bar and tier upgrade work correctly
+              const depositSum = await Transaction.aggregate([
+                {
+                  $match: {
+                    userId: user._id,
+                    type: { $in: ['deposit', undefined, null] },
+                    status: 'confirmed',
+                  }
+                },
+                {
+                  $group: {
+                    _id: null,
+                    total: { $sum: '$amount' }
+                  }
+                }
+              ]);
+
+              const newTotalDeposit = depositSum.length > 0 ? depositSum[0].total : 0;
+              
+              // Calculate tier based on total deposit
+              let newTier = 'bronze';
+              if (newTotalDeposit >= 10000) newTier = 'platinum';
+              else if (newTotalDeposit >= 2000) newTier = 'gold';
+              else if (newTotalDeposit >= 1000) newTier = 'silver';
+
+              // Update totalPersonalDeposit and tier (only if NOT manually set by admin)
+              const updateData: any = { totalPersonalDeposit: newTotalDeposit };
+              if (!user.tierSetManually) {
+                updateData.membershipLevel = newTier;
+              }
+
+              await User.findByIdAndUpdate(user._id, updateData);
+
+              console.log(`📊 Updated totalPersonalDeposit: $${newTotalDeposit} (${newTier})`);
+
               networkProcessed++;
               
               console.log(`💰 Processed deposit: ${amount} USDT to ${user.email} (${txHash})`);
