@@ -416,7 +416,7 @@ export default function RegisterPage() {
             {/* CAPTCHA */}
             <div>
               <TurnstileCaptcha
-                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
                 onSuccess={(token) => setCaptchaSolution(token)}
                 onError={() => {
                   setError('Security check error. Please refresh the page.');
