@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '@/lib/mongodb';
 import { Withdrawal } from '@/models/Withdrawal';
+import { User } from '@/models/User';
 
 // Verify admin token
 async function verifyAdminToken(request: NextRequest) {
@@ -41,19 +42,28 @@ export async function GET(request: NextRequest) {
     // Connect to database
     await connectDB();
 
-    // Fetch only referral type withdrawals with user details
-    const withdrawals = await Withdrawal.find({ type: 'referral' })
-      .populate('userId', 'name email membershipLevel')
-      .sort({ createdAt: -1 })
-      .lean();
+    // Use aggregation to join with users collection (avoids populate issues)
+    const withdrawals = await Withdrawal.aggregate([
+      { $match: { type: 'referral' } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'futurepilotcols', // User collection name
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' }
+    ]);
 
     // Transform to match Commission interface expected by frontend
     const commissions = withdrawals.map((w: any) => ({
       _id: w._id.toString(),
       userId: {
-        _id: w.userId._id.toString(),
-        name: w.userId.name,
-        email: w.userId.email,
+        _id: w.user._id.toString(),
+        name: w.user.name,
+        email: w.user.email,
       },
       type: 'referral',
       amount: w.amount,
