@@ -21,9 +21,9 @@ export const authOptions: NextAuthOptions = {
 
         await connectDB();
 
-        // Find user with password and 2FA fields
+        // Find user with password, 2FA fields, and lockout fields
         const user = await User.findOne({ email: credentials.email })
-          .select('+password +twoFactorEnabled +twoFactorSecret +twoFactorBackupCodes');
+          .select('+password +twoFactorEnabled +twoFactorSecret +twoFactorBackupCodes +accountLockedUntil +lastFailedLogin');
 
         if (!user) {
           throw new Error('Invalid email or password');
@@ -32,6 +32,19 @@ export const authOptions: NextAuthOptions = {
         // Check if user is banned
         if (user.isBanned) {
           throw new Error('Your account has been banned. Please contact administrator for more information.');
+        }
+
+        // Check if account is locked
+        if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+          const minutesRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60000);
+          throw new Error(`Account is locked due to multiple failed login attempts. Please try again in ${minutesRemaining} minute(s).`);
+        }
+
+        // Reset lockout if time has passed
+        if (user.accountLockedUntil && user.accountLockedUntil <= new Date()) {
+          user.failedLoginAttempts = 0;
+          user.accountLockedUntil = undefined;
+          await user.save();
         }
 
         // Check if user has a password (for OAuth users, password might be null)
@@ -43,7 +56,28 @@ export const authOptions: NextAuthOptions = {
         const isPasswordValid = await user.comparePassword(credentials.password);
 
         if (!isPasswordValid) {
-          throw new Error('Invalid email or password');
+          // Increment failed login attempts
+          user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+          user.lastFailedLogin = new Date();
+
+          // Lock account after 5 failed attempts for 30 minutes
+          if (user.failedLoginAttempts >= 5) {
+            user.accountLockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+            await user.save();
+            throw new Error('Too many failed login attempts. Your account has been locked for 30 minutes.');
+          }
+
+          await user.save();
+          const remainingAttempts = 5 - user.failedLoginAttempts;
+          throw new Error(`Invalid email or password. ${remainingAttempts} attempt(s) remaining before account lockout.`);
+        }
+
+        // Reset failed login attempts on successful password validation
+        if (user.failedLoginAttempts && user.failedLoginAttempts > 0) {
+          user.failedLoginAttempts = 0;
+          user.accountLockedUntil = undefined;
+          user.lastFailedLogin = undefined;
+          await user.save();
         }
 
         // Check if 2FA is enabled for this user
@@ -102,7 +136,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 14 * 24 * 60 * 60, // 14 days (reduced from 30 for security)
   },
   pages: {
     signIn: '/login',

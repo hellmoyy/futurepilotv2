@@ -46,6 +46,10 @@ export interface IUser extends Document {
   isBanned?: boolean;
   bannedAt?: Date;
   banReason?: string;
+  // Account lockout fields (for failed login attempts)
+  failedLoginAttempts?: number;
+  accountLockedUntil?: Date;
+  lastFailedLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -69,7 +73,15 @@ const UserSchema = new Schema<IUser>(
     password: {
       type: String,
       select: false,
-      minlength: 6,
+      minlength: [8, 'Password must be at least 8 characters long'],
+      validate: {
+        validator: function(v: string) {
+          if (!v) return true; // Allow empty for OAuth users
+          // At least 8 chars, 1 uppercase, 1 lowercase, 1 number
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(v);
+        },
+        message: 'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, and one number'
+      }
     },
     provider: {
       type: String,
@@ -205,6 +217,20 @@ const UserSchema = new Schema<IUser>(
     },
     bannedAt: Date,
     banReason: String,
+    // Account lockout fields (for failed login attempts)
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    accountLockedUntil: {
+      type: Date,
+      select: false,
+    },
+    lastFailedLogin: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,

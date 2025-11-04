@@ -1,11 +1,34 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import rateLimiter, { RateLimitConfigs, getClientIP } from '@/lib/rateLimit';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting - by IP
+    const clientIP = getClientIP(request);
+    const rateLimitCheck = rateLimiter.check(
+      `password-reset:${clientIP}`,
+      RateLimitConfigs.PASSWORD_RESET
+    );
+
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many password reset attempts. Please try again in ${Math.ceil(rateLimitCheck.retryAfter! / 60)} minutes.`,
+          retryAfter: rateLimitCheck.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitCheck.retryAfter?.toString() || '3600',
+          },
+        }
+      );
+    }
+
     const { email } = await request.json();
 
     if (!email) {

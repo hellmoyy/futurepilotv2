@@ -2,10 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { sendVerificationEmail } from '@/lib/resend';
+import rateLimiter, { RateLimitConfigs, getClientIP } from '@/lib/rateLimit';
+import { validatePassword } from '@/lib/passwordValidation';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - by IP
+    const clientIP = getClientIP(request);
+    const rateLimitCheck = rateLimiter.check(
+      `register:${clientIP}`,
+      RateLimitConfigs.REGISTER
+    );
+
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many registration attempts. Please try again in ${rateLimitCheck.retryAfter} seconds.`,
+          retryAfter: rateLimitCheck.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitCheck.retryAfter?.toString() || '3600',
+            'X-RateLimit-Limit': RateLimitConfigs.REGISTER.maxAttempts.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': rateLimitCheck.resetAt.toISOString(),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { name, email, password, referralCode } = body;
 
@@ -17,9 +44,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Strong password validation
+    const passwordError = validatePassword(password);
+    if (passwordError) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: passwordError },
         { status: 400 }
       );
     }
@@ -76,6 +105,9 @@ export async function POST(request: NextRequest) {
     // Send verification email
     await sendVerificationEmail(user.email, verificationToken);
 
+    // Reset rate limit on successful registration
+    rateLimiter.reset(`register:${clientIP}`);
+
     return NextResponse.json(
       {
         message: 'User registered successfully. Please check your email to verify your account.',
@@ -86,7 +118,14 @@ export async function POST(request: NextRequest) {
           emailVerified: false,
         },
       },
-      { status: 201 }
+      {
+        status: 201,
+        headers: {
+          'X-RateLimit-Limit': RateLimitConfigs.REGISTER.maxAttempts.toString(),
+          'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
+          'X-RateLimit-Reset': rateLimitCheck.resetAt.toISOString(),
+        },
+      }
     );
   } catch (error: any) {
     console.error('Registration error:', error);
