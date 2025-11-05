@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     const scriptPath = path.join(backtestDir, 'run-futures-scalper.js');
     
     // Build command with config parameters
-    let command = `cd ${backtestDir} && node run-futures-scalper.js --symbol=${symbol} --period=${period} --balance=${balance}`;
+    let command = `cd ${backtestDir} && node run-futures-scalper.js --symbol=${symbol} --period=${period} --balance=${balance} --verbose`;
     
     // Add config parameters if available
     if (config) {
@@ -179,10 +179,79 @@ function parseBacktestOutput(output: string, period: string) {
       profitFactor: 0,
       maxDrawdown: 0,
       monthlyBreakdown: [],
+      trades: [], // Individual trade list
     };
+    
+    let currentTrade: any = null;
+    let inTradeLog = false;
     
     // Extract values from output (matching actual script format)
     for (const line of lines) {
+      // Detect trade log section
+      if (line.includes('DETAILED TRADE LOG')) {
+        inTradeLog = true;
+        continue;
+      }
+      
+      // Parse individual trades
+      if (inTradeLog && line.match(/^[✅❌]\s+Trade\s+#/)) {
+        // Start new trade
+        if (currentTrade) {
+          results.trades.push(currentTrade);
+        }
+        
+        const tradeMatch = line.match(/Trade #(\d+) - (\w+)/);
+        currentTrade = {
+          id: tradeMatch ? parseInt(tradeMatch[1]) : results.trades.length + 1,
+          type: tradeMatch ? tradeMatch[2] : 'UNKNOWN',
+          icon: line.startsWith('✅') ? '✅' : '❌',
+        };
+        continue;
+      }
+      
+      // Parse trade details
+      if (currentTrade && inTradeLog) {
+        if (line.includes('Time:')) {
+          const match = line.match(/Time:\s+(.+)/);
+          if (match) currentTrade.time = match[1].trim();
+        } else if (line.includes('Entry:')) {
+          const match = line.match(/\$([0-9,.]+)/);
+          if (match) currentTrade.entryPrice = parseFloat(match[1].replace(/,/g, ''));
+        } else if (line.includes('Exit:')) {
+          const match = line.match(/\$([0-9,.]+)/);
+          if (match) currentTrade.exitPrice = parseFloat(match[1].replace(/,/g, ''));
+        } else if (line.includes('Size:')) {
+          const sizeMatch = line.match(/Size:\s+([0-9.]+)/);
+          const notionalMatch = line.match(/Notional:\s+\$([0-9,.]+)/);
+          if (sizeMatch) currentTrade.size = parseFloat(sizeMatch[1]);
+          if (notionalMatch) currentTrade.notional = parseFloat(notionalMatch[1].replace(/,/g, ''));
+        } else if (line.includes('PnL:')) {
+          const pnlMatch = line.match(/PnL:\s+\$([0-9,.+-]+)/);
+          const pctMatch = line.match(/\(([0-9.+-]+)%\)/);
+          if (pnlMatch) currentTrade.pnl = parseFloat(pnlMatch[1].replace(/,/g, ''));
+          if (pctMatch) currentTrade.pnlPct = parseFloat(pctMatch[1]);
+        } else if (line.includes('Exit Type:')) {
+          const match = line.match(/Exit Type:\s+(.+)/);
+          if (match) currentTrade.exitType = match[1].trim();
+        }
+        
+        // Check if we've reached end of this trade (empty line)
+        if (line.trim() === '' && currentTrade.exitType) {
+          results.trades.push(currentTrade);
+          currentTrade = null;
+        }
+      }
+      
+      // Stop parsing trades after trade log section ends
+      if (inTradeLog && line.includes('='.repeat(20))) {
+        if (currentTrade && currentTrade.exitType) {
+          results.trades.push(currentTrade);
+          currentTrade = null;
+        }
+        inTradeLog = false;
+        continue;
+      }
+      
       // Initial Balance: "Initial Balance: $10000.00"
       if (line.includes('Initial Balance:')) {
         const match = line.match(/\$([0-9,.]+)/);

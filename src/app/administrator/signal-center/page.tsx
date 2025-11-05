@@ -11,7 +11,7 @@
  * - Configuration management
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 
 interface Signal {
   id: string;
@@ -65,6 +65,10 @@ export default function SignalCenterPage() {
   const [backtestPeriod, setBacktestPeriod] = useState<'1m' | '2m' | '3m'>('3m');
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestResults, setBacktestResults] = useState<any>(null);
+  
+  // Pagination for trade list
+  const [tradePage, setTradePage] = useState(1);
+  const tradesPerPage = 10;
   
   // PIN Protection state
   const [configUnlocked, setConfigUnlocked] = useState(false);
@@ -473,6 +477,7 @@ export default function SignalCenterPage() {
         console.log('✅ Backtest completed:', data.results);
         console.log('📊 Config used:', data.config); // Log which config was used
         setBacktestResults(data.results);
+        setTradePage(1); // Reset to first page
       } else {
         setError(data.error || 'Failed to run backtest');
       }
@@ -1933,6 +1938,157 @@ export default function SignalCenterPage() {
                         Edit and save configuration to test different strategies.
                       </div>
                     </div>
+                    
+                    {/* Trade List Table */}
+                    {backtestResults.trades && backtestResults.trades.length > 0 && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                          <h4 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            📋 Trade History
+                            <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-normal">
+                              {backtestResults.trades.length} Total Trades
+                            </span>
+                          </h4>
+                        </div>
+                        
+                        {/* Table */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead className="bg-gray-50 dark:bg-gray-700">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  #
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Time
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Type
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Entry
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Exit
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Size
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  PnL
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  PnL %
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Exit Type
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                              {backtestResults.trades
+                                .slice((tradePage - 1) * tradesPerPage, tradePage * tradesPerPage)
+                                .map((trade: any, index: number) => (
+                                <tr key={trade.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                    {trade.icon} #{trade.id}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
+                                    {trade.time?.substring(0, 16) || 'N/A'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                      trade.type === 'BUY' 
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                    }`}>
+                                      {trade.type}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-gray-900 dark:text-white">
+                                    ${trade.entryPrice?.toFixed(2)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-gray-900 dark:text-white">
+                                    ${trade.exitPrice?.toFixed(2)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-mono text-gray-600 dark:text-gray-400">
+                                    {trade.size?.toFixed(6)}
+                                  </td>
+                                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-mono font-semibold ${
+                                    (trade.pnl || 0) >= 0 
+                                      ? 'text-green-600 dark:text-green-400' 
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    ${trade.pnl?.toFixed(2)}
+                                  </td>
+                                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-mono ${
+                                    (trade.pnlPct || 0) >= 0 
+                                      ? 'text-green-600 dark:text-green-400' 
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {trade.pnlPct?.toFixed(2)}%
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
+                                    {trade.exitType}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        
+                        {/* Pagination */}
+                        {backtestResults.trades.length > tradesPerPage && (
+                          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              Showing {((tradePage - 1) * tradesPerPage) + 1} to {Math.min(tradePage * tradesPerPage, backtestResults.trades.length)} of {backtestResults.trades.length} trades
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setTradePage(Math.max(1, tradePage - 1))}
+                                disabled={tradePage === 1}
+                                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                              >
+                                ← Previous
+                              </button>
+                              <div className="flex items-center gap-2">
+                                {Array.from({ length: Math.ceil(backtestResults.trades.length / tradesPerPage) }, (_, i) => i + 1)
+                                  .filter(page => {
+                                    // Show first, last, current, and adjacent pages
+                                    return page === 1 || 
+                                           page === Math.ceil(backtestResults.trades.length / tradesPerPage) || 
+                                           Math.abs(page - tradePage) <= 1;
+                                  })
+                                  .map((page, index, array) => (
+                                    <Fragment key={page}>
+                                      {index > 0 && array[index - 1] !== page - 1 && (
+                                        <span className="text-gray-400">...</span>
+                                      )}
+                                      <button
+                                        onClick={() => setTradePage(page)}
+                                        className={`px-3 py-1 rounded text-sm transition ${
+                                          tradePage === page
+                                            ? 'bg-blue-600 text-white'
+                                            : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                        }`}
+                                      >
+                                        {page}
+                                      </button>
+                                    </Fragment>
+                                  ))}
+                              </div>
+                              <button
+                                onClick={() => setTradePage(Math.min(Math.ceil(backtestResults.trades.length / tradesPerPage), tradePage + 1))}
+                                disabled={tradePage === Math.ceil(backtestResults.trades.length / tradesPerPage)}
+                                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                              >
+                                Next →
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 
