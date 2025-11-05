@@ -2,15 +2,18 @@
  * Backtest API - Run strategy backtest with historical data
  * 
  * POST /api/backtest/run
- * Body: { symbol, period, balance }
+ * Body: { symbol, period, balance, useActiveConfig }
  * 
- * Executes backtest script and returns results
+ * Executes backtest script with configuration from database
+ * If useActiveConfig=true, uses active Signal Center config
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
+import { SignalCenterConfig } from '@/models/SignalCenterConfig';
+import connectDB from '@/lib/mongodb';
 
 const execAsync = promisify(exec);
 
@@ -20,12 +23,41 @@ interface BacktestRequest {
   symbol: string;
   period: '1m' | '2m' | '3m';
   balance: number;
+  useActiveConfig?: boolean; // Use active config from database
+  configId?: string; // Or use specific config by ID
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: BacktestRequest = await req.json();
-    const { symbol = 'BTCUSDT', period = '3m', balance = 10000 } = body;
+    const { 
+      symbol = 'BTCUSDT', 
+      period = '3m', 
+      balance = 10000,
+      useActiveConfig = true,
+      configId 
+    } = body;
+    
+    // Get config from database
+    let config: any = null;
+    
+    if (useActiveConfig || configId) {
+      await connectDB();
+      
+      if (configId) {
+        config = await SignalCenterConfig.findById(configId);
+        if (!config) {
+          return NextResponse.json(
+            { success: false, error: 'Config not found' },
+            { status: 404 }
+          );
+        }
+      } else {
+        config = await (SignalCenterConfig as any).getActiveConfig();
+      }
+      
+      console.log(`🎯 Using config: ${config.name} (${config.isActive ? 'ACTIVE' : 'CUSTOM'})`);
+    }
     
     console.log(`🧪 Starting backtest: ${symbol} ${period} $${balance}`);
     
@@ -33,8 +65,32 @@ export async function POST(req: NextRequest) {
     const backtestDir = path.join(process.cwd(), 'backtest');
     const scriptPath = path.join(backtestDir, 'run-futures-scalper.js');
     
-    // Build command
-    const command = `cd ${backtestDir} && node run-futures-scalper.js --symbol=${symbol} --period=${period} --balance=${balance}`;
+    // Build command with config parameters
+    let command = `cd ${backtestDir} && node run-futures-scalper.js --symbol=${symbol} --period=${period} --balance=${balance}`;
+    
+    // Add config parameters if available
+    if (config) {
+      command += ` --riskPerTrade=${config.riskPerTrade}`;
+      command += ` --leverage=${config.leverage}`;
+      command += ` --stopLossPercent=${config.stopLossPercent}`;
+      command += ` --takeProfitPercent=${config.takeProfitPercent}`;
+      command += ` --trailProfitActivate=${config.trailProfitActivate}`;
+      command += ` --trailProfitDistance=${config.trailProfitDistance}`;
+      command += ` --trailLossActivate=${config.trailLossActivate}`;
+      command += ` --trailLossDistance=${config.trailLossDistance}`;
+      command += ` --macdMinStrength=${config.macdMinStrength}`;
+      command += ` --volumeMin=${config.volumeMin}`;
+      command += ` --volumeMax=${config.volumeMax}`;
+      command += ` --adxMin=${config.adxMin}`;
+      command += ` --adxMax=${config.adxMax}`;
+      command += ` --rsiMin=${config.rsiMin}`;
+      command += ` --rsiMax=${config.rsiMax}`;
+      command += ` --entryConfirmationCandles=${config.entryConfirmationCandles}`;
+      command += ` --marketBiasPeriod=${config.marketBiasPeriod}`;
+      command += ` --biasThreshold=${config.biasThreshold}`;
+      
+      console.log(`📊 Using parameters from config: ${config.name}`);
+    }
     
     console.log(`📂 Running command: ${command}`);
     
@@ -72,6 +128,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       results,
+      config: config ? {
+        id: config._id,
+        name: config.name,
+        description: config.description,
+        isActive: config.isActive,
+      } : null,
+      parameters: {
+        symbol,
+        period,
+        balance,
+      },
       timestamp: Date.now(),
     });
     
