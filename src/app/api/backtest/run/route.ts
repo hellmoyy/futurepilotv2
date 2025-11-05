@@ -94,10 +94,10 @@ export async function POST(req: NextRequest) {
     
     console.log(`📂 Running command: ${command}`);
     
-    // Execute backtest (with 5 minute timeout)
+    // Execute backtest (with 15 minute timeout for 3-month backtests)
     const { stdout, stderr } = await execAsync(command, {
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-      timeout: 5 * 60 * 1000, // 5 minutes
+      maxBuffer: 20 * 1024 * 1024, // 20MB buffer (untuk output besar)
+      timeout: 15 * 60 * 1000, // 15 minutes (3-month backtest needs more time)
     });
     
     if (stderr && !stderr.includes('DeprecationWarning')) {
