@@ -32,15 +32,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get commission rate based on membership level
-    const commissionRates: Record<string, number> = {
-      bronze: 10,
-      silver: 20,
-      gold: 30,
-      platinum: 50,
+    // Get commission rates from admin settings
+    let commissionRatesConfig: any = null;
+    try {
+      const { Settings } = await import('@/models/Settings');
+      const settings = await Settings.findOne({});
+      if (settings?.referralCommission) {
+        commissionRatesConfig = settings.referralCommission[user.membershipLevel || 'bronze'];
+      }
+    } catch (error) {
+      console.error('Error fetching commission settings:', error);
+    }
+
+    // Fallback to hardcoded if settings not found
+    const defaultRates: Record<string, any> = {
+      bronze: { level1: 10, level2: 5, level3: 5 },
+      silver: { level1: 20, level2: 5, level3: 5 },
+      gold: { level1: 30, level2: 5, level3: 5 },
+      platinum: { level1: 40, level2: 5, level3: 5 },
     };
 
-    const commissionRate = commissionRates[user.membershipLevel || 'bronze'];
+    const tierRates = commissionRatesConfig || defaultRates[user.membershipLevel || 'bronze'];
+    const commissionRate = tierRates.level1 + tierRates.level2 + tierRates.level3;
 
     // Get Level 1 referrals (direct referrals)
     const level1Referrals = await User.find({ referredBy: user._id }).select('name email createdAt');
@@ -107,6 +120,7 @@ export async function GET(request: NextRequest) {
       referralCode: user.referralCode || '',
       membershipLevel: user.membershipLevel || 'bronze',
       commissionRate,
+      commissionRates: tierRates, // ✅ Add individual L1/L2/L3 rates
       totalEarnings: user.totalEarnings || 0,
       totalWithdrawn: totalWithdrawn,
       availableCommission: availableCommission, // Already ensured non-negative above

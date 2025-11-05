@@ -9,6 +9,11 @@ interface ReferralStats {
   referralCode: string;
   membershipLevel: string;
   commissionRate: number;
+  commissionRates?: { // ✅ Add individual L1/L2/L3 rates
+    level1: number;
+    level2: number;
+    level3: number;
+  };
   totalEarnings: number;
   totalWithdrawn: number;
   availableCommission: number;
@@ -28,10 +33,10 @@ interface ReferralStats {
 }
 
 const membershipLevels = {
-  bronze: { name: 'Bronze', rate: 10, color: 'from-amber-600 to-amber-800', icon: '🥉' },
-  silver: { name: 'Silver', rate: 20, color: 'from-gray-400 to-gray-600', icon: '🥈' },
-  gold: { name: 'Gold', rate: 30, color: 'from-yellow-400 to-yellow-600', icon: '🥇' },
-  platinum: { name: 'Platinum', rate: 50, color: 'from-cyan-400 to-blue-600', icon: '💎' },
+  bronze: { name: 'Bronze', color: 'from-amber-600 to-amber-800', icon: '🥉' },
+  silver: { name: 'Silver', color: 'from-gray-400 to-gray-600', icon: '🥈' },
+  gold: { name: 'Gold', color: 'from-yellow-400 to-yellow-600', icon: '🥇' },
+  platinum: { name: 'Platinum', color: 'from-cyan-400 to-blue-600', icon: '💎' },
 };
 
 export default function ReferralPage() {
@@ -39,12 +44,14 @@ export default function ReferralPage() {
   const router = useRouter();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [activeTab, setActiveTab] = useState<'network' | 'history' | 'transaction' | 'withdraw' | 'commission'>('network');
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [withdrawalStats, setWithdrawalStats] = useState<any>(null);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawWallet, setWithdrawWallet] = useState('');
@@ -55,15 +62,13 @@ export default function ReferralPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionStats, setTransactionStats] = useState<any>(null);
   const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
   
   // Pagination states
   const [networkPage, setNetworkPage] = useState(1);
   const [networkPerPage, setNetworkPerPage] = useState(10);
   const [withdrawPage, setWithdrawPage] = useState(1);
   const [withdrawPerPage, setWithdrawPerPage] = useState(10);
-  
-  // Commission rates from admin settings
-  const [commissionRates, setCommissionRates] = useState<any>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -74,7 +79,6 @@ export default function ReferralPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchReferralStats();
-      fetchCommissionRates();
     }
   }, [status]);
 
@@ -95,29 +99,28 @@ export default function ReferralPage() {
 
   const fetchReferralStats = async () => {
     try {
+      setError(null);
+      setLoading(true);
+      
       const response = await fetch('/api/referral/stats');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch referral data: ${response.status}`);
+      }
+      
       const data = await response.json();
       console.log('📊 Referral Stats:', data); // Debug log
       console.log('💰 Total Personal Deposit:', data.totalPersonalDeposit); // Debug log
       setStats(data);
     } catch (error) {
       console.error('Error fetching referral stats:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load referral data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchCommissionRates = async () => {
-    try {
-      const response = await fetch('/api/settings/commission-rates');
-      const data = await response.json();
-      if (data.success) {
-        setCommissionRates(data.rates);
-      }
-    } catch (error) {
-      console.error('Error fetching commission rates:', error);
-    }
-  };
+  // Get current tier commission rates from stats
 
   const copyReferralLink = () => {
     if (stats) {
@@ -158,7 +161,14 @@ export default function ReferralPage() {
   const fetchWithdrawals = async () => {
     try {
       setWithdrawalLoading(true);
+      setWithdrawalError(null);
+      
       const response = await fetch('/api/withdrawals');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch withdrawals: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (response.ok) {
@@ -167,6 +177,7 @@ export default function ReferralPage() {
       }
     } catch (error) {
       console.error('Failed to fetch withdrawals:', error);
+      setWithdrawalError(error instanceof Error ? error.message : 'Failed to load withdrawal history');
     } finally {
       setWithdrawalLoading(false);
     }
@@ -175,7 +186,14 @@ export default function ReferralPage() {
   const fetchTransactions = async () => {
     try {
       setTransactionLoading(true);
+      setTransactionError(null);
+      
       const response = await fetch('/api/referral/commissions');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch transactions: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (response.ok && data.success) {
@@ -184,6 +202,7 @@ export default function ReferralPage() {
       }
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
+      setTransactionError(error instanceof Error ? error.message : 'Failed to load transaction history');
     } finally {
       setTransactionLoading(false);
     }
@@ -262,6 +281,32 @@ export default function ReferralPage() {
     );
   }
 
+  // Error state with retry button
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white light:text-gray-900 mb-2">Failed to Load Data</h2>
+          <p className="text-gray-400 light:text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              fetchReferralStats();
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-semibold text-white hover:shadow-xl transition-all hover:scale-105"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!stats) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -271,6 +316,29 @@ export default function ReferralPage() {
   }
 
   const currentLevel = membershipLevels[stats.membershipLevel as keyof typeof membershipLevels];
+  
+  // Get commission rates (from API or fallback to default)
+  const getCurrentTierRates = () => {
+    if (stats?.commissionRates) {
+      const tierRates = stats.commissionRates;
+      return {
+        level1: tierRates.level1 || 10,
+        level2: tierRates.level2 || 5,
+        level3: tierRates.level3 || 5,
+        total: (tierRates.level1 || 10) + (tierRates.level2 || 5) + (tierRates.level3 || 5)
+      };
+    }
+    // Fallback defaults
+    const defaults: Record<string, any> = {
+      bronze: { level1: 10, level2: 5, level3: 5, total: 20 },
+      silver: { level1: 20, level2: 5, level3: 5, total: 30 },
+      gold: { level1: 30, level2: 5, level3: 5, total: 40 },
+      platinum: { level1: 40, level2: 5, level3: 5, total: 50 },
+    };
+    return defaults[stats?.membershipLevel || 'bronze'];
+  };
+
+  const currentRates = getCurrentTierRates();
 
   // Pagination calculations for network tab
   const totalNetworkPages = Math.ceil(stats.referrals.length / networkPerPage);
@@ -467,11 +535,7 @@ export default function ReferralPage() {
                 <div className={`inline-block px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r ${currentLevel.color} rounded-xl sm:rounded-2xl w-full`}>
                   <p className="text-xs sm:text-sm text-white/80">Total Commission Rate</p>
                   <p className="text-2xl sm:text-3xl font-bold text-white">
-                    {commissionRates && stats 
-                      ? (commissionRates[stats.membershipLevel || 'bronze'].level1 + 
-                         commissionRates[stats.membershipLevel || 'bronze'].level2 + 
-                         commissionRates[stats.membershipLevel || 'bronze'].level3)
-                      : currentLevel.rate}%
+                    {currentRates.total}%
                   </p>
                 </div>
               </div>
@@ -500,7 +564,7 @@ export default function ReferralPage() {
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">
-                Level 1 {commissionRates && stats && `(${commissionRates[stats.membershipLevel || 'bronze'].level1}%)`}
+                Level 1 ({currentRates.level1}%)
               </span>
               <span className="text-xl sm:text-2xl">👤</span>
             </div>
@@ -519,7 +583,7 @@ export default function ReferralPage() {
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">
-                Level 2 {commissionRates && stats && `(${commissionRates[stats.membershipLevel || 'bronze'].level2}%)`}
+                Level 2 ({currentRates.level2}%)
               </span>
               <span className="text-xl sm:text-2xl">👥</span>
             </div>
@@ -538,7 +602,7 @@ export default function ReferralPage() {
           <div className="relative">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-400 text-xs sm:text-sm light:text-gray-600">
-                Level 3 {commissionRates && stats && `(${commissionRates[stats.membershipLevel || 'bronze'].level3}%)`}
+                Level 3 ({currentRates.level3}%)
               </span>
               <span className="text-xl sm:text-2xl">👨‍👩‍👧‍👦</span>
             </div>
@@ -1125,7 +1189,7 @@ export default function ReferralPage() {
       </div>
 
       {/* Commission Tab */}
-      {activeTab === 'commission' && commissionRates && stats && (
+      {activeTab === 'commission' && stats && (
         <div className="p-4 sm:p-5 lg:p-6 space-y-4 sm:space-y-6">
           <div className="mb-6">
             <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2 mb-2 light:text-gray-900">
@@ -1151,7 +1215,7 @@ export default function ReferralPage() {
               </div>
               <div className="text-center py-3">
                 <p className="text-4xl font-bold text-green-400 light:text-green-600">
-                  {commissionRates[stats.membershipLevel || 'bronze'].level1}%
+                  {currentRates.level1}%
                 </p>
                 <p className="text-xs text-gray-400 mt-1 light:text-gray-600">Per transaction</p>
               </div>
@@ -1175,7 +1239,7 @@ export default function ReferralPage() {
               </div>
               <div className="text-center py-3">
                 <p className="text-4xl font-bold text-blue-400 light:text-blue-600">
-                  {commissionRates[stats.membershipLevel || 'bronze'].level2}%
+                  {currentRates.level2}%
                 </p>
                 <p className="text-xs text-gray-400 mt-1 light:text-gray-600">Per transaction</p>
               </div>
@@ -1199,7 +1263,7 @@ export default function ReferralPage() {
               </div>
               <div className="text-center py-3">
                 <p className="text-4xl font-bold text-purple-400 light:text-purple-600">
-                  {commissionRates[stats.membershipLevel || 'bronze'].level3}%
+                  {currentRates.level3}%
                 </p>
                 <p className="text-xs text-gray-400 mt-1 light:text-gray-600">Per transaction</p>
               </div>
@@ -1216,9 +1280,9 @@ export default function ReferralPage() {
               <div className="flex-1">
                 <p className="text-sm font-semibold text-yellow-400 mb-2 light:text-yellow-700">Example Commission Calculation:</p>
                 <div className="space-y-1 text-xs text-gray-300 light:text-gray-700">
-                  <p>• Level 1 user deposits $1,000 → You earn ${(1000 * commissionRates[stats.membershipLevel || 'bronze'].level1 / 100).toFixed(2)}</p>
-                  <p>• Level 2 user deposits $1,000 → You earn ${(1000 * commissionRates[stats.membershipLevel || 'bronze'].level2 / 100).toFixed(2)}</p>
-                  <p>• Level 3 user deposits $1,000 → You earn ${(1000 * commissionRates[stats.membershipLevel || 'bronze'].level3 / 100).toFixed(2)}</p>
+                  <p>• Level 1 user deposits $1,000 → You earn ${(1000 * currentRates.level1 / 100).toFixed(2)}</p>
+                  <p>• Level 2 user deposits $1,000 → You earn ${(1000 * currentRates.level2 / 100).toFixed(2)}</p>
+                  <p>• Level 3 user deposits $1,000 → You earn ${(1000 * currentRates.level3 / 100).toFixed(2)}</p>
                 </div>
               </div>
             </div>
