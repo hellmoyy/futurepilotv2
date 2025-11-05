@@ -15,11 +15,45 @@ import {
   fetchCryptoNews,
   formatNewsForAI,
 } from '@/lib/crypto-news';
+import rateLimiter from '@/lib/rateLimit';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   let imageUrl: string | null = null;
   
   try {
+    // Authentication check
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Rate limiting: 10 messages per minute to prevent AI cost explosion
+    const rateLimitResult = rateLimiter.check(
+      session.user.email,
+      { maxAttempts: 10, windowMs: 60000, blockDurationMs: 60000 } // 10 requests per minute
+    );
+
+    if (!rateLimitResult.allowed) {
+      const retryAfter = rateLimitResult.retryAfter || 60;
+      return NextResponse.json(
+        { 
+          error: 'Too many AI requests. Please wait before sending another message.',
+          retryAfter
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': retryAfter.toString()
+          }
+        }
+      );
+    }
+
     const requestBody = await request.json();
     const { 
       message, 
@@ -31,16 +65,36 @@ export async function POST(request: NextRequest) {
     
     imageUrl = requestImageUrl;
 
-    if (!message || message.trim().length < AI_AGENT_CONFIG.settings.minQueryLength) {
+    // Input validation: message length and sanitization
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json(
+        { error: 'Message is required and must be a string' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedMessage = message.trim();
+
+    if (trimmedMessage.length < AI_AGENT_CONFIG.settings.minQueryLength) {
       return NextResponse.json(
         { error: 'Message is required and must be at least 3 characters' },
         { status: 400 }
       );
     }
 
+    if (trimmedMessage.length > 2000) {
+      return NextResponse.json(
+        { error: 'Message is too long. Maximum length is 2000 characters.' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize message (remove script tags and potential XSS)
+    const sanitizedMessage = trimmedMessage.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
     // Detect if user is asking about specific trading pairs
     const tradingPairRegex = /\b(BTC|ETH|BNB|SOL|ADA|XRP|DOGE|MATIC|AVAX|DOT|LINK|LTC)(?:USDT)?\b/gi;
-    const mentionedPairs = message.match(tradingPairRegex);
+    const mentionedPairs = sanitizedMessage.match(tradingPairRegex);
     
     // Fetch real-time market data if pairs are mentioned
     let marketDataContext = '';

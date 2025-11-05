@@ -6,6 +6,7 @@ import { Trade } from '@/models/Trade';
 import { User } from '@/models/User';
 import { ExchangeConnection } from '@/models/ExchangeConnection';
 import mongoose from 'mongoose';
+import rateLimiter, { RateLimitConfigs } from '@/lib/rateLimit';
 
 // GET dashboard statistics
 export async function GET(request: NextRequest) {
@@ -13,6 +14,28 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limiting: 60 requests per minute
+    const rateLimitResult = rateLimiter.check(
+      session.user.email,
+      RateLimitConfigs.WALLET_GET // Reuse WALLET_GET config (60 per minute)
+    );
+
+    if (!rateLimitResult.allowed) {
+      const retryAfter = rateLimitResult.retryAfter || 60;
+      return NextResponse.json(
+        { 
+          error: 'Too many requests. Please try again later.',
+          retryAfter
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': retryAfter.toString()
+          }
+        }
+      );
     }
 
     await connectDB();

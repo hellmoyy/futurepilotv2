@@ -6,7 +6,7 @@ let newsCache: {
   timestamp: number;
 } | null = null;
 
-const CACHE_DURATION = 30 * 1000; // 30 seconds cache for real-time news updates
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache (increased from 30s to reduce API calls)
 
 export async function GET(request: NextRequest) {
   try {
