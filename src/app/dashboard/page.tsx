@@ -131,23 +131,15 @@ export default function DashboardPage() {
     }
   }, [session]);
 
-  // Fetch market prices
+  // Fetch market prices using aggregator (shared cache for all users)
   useEffect(() => {
     const fetchPrices = async () => {
       try {
-        // Timeout controller for 5 seconds
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const response = await fetch('https://api.binance.com/api/v3/ticker/24hr', {
-          signal: controller.signal,
-          next: { revalidate: 30 } // Cache for 30 seconds
-        });
+        // Use server-side aggregated prices (1 API call for all users)
+        const response = await fetch('/api/prices/aggregated');
         
-        clearTimeout(timeoutId);
-
         if (!response.ok) {
-          throw new Error(`Binance API error: ${response.status}`);
+          throw new Error(`Price API error: ${response.status}`);
         }
 
         const data = await response.json();
@@ -178,12 +170,8 @@ export default function DashboardPage() {
         setCoins(filtered);
         setLoading(false);
       } catch (error: any) {
-        if (error.name === 'AbortError') {
-          console.error('Binance API timeout (5s exceeded)');
-        } else {
-          console.error('Error fetching prices:', error);
-        }
-        // Keep showing cached data if available, otherwise show loading state
+        console.error('Error fetching prices:', error);
+        // Keep showing cached data if available
         if (coins.length === 0) {
           setLoading(false);
         }
@@ -191,7 +179,7 @@ export default function DashboardPage() {
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, 30000); // Update every 30 seconds (reduced from 10s)
+    const interval = setInterval(fetchPrices, 10000); // Update every 10 seconds (aggregated = safe)
 
     return () => clearInterval(interval);
   }, []);

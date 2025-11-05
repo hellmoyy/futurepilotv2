@@ -32,9 +32,11 @@ async function connectDB(): Promise<typeof mongoose> {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      maxPoolSize: 10,
+      maxPoolSize: 50,           // ← Increased from 10 to 50 for 1000+ users
+      minPoolSize: 10,           // ← Keep 10 connections warm
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      family: 4,                 // ← Use IPv4 (faster connection)
     };
 
     console.log('🔄 Creating new MongoDB connection...');
