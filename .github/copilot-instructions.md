@@ -311,6 +311,159 @@ else tier = 'bronze';
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
+## 🔐 Environment Variables
+
+**IMPORTANT:** Gunakan **HANYA `.env`** untuk semua environment variables!
+
+### ⚠️ `.env` vs `.env.local` (READ THIS!)
+
+**Problem yang sering terjadi:**
+- Ada 2 file environment: `.env` dan `.env.local`
+- Sering bingung mana yang dipakai
+- PIN tidak berfungsi karena ada di file yang salah
+- Script tidak load variable karena salah file
+
+**Solution - Gunakan HANYA `.env`:**
+
+```bash
+# ✅ CORRECT: Semua variables di .env
+/Users/hap/Documents/CODE-MASTER/futurepilotv2/.env
+
+# ❌ IGNORE: Jangan gunakan .env.local
+/Users/hap/Documents/CODE-MASTER/futurepilotv2/.env.local
+```
+
+**Kenapa hanya `.env`?**
+1. ✅ **Single source of truth** - Tidak ada confusion
+2. ✅ **Semua scripts langsung load** - Node.js default load `.env`
+3. ✅ **Production ready** - Railway, Vercel baca dari `.env`
+4. ✅ **No override issues** - Tidak ada variable yang ketiban
+
+**File Priority (Next.js default):**
+```
+.env.local         (highest priority, override semua)
+↓
+.env.development   (only in development)
+↓
+.env.production    (only in production)
+↓
+.env               (default, always loaded)
+```
+
+**Our Strategy:**
+- ❌ **Delete atau ignore** `.env.local` 
+- ✅ **Use only** `.env` for all variables
+- ✅ Variables langsung ke Production (Railway dashboard)
+
+### 📋 Critical Environment Variables
+
+**Signal Center Configuration PIN:**
+```bash
+# PIN untuk protect Configuration tab di Signal Center
+# PIN: 366984 (6-digit numeric)
+# Used in: /api/admin/verify-config-pin
+PIN_SIGNAL_CONFIGURATION=366984
+```
+
+**Location:**
+```
+File: /Users/hap/Documents/CODE-MASTER/futurepilotv2/.env
+Line: 12
+```
+
+**Usage:**
+```typescript
+// API Route: /src/app/api/admin/verify-config-pin/route.ts
+const correctPin = process.env.PIN_SIGNAL_CONFIGURATION; // "366984"
+
+// Frontend: /src/app/administrator/signal-center/page.tsx
+const response = await fetch('/api/admin/verify-config-pin', {
+  method: 'POST',
+  body: JSON.stringify({ pin: userInput })
+});
+```
+
+**Security:**
+- ✅ Only admins can access Configuration tab
+- ✅ 5 attempts max, then auto-logout
+- ✅ Protects sensitive trading strategy parameters
+
+**Other Important Variables:**
+```bash
+# Network Mode (testnet vs mainnet)
+NETWORK_MODE=testnet                    # or 'mainnet'
+NEXT_PUBLIC_NETWORK_MODE=testnet        # Frontend access
+
+# Binance API (per user, stored in DB)
+BINANCE_TESTNET=true                    # Admin override
+BINANCE_TESTNET_API_KEY=your_key        # For testing only
+BINANCE_TESTNET_API_SECRET=your_secret  # For testing only
+
+# Trading Commission (configurable)
+# Default: 20% of profit deducted from gas fee balance
+# Configurable in: /administrator/settings tab "Trading Commission"
+```
+
+### 🛠️ Troubleshooting Environment Variables
+
+**Problem: "Incorrect PIN" padahal PIN benar**
+```bash
+# ❌ Wrong: PIN di .env.local, API baca .env
+.env.local → PIN_SIGNAL_CONFIGURATION=366984
+.env → (tidak ada PIN)
+Result: API tidak dapat PIN, selalu return false
+
+# ✅ Correct: PIN di .env
+.env → PIN_SIGNAL_CONFIGURATION=366984
+Result: API dapat PIN, verification works!
+```
+
+**Solution:**
+1. Check `.env` (HANYA file ini):
+   ```bash
+   grep PIN_SIGNAL_CONFIGURATION .env
+   # Should return: PIN_SIGNAL_CONFIGURATION=366984
+   ```
+
+2. Restart dev server (load new .env):
+   ```bash
+   # Kill existing server (Ctrl+C)
+   npm run dev
+   ```
+
+3. Verify API dapat PIN:
+   ```bash
+   # Check console log when submitting PIN
+   # Should see: ✅ Configuration PIN verified for admin: xxx
+   # NOT: ❌ PIN_SIGNAL_CONFIGURATION not set in environment variables
+   ```
+
+**When to use which file:**
+```bash
+# Development (local machine)
+✅ USE: .env (always)
+❌ SKIP: .env.local (causes confusion)
+
+# Production (Railway/Vercel)
+✅ USE: Dashboard environment variables (Railway/Vercel UI)
+❌ DON'T: Commit .env to git (use .env.example instead)
+```
+
+### 📝 Environment Variable Checklist
+
+**Before running app:**
+- [ ] `.env` exists di root folder
+- [ ] `PIN_SIGNAL_CONFIGURATION=366984` ada di `.env`
+- [ ] `NETWORK_MODE=testnet` or `mainnet` sesuai kebutuhan
+- [ ] Restart dev server setelah edit `.env`
+- [ ] `.env.local` TIDAK digunakan (untuk avoid confusion)
+
+**Before deploying to production:**
+- [ ] Copy `.env` ke `.env.example` (remove sensitive values)
+- [ ] Set environment variables di Railway/Vercel dashboard
+- [ ] Verify `PIN_SIGNAL_CONFIGURATION` ada di production env
+- [ ] Test PIN protection setelah deploy
+
 ---
 
 ## 🚀 TRADING BOT STRATEGY (PRODUCTION READY)

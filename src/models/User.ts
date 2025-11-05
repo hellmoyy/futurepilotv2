@@ -35,6 +35,17 @@ export interface IUser extends Document {
     verified?: boolean;
     addedAt?: Date;
   };
+  // Bot settings for Signal Center
+  botSettings?: {
+    enabled: boolean; // Auto-execute signals
+    symbols: string[]; // Symbol filter (e.g., ['BTCUSDT', 'ETHUSDT'])
+    minStrength: 'WEAK' | 'MODERATE' | 'STRONG' | 'VERY_STRONG'; // Minimum signal strength
+    riskPerTrade: number; // 1-5% (default 2%)
+    maxPositions: number; // 1-5 concurrent positions (default 3)
+    leverage: number; // 1-20x (default 10x)
+    createdAt?: Date;
+    updatedAt?: Date;
+  };
   // 2FA fields
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string;
@@ -186,6 +197,42 @@ const UserSchema = new Schema<IUser>(
         default: false,
       },
       addedAt: Date,
+    },
+    // Bot settings for Signal Center
+    botSettings: {
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+      symbols: {
+        type: [String],
+        default: ['BTCUSDT'],
+      },
+      minStrength: {
+        type: String,
+        enum: ['WEAK', 'MODERATE', 'STRONG', 'VERY_STRONG'],
+        default: 'STRONG',
+      },
+      riskPerTrade: {
+        type: Number,
+        default: 2,
+        min: 1,
+        max: 5,
+      },
+      maxPositions: {
+        type: Number,
+        default: 3,
+        min: 1,
+        max: 5,
+      },
+      leverage: {
+        type: Number,
+        default: 10,
+        min: 1,
+        max: 20,
+      },
+      createdAt: Date,
+      updatedAt: Date,
     },
     // 2FA fields
     twoFactorEnabled: {
