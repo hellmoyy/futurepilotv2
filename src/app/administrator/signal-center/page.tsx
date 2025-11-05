@@ -1401,7 +1401,7 @@ export default function SignalCenterPage() {
                       Ready to Test Strategy
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                      Select a period above and click "Run Backtest" to test the Futures Scalper strategy 
+                      Select a period above and click &quot;Run Backtest&quot; to test the Futures Scalper strategy 
                       with historical Bitcoin (BTCUSDT) data. The backtest will use the same configuration 
                       shown in the Configuration tab.
                     </p>
