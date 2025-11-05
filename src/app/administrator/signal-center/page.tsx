@@ -75,6 +75,13 @@ export default function SignalCenterPage() {
   const [isLocked, setIsLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState('');
   
+  // Configuration Edit state
+  const [configData, setConfigData] = useState<any>(null);
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configSaving, setConfigSaving] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [configError, setConfigError] = useState('');
+  
   // Check PIN attempt status on mount and when switching to Configuration tab
   useEffect(() => {
     // Only check when Configuration tab is active
@@ -335,6 +342,71 @@ export default function SignalCenterPage() {
     } finally {
       setPinLoading(false);
     }
+  };
+  
+  // Load configuration from database when unlocked
+  useEffect(() => {
+    if (configUnlocked) {
+      loadConfiguration();
+    }
+  }, [configUnlocked]);
+  
+  const loadConfiguration = async () => {
+    setConfigLoading(true);
+    setConfigError('');
+    
+    try {
+      const res = await fetch('/api/signal-center/config');
+      const data = await res.json();
+      
+      if (data.config) {
+        setConfigData(data.config);
+      } else {
+        setConfigError('No configuration found');
+      }
+    } catch (err: any) {
+      setConfigError(err.message || 'Failed to load configuration');
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+  
+  // Handle configuration save
+  const handleSaveConfiguration = async () => {
+    setConfigSaving(true);
+    setConfigError('');
+    
+    try {
+      const res = await fetch('/api/signal-center/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(configData),
+      });
+      
+      const data = await res.json();
+      
+      if (data.config) {
+        setConfigData(data.config);
+        setShowSaveConfirm(false);
+        alert('✅ Configuration saved successfully!');
+      } else {
+        setConfigError(data.error || 'Failed to save configuration');
+      }
+    } catch (err: any) {
+      setConfigError(err.message || 'Failed to save configuration');
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+  
+  // Update config field
+  const updateConfigField = (field: string, value: any) => {
+    setConfigData((prev: any) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
   
   // Run backtest with selected period
@@ -820,306 +892,453 @@ export default function SignalCenterPage() {
                   <>
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-200">
-                      ⚙️ Strategy Configuration
+                    <div>
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-200">
+                        ⚙️ Strategy Configuration
+                      </h3>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        Edit parameters and save to update the trading strategy
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowSaveConfirm(true)}
+                        disabled={configSaving || configLoading || !configData}
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {configSaving ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            💾 Save Configuration
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/admin/verify-config-pin', {
+                              method: 'DELETE',
+                            });
+                            setConfigUnlocked(false);
+                            setPinInput('');
+                            setPinError('');
+                            setPinAttempts(0);
+                            setConfigData(null);
+                          } catch (err) {
+                            console.error('Failed to lock configuration:', err);
+                          }
+                        }}
+                        className="px-3 py-2 text-sm bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-700 transition"
+                      >
+                        🔒 Lock
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Error Display */}
+                {configError && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p className="text-sm text-red-800 dark:text-red-300">{configError}</p>
+                  </div>
+                )}
+                
+                {/* Loading State */}
+                {configLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+                
+                {/* Configuration Form */}
+                {!configLoading && configData && (
+                <div className="space-y-6">
+                
+                {/* Risk Management */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span>💰</span> Risk Management
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Risk per Trade (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="10"
+                        value={(configData.riskPerTrade * 100).toFixed(2)}
+                        onChange={(e) => updateConfigField('riskPerTrade', parseFloat(e.target.value) / 100)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 0.1% - 10%</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Leverage (x)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={configData.leverage}
+                        onChange={(e) => updateConfigField('leverage', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 1x - 20x</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Stop Loss (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="5"
+                        value={(configData.stopLossPercent * 100).toFixed(2)}
+                        onChange={(e) => updateConfigField('stopLossPercent', parseFloat(e.target.value) / 100)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 0.1% - 5%</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Take Profit (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="10"
+                        value={(configData.takeProfitPercent * 100).toFixed(2)}
+                        onChange={(e) => updateConfigField('takeProfitPercent', parseFloat(e.target.value) / 100)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 0.1% - 10%</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Trailing Stops */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span>📊</span> Trailing Stops
+                  </h4>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h5 className="text-sm font-medium text-green-700 dark:text-green-300">📈 Trailing Profit</h5>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Activation Threshold (%)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="5"
+                          value={(configData.trailProfitActivate * 100).toFixed(2)}
+                          onChange={(e) => updateConfigField('trailProfitActivate', parseFloat(e.target.value) / 100)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">When to start trailing profit</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Trail Distance (%)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="5"
+                          value={(configData.trailProfitDistance * 100).toFixed(2)}
+                          onChange={(e) => updateConfigField('trailProfitDistance', parseFloat(e.target.value) / 100)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Distance from peak to exit</p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <h5 className="text-sm font-medium text-red-700 dark:text-red-300">📉 Trailing Loss</h5>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Activation Threshold (%)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="-5"
+                          max="0"
+                          value={(configData.trailLossActivate * 100).toFixed(2)}
+                          onChange={(e) => updateConfigField('trailLossActivate', parseFloat(e.target.value) / 100)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">When to start trailing loss (negative)</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Trail Distance (%)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="5"
+                          value={(configData.trailLossDistance * 100).toFixed(2)}
+                          onChange={(e) => updateConfigField('trailLossDistance', parseFloat(e.target.value) / 100)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Distance from bottom to exit</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Technical Indicators */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span>🔍</span> Technical Indicators
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        RSI Min
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={configData.rsiMin}
+                        onChange={(e) => updateConfigField('rsiMin', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        RSI Max
+                      </label>
+                      <input
+                        type="number"
+                        min="50"
+                        max="100"
+                        value={configData.rsiMax}
+                        onChange={(e) => updateConfigField('rsiMax', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        ADX Min
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={configData.adxMin}
+                        onChange={(e) => updateConfigField('adxMin', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        ADX Max
+                      </label>
+                      <input
+                        type="number"
+                        min="20"
+                        max="100"
+                        value={configData.adxMax}
+                        onChange={(e) => updateConfigField('adxMax', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Volume Min (x)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        max="2"
+                        value={configData.volumeMin}
+                        onChange={(e) => updateConfigField('volumeMin', parseFloat(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Volume Max (x)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="1"
+                        max="10"
+                        value={configData.volumeMax}
+                        onChange={(e) => updateConfigField('volumeMax', parseFloat(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Confirmation Settings */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span>⚡</span> Confirmation Settings
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Entry Confirmation Candles
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={configData.entryConfirmationCandles}
+                        onChange={(e) => updateConfigField('entryConfirmationCandles', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Wait candles before entry</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Market Bias Period
+                      </label>
+                      <input
+                        type="number"
+                        min="20"
+                        max="200"
+                        value={configData.marketBiasPeriod}
+                        onChange={(e) => updateConfigField('marketBiasPeriod', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Candles for market regime detection</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Bias Threshold (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="10"
+                        value={(configData.biasThreshold * 100).toFixed(2)}
+                        onChange={(e) => updateConfigField('biasThreshold', parseFloat(e.target.value) / 100)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum trend strength</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Signal Expiry (minutes)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={configData.signalExpiryMinutes}
+                        onChange={(e) => updateConfigField('signalExpiryMinutes', parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Signal validity duration</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Save Button */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => loadConfiguration()}
+                    disabled={configLoading || configSaving}
+                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+                  >
+                    🔄 Reset
+                  </button>
+                  <button
+                    onClick={() => setShowSaveConfirm(true)}
+                    disabled={configSaving || configLoading}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {configSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        💾 Save Configuration
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                </div>
+                )}
+                </>
+                )}
+              </div>
+            )}
+            
+            {/* Save Confirmation Modal */}
+            {showSaveConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full mb-4">
+                      <svg className="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                      Confirm Configuration Save
                     </h3>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await fetch('/api/admin/verify-config-pin', {
-                            method: 'DELETE',
-                          });
-                          setConfigUnlocked(false);
-                          setPinInput('');
-                          setPinError('');
-                          setPinAttempts(0);
-                        } catch (err) {
-                          console.error('Failed to lock configuration:', err);
-                        }
-                      }}
-                      className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-700 transition"
-                    >
-                      🔒 Lock
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">💰 Risk Management</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Risk per Trade:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">2%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Leverage:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">10x</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Initial Stop Loss:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">0.8%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Initial Take Profit:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">0.8%</span>
-                      </div>
-                      <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <span className="text-gray-600 dark:text-gray-400">Emergency Exit:</span>
-                        <span className="font-mono text-red-600 dark:text-red-400 font-bold">-2.0%</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">📈 Trailing Profit</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Activation Threshold:</span>
-                        <span className="font-mono text-green-600 dark:text-green-400">+0.4%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Trail Distance:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">0.3%</span>
-                      </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          When profit reaches +0.4%, start trailing. Exit if price drops 0.3% from peak.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">📉 Trailing Loss</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Activation Threshold:</span>
-                        <span className="font-mono text-red-600 dark:text-red-400">-0.3%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Trail Distance:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">0.2%</span>
-                      </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          When loss reaches -0.3%, start trailing. Exit if price recovers 0.2% from bottom.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">🔍 Technical Indicators</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">EMA:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">9/21 crossover</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">RSI Range:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">35 - 68</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">MACD:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">12/26/9</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">ADX Range:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">20 - 50</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Volume Filter:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">0.8x - 2.0x</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">⏱️ Timeframes</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Primary:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">1 minute</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Confirmation 1:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">3 minutes</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Confirmation 2:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">5 minutes</span>
-                      </div>
-                      <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <span className="text-gray-600 dark:text-gray-400">Signal Expiry:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">5 minutes</span>
-                      </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Triple timeframe confirmation reduces false signals
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">⚡ Position Monitoring</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Check Interval:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">10 seconds</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Max Positions:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">3-4 concurrent</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Margin Usage:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">~25% per trade</span>
-                      </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          Real-time monitoring with automatic exits on conditions
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Trailing Mechanism Explanation */}
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
-                  <h3 className="font-semibold text-purple-900 dark:text-purple-200 mb-3 flex items-center gap-2">
-                    <span className="text-xl">🎯</span> Dual Trailing System (Advanced Risk Management)
-                  </h3>
-                  
-                  <div className="grid grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <h4 className="font-medium text-green-900 dark:text-green-200 mb-2">📈 Trailing Profit (Maximize Gains)</h4>
-                      <div className="space-y-2 text-gray-700 dark:text-gray-300">
-                        <p><strong>How it works:</strong></p>
-                        <ol className="list-decimal ml-4 space-y-1">
-                          <li>Position opens at entry price (e.g., $68,000)</li>
-                          <li>Price moves up to $68,300 (+0.44%) ✅ Trailing activates!</li>
-                          <li>Peak reaches $68,400 (+0.59%) → Trail at +0.29%</li>
-                          <li>Price drops to $68,200 (+0.29%) → EXIT automatically</li>
-                        </ol>
-                        <p className="text-xs text-green-800 dark:text-green-300 mt-2">
-                          ✨ Captures partial profits before reversal instead of waiting for full TP
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-red-900 dark:text-red-200 mb-2">📉 Trailing Loss (Cut Losses Early)</h4>
-                      <div className="space-y-2 text-gray-700 dark:text-gray-300">
-                        <p><strong>How it works:</strong></p>
-                        <ol className="list-decimal ml-4 space-y-1">
-                          <li>Position opens at entry price (e.g., $68,000)</li>
-                          <li>Price drops to $67,750 (-0.37%) ✅ Trailing activates!</li>
-                          <li>Lowest: $67,700 (-0.44%) → Trail at -0.24%</li>
-                          <li>Price recovers to $67,840 (-0.24%) → EXIT automatically</li>
-                        </ol>
-                        <p className="text-xs text-red-800 dark:text-red-300 mt-2">
-                          ✨ Reduces average loss from $200 to ~$160 before hitting full SL
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
-                    <h4 className="font-medium text-purple-900 dark:text-purple-200 mb-2">💎 Benefits:</h4>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="flex items-start gap-2">
-                        <span className="text-green-600">✅</span>
-                        <span className="text-gray-700 dark:text-gray-300">Captures partial profits before reversal</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-green-600">✅</span>
-                        <span className="text-gray-700 dark:text-gray-300">Cuts losses before hitting full stop loss</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-green-600">✅</span>
-                        <span className="text-gray-700 dark:text-gray-300">Improves win rate by 5-10%</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-green-600">✅</span>
-                        <span className="text-gray-700 dark:text-gray-300">Increases profit factor significantly</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">📊 Without Trailing</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Avg Win:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">$200</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Avg Loss:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">$200</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Win Rate:</span>
-                        <span className="font-mono text-gray-900 dark:text-white">~75%</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-green-200 dark:border-green-700 rounded-lg p-4 bg-green-50 dark:bg-green-900/10">
-                    <h4 className="font-medium text-green-900 dark:text-green-200 mb-3">✨ With Dual Trailing</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-green-700 dark:text-green-300">Avg Win:</span>
-                        <span className="font-mono text-green-900 dark:text-green-200">$165 (mix of TP + trail)</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-700 dark:text-green-300">Avg Loss:</span>
-                        <span className="font-mono text-green-900 dark:text-green-200">$160 (mix of SL + trail)</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-700 dark:text-green-300">Win Rate:</span>
-                        <span className="font-mono text-green-900 dark:text-green-200 font-bold">~80% (+5%!)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">🎲 Trading Pairs</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Primary Symbol:</span>
-                      <span className="font-mono text-gray-900 dark:text-white">BTCUSDT</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Market Type:</span>
-                      <span className="font-mono text-gray-900 dark:text-white">Binance Futures</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Minimum Balance:</span>
-                      <span className="font-mono text-gray-900 dark:text-white">$10,000 (recommended)</span>
-                    </div>
-                    <div className="pt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
-                        Strategy is optimized for Bitcoin futures. Not viable below $5,000 balance.
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Are you sure you want to save these changes? This will update the active trading strategy configuration.
+                    </p>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-left">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                        <strong>⚠️ Impact:</strong> All systems (Signal Generator, Backtest, Bot) will use the new configuration immediately.
                       </p>
                     </div>
                   </div>
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowSaveConfirm(false)}
+                      disabled={configSaving}
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveConfiguration}
+                      disabled={configSaving}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {configSaving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          ✅ Confirm Save
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-2">
-                    ⚠️ Configuration Management
-                  </h3>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                    Configuration changes will be available in a future update. Current settings are optimized based on 675% ROI backtest results (Aug-Oct 2025 data).
-                  </p>
-                </div>
-                  </>
-                )}
               </div>
             )}
             
