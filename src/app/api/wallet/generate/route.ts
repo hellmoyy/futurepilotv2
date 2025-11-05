@@ -6,9 +6,31 @@ import { User } from '@/models/User';
 import crypto from 'crypto';
 import { ethers } from 'ethers';
 
-// Encryption functions with DUAL KEY SUPPORT for backward compatibility
-const ENCRYPTION_KEY = process.env.ENCRYPTION_SECRET_KEY || 'your-secret-key-32-chars-long!!';
+// ✅ CRITICAL: Force encryption key to be set - NO DEFAULT FALLBACK
+const ENCRYPTION_KEY = process.env.ENCRYPTION_SECRET_KEY;
 const ENCRYPTION_KEY_LEGACY = process.env.ENCRYPTION_SECRET_KEY_LEGACY; // For old wallets
+
+if (!ENCRYPTION_KEY) {
+  throw new Error(
+    '🚨 CRITICAL SECURITY ERROR: ENCRYPTION_SECRET_KEY environment variable is not set!\n\n' +
+    'This is REQUIRED for wallet security to protect user private keys.\n\n' +
+    'To fix:\n' +
+    '1. Generate a strong key: openssl rand -hex 32\n' +
+    '2. Add to .env.local: ENCRYPTION_SECRET_KEY=<your_generated_key>\n' +
+    '3. Restart the server\n\n' +
+    'NEVER use a default or weak key in production!'
+  );
+}
+
+// ✅ Validate key strength
+if (ENCRYPTION_KEY.length < 32) {
+  throw new Error(
+    `🚨 CRITICAL SECURITY ERROR: ENCRYPTION_SECRET_KEY is too short!\n\n` +
+    `Current length: ${ENCRYPTION_KEY.length} characters\n` +
+    `Required: At least 32 characters\n\n` +
+    `Generate a strong key: openssl rand -hex 32`
+  );
+}
 
 // Create 32-byte keys from the provided keys
 const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
@@ -57,12 +79,44 @@ function decrypt(text: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ CSRF Protection
+    const { validateCSRF } = await import('@/lib/csrf');
+    if (!validateCSRF(request)) {
+      return NextResponse.json(
+        { error: 'CSRF validation failed. Request origin not allowed.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    // ✅ CRITICAL: Rate limiting to prevent abuse
+    const rateLimiter = (await import('@/lib/rateLimit')).default;
+    const { RateLimitConfigs } = await import('@/lib/rateLimit');
+    const rateLimitResult = rateLimiter.check(
+      session.user.email,
+      RateLimitConfigs.WALLET_GENERATE
+    );
+
+    if (!rateLimitResult.allowed) {
+      const waitTime = rateLimitResult.retryAfter 
+        ? Math.ceil(rateLimitResult.retryAfter / 1000) 
+        : 60;
+      
+      return NextResponse.json(
+        { 
+          error: `Rate limit exceeded. Please wait ${waitTime} seconds before generating a wallet again.`,
+          retryAfter: waitTime,
+          rateLimitExceeded: true
+        },
+        { status: 429 }
       );
     }
 

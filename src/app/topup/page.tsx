@@ -83,13 +83,18 @@ export default function TopUpPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, pagination.page, pagination.limit]);
 
-  // Auto-refresh every 10 seconds to detect new deposits (Always ON)
+  // Auto-refresh every 30 seconds to detect new deposits (optimized from 10s)
   useEffect(() => {
     if (status !== 'authenticated') {
       return;
     }
 
     const refreshInterval = setInterval(async () => {
+      // ✅ Only refresh if page is visible (performance optimization)
+      if (document.hidden) {
+        return;
+      }
+
       try {
         // Silently fetch new data in background
         const [walletResponse, txResponse] = await Promise.all([
@@ -135,7 +140,7 @@ export default function TopUpPage() {
       } catch (error) {
         console.error('Auto-refresh error:', error);
       }
-    }, 10000); // Refresh every 10 seconds
+    }, 30000); // ✅ Optimized: 30 seconds (reduced from 10s to save RPC calls)
 
     return () => clearInterval(refreshInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,17 +205,54 @@ export default function TopUpPage() {
   };
 
   const generateWallet = async () => {
+    // ✅ CRITICAL: Add confirmation dialog
+    const confirmed = window.confirm(
+      '⚠️ GENERATE NEW WALLET?\n\n' +
+      'This will create a NEW custodial wallet address for deposits.\n\n' +
+      '✅ SAFE: If you already have a wallet, it will NOT be replaced\n' +
+      '✅ SAFE: Your existing balance will remain intact\n' +
+      '✅ INFO: You can only have ONE wallet per account\n\n' +
+      '⚠️ IMPORTANT:\n' +
+      '• This action is IRREVERSIBLE\n' +
+      '• Save the generated address safely\n' +
+      '• Only deposit USDT (ERC-20 or BEP-20) to this address\n\n' +
+      'Continue with wallet generation?'
+    );
+    
+    if (!confirmed) {
+      return; // User canceled
+    }
+
     setGenerating(true);
     try {
       const response = await fetch('/api/wallet/generate', {
         method: 'POST',
       });
+      
       if (response.ok) {
         const data = await response.json();
         setWalletData(data);
+        
+        // ✅ Show success message with address
+        alert(
+          '✅ WALLET GENERATED SUCCESSFULLY!\n\n' +
+          `Your Deposit Address:\n${data.erc20Address}\n\n` +
+          '✅ This address works for both:\n' +
+          '   • Ethereum (ERC-20)\n' +
+          '   • Binance Smart Chain (BEP-20)\n\n' +
+          '⚠️ IMPORTANT:\n' +
+          '   • Save this address safely\n' +
+          '   • Only send USDT to this address\n' +
+          '   • Sending other tokens will result in loss\n' +
+          '   • Always double-check the address before sending'
+        );
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Error: ${errorData.error || 'Failed to generate wallet'}`);
       }
     } catch (error) {
       console.error('Error generating wallet:', error);
+      alert('❌ Network error. Please check your connection and try again.');
     } finally {
       setGenerating(false);
     }

@@ -189,6 +189,27 @@ export const RateLimitConfigs = {
     windowMs: 15 * 60 * 1000, // 15 minutes
     blockDurationMs: 5 * 60 * 1000, // 5 minutes
   },
+  // ✅ WALLET ENDPOINTS: Strict limits
+  WALLET_GENERATE: {
+    maxAttempts: 3,
+    windowMs: 60 * 1000, // 1 minute
+    blockDurationMs: 5 * 60 * 1000, // 5 minutes
+  },
+  WALLET_GET: {
+    maxAttempts: 60,
+    windowMs: 60 * 1000, // 1 minute (60 per minute = 1 per second)
+    blockDurationMs: 60 * 1000, // 1 minute
+  },
+  WALLET_TRANSACTIONS: {
+    maxAttempts: 30,
+    windowMs: 60 * 1000, // 1 minute
+    blockDurationMs: 2 * 60 * 1000, // 2 minutes
+  },
+  DEPOSIT_CHECK: {
+    maxAttempts: 12,
+    windowMs: 60 * 1000, // 1 minute (5 seconds per request)
+    blockDurationMs: 5 * 60 * 1000, // 5 minutes
+  },
 };
 
 // Helper function to get client IP from request

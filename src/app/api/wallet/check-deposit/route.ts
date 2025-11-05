@@ -14,21 +14,8 @@ const USDT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ];
 
-// ✅ RATE LIMITING: 1 request per 5 seconds per user
-const rateLimitMap = new Map<string, number>();
-const RATE_LIMIT_WINDOW = 5000; // 5 seconds in milliseconds
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const lastRequest = rateLimitMap.get(userId);
-  
-  if (lastRequest && (now - lastRequest) < RATE_LIMIT_WINDOW) {
-    return false; // Rate limit exceeded
-  }
-  
-  rateLimitMap.set(userId, now);
-  return true; // Allowed
-}
+// ✅ NOTE: Now using centralized rate limiter from @/lib/rateLimit
+// Old local implementation removed to avoid duplication
 
 const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
 
@@ -58,6 +45,15 @@ const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ CSRF Protection
+    const { validateCSRF } = await import('@/lib/csrf');
+    if (!validateCSRF(request)) {
+      return NextResponse.json(
+        { error: 'CSRF validation failed. Request origin not allowed.' },
+        { status: 403 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -67,11 +63,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ RATE LIMITING CHECK
-    if (!checkRateLimit(session.user.email)) {
+    // ✅ CRITICAL: Rate limiting using centralized limiter
+    const rateLimiter = (await import('@/lib/rateLimit')).default;
+    const { RateLimitConfigs } = await import('@/lib/rateLimit');
+    const rateLimitResult = rateLimiter.check(
+      session.user.email,
+      RateLimitConfigs.DEPOSIT_CHECK
+    );
+
+    if (!rateLimitResult.allowed) {
+      const waitTime = rateLimitResult.retryAfter 
+        ? Math.ceil(rateLimitResult.retryAfter / 1000) 
+        : 5;
+      
       return NextResponse.json(
         { 
-          error: 'Rate limit exceeded. Please wait 5 seconds before trying again.',
+          error: `Rate limit exceeded. Please wait ${waitTime} seconds before checking again.`,
+          retryAfter: waitTime,
           rateLimitExceeded: true 
         },
         { status: 429 }

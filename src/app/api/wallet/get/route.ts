@@ -20,6 +20,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // ✅ CRITICAL: Rate limiting to prevent abuse
+    const rateLimiter = (await import('@/lib/rateLimit')).default;
+    const { RateLimitConfigs } = await import('@/lib/rateLimit');
+    const rateLimitResult = rateLimiter.check(
+      session.user.email,
+      RateLimitConfigs.WALLET_GET
+    );
+
+    if (!rateLimitResult.allowed) {
+      const waitTime = rateLimitResult.retryAfter 
+        ? Math.ceil(rateLimitResult.retryAfter / 1000) 
+        : 60;
+      
+      return NextResponse.json(
+        { 
+          error: `Rate limit exceeded. Too many requests. Please wait ${waitTime} seconds.`,
+          retryAfter: waitTime
+        },
+        { status: 429 }
+      );
+    }
+
     await connectDB();
 
     const user = await User.findOne({ email: session.user.email });
