@@ -81,6 +81,7 @@ export default function SignalCenterPage() {
   const [configSaving, setConfigSaving] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [configError, setConfigError] = useState('');
+  const [editingFields, setEditingFields] = useState<Set<string>>(new Set());
   
   // Check PIN attempt status on mount and when switching to Configuration tab
   useEffect(() => {
@@ -407,6 +408,35 @@ export default function SignalCenterPage() {
       ...prev,
       [field]: value,
     }));
+  };
+  
+  // Toggle field editing
+  const toggleFieldEdit = (field: string) => {
+    setEditingFields((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(field)) {
+        newSet.delete(field);
+      } else {
+        newSet.add(field);
+      }
+      return newSet;
+    });
+  };
+  
+  // Enable all fields for editing
+  const enableAllFields = () => {
+    const allFields = [
+      'riskPerTrade', 'leverage', 'stopLossPercent', 'takeProfitPercent',
+      'trailProfitActivate', 'trailProfitDistance', 'trailLossActivate', 'trailLossDistance',
+      'rsiMin', 'rsiMax', 'adxMin', 'adxMax', 'volumeMin', 'volumeMax',
+      'entryConfirmationCandles', 'marketBiasPeriod', 'biasThreshold', 'signalExpiryMinutes'
+    ];
+    setEditingFields(new Set(allFields));
+  };
+  
+  // Disable all fields
+  const disableAllFields = () => {
+    setEditingFields(new Set());
   };
   
   // Run backtest with selected period
@@ -897,13 +927,28 @@ export default function SignalCenterPage() {
                         ⚙️ Strategy Configuration
                       </h3>
                       <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                        Edit parameters and save to update the trading strategy
+                        Click edit icons (✏️) to enable/disable editing per field
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      {editingFields.size > 0 ? (
+                        <button
+                          onClick={disableAllFields}
+                          className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center gap-2"
+                        >
+                          🔒 Disable All
+                        </button>
+                      ) : (
+                        <button
+                          onClick={enableAllFields}
+                          className="px-3 py-2 text-sm bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 rounded hover:bg-green-200 dark:hover:bg-green-700 transition flex items-center gap-2"
+                        >
+                          ✏️ Enable All
+                        </button>
+                      )}
                       <button
                         onClick={() => setShowSaveConfirm(true)}
-                        disabled={configSaving || configLoading || !configData}
+                        disabled={configSaving || configLoading || !configData || editingFields.size === 0}
                         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         {configSaving ? (
@@ -913,7 +958,7 @@ export default function SignalCenterPage() {
                           </>
                         ) : (
                           <>
-                            💾 Save Configuration
+                            💾 Save Changes
                           </>
                         )}
                       </button>
@@ -928,6 +973,7 @@ export default function SignalCenterPage() {
                             setPinError('');
                             setPinAttempts(0);
                             setConfigData(null);
+                            setEditingFields(new Set());
                           } catch (err) {
                             console.error('Failed to lock configuration:', err);
                           }
@@ -964,9 +1010,21 @@ export default function SignalCenterPage() {
                     <span>💰</span> Risk Management
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
+                    {/* Risk per Trade */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Risk per Trade (%)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Risk per Trade (%)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('riskPerTrade')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('riskPerTrade')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('riskPerTrade') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('riskPerTrade') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -975,13 +1033,27 @@ export default function SignalCenterPage() {
                         max="10"
                         value={(configData.riskPerTrade * 100).toFixed(2)}
                         onChange={(e) => updateConfigField('riskPerTrade', parseFloat(e.target.value) / 100)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('riskPerTrade')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 0.1% - 10%</p>
                     </div>
+                    
+                    {/* Leverage */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Leverage (x)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Leverage (x)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('leverage')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('leverage')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('leverage') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('leverage') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -989,13 +1061,27 @@ export default function SignalCenterPage() {
                         max="20"
                         value={configData.leverage}
                         onChange={(e) => updateConfigField('leverage', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('leverage')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 1x - 20x</p>
                     </div>
+                    
+                    {/* Stop Loss */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Stop Loss (%)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Stop Loss (%)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('stopLossPercent')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('stopLossPercent')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('stopLossPercent') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('stopLossPercent') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1004,13 +1090,27 @@ export default function SignalCenterPage() {
                         max="5"
                         value={(configData.stopLossPercent * 100).toFixed(2)}
                         onChange={(e) => updateConfigField('stopLossPercent', parseFloat(e.target.value) / 100)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('stopLossPercent')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 0.1% - 5%</p>
                     </div>
+                    
+                    {/* Take Profit */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Take Profit (%)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Take Profit (%)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('takeProfitPercent')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('takeProfitPercent')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('takeProfitPercent') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('takeProfitPercent') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1019,7 +1119,8 @@ export default function SignalCenterPage() {
                         max="10"
                         value={(configData.takeProfitPercent * 100).toFixed(2)}
                         onChange={(e) => updateConfigField('takeProfitPercent', parseFloat(e.target.value) / 100)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('takeProfitPercent')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Range: 0.1% - 10%</p>
                     </div>
@@ -1035,8 +1136,19 @@ export default function SignalCenterPage() {
                     <div className="space-y-4">
                       <h5 className="text-sm font-medium text-green-700 dark:text-green-300">📈 Trailing Profit</h5>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Activation Threshold (%)
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                          <span>Activation Threshold (%)</span>
+                          <button
+                            onClick={() => toggleFieldEdit('trailProfitActivate')}
+                            className={`p-1 rounded transition ${
+                              editingFields.has('trailProfitActivate')
+                                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                            title={editingFields.has('trailProfitActivate') ? 'Disable editing' : 'Enable editing'}
+                          >
+                            {editingFields.has('trailProfitActivate') ? '🔓' : '✏️'}
+                          </button>
                         </label>
                         <input
                           type="number"
@@ -1045,13 +1157,25 @@ export default function SignalCenterPage() {
                           max="5"
                           value={(configData.trailProfitActivate * 100).toFixed(2)}
                           onChange={(e) => updateConfigField('trailProfitActivate', parseFloat(e.target.value) / 100)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          disabled={!editingFields.has('trailProfitActivate')}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">When to start trailing profit</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Trail Distance (%)
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                          <span>Trail Distance (%)</span>
+                          <button
+                            onClick={() => toggleFieldEdit('trailProfitDistance')}
+                            className={`p-1 rounded transition ${
+                              editingFields.has('trailProfitDistance')
+                                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                            title={editingFields.has('trailProfitDistance') ? 'Disable editing' : 'Enable editing'}
+                          >
+                            {editingFields.has('trailProfitDistance') ? '🔓' : '✏️'}
+                          </button>
                         </label>
                         <input
                           type="number"
@@ -1060,7 +1184,8 @@ export default function SignalCenterPage() {
                           max="5"
                           value={(configData.trailProfitDistance * 100).toFixed(2)}
                           onChange={(e) => updateConfigField('trailProfitDistance', parseFloat(e.target.value) / 100)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          disabled={!editingFields.has('trailProfitDistance')}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Distance from peak to exit</p>
                       </div>
@@ -1068,8 +1193,19 @@ export default function SignalCenterPage() {
                     <div className="space-y-4">
                       <h5 className="text-sm font-medium text-red-700 dark:text-red-300">📉 Trailing Loss</h5>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Activation Threshold (%)
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                          <span>Activation Threshold (%)</span>
+                          <button
+                            onClick={() => toggleFieldEdit('trailLossActivate')}
+                            className={`p-1 rounded transition ${
+                              editingFields.has('trailLossActivate')
+                                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                            title={editingFields.has('trailLossActivate') ? 'Disable editing' : 'Enable editing'}
+                          >
+                            {editingFields.has('trailLossActivate') ? '🔓' : '✏️'}
+                          </button>
                         </label>
                         <input
                           type="number"
@@ -1078,13 +1214,25 @@ export default function SignalCenterPage() {
                           max="0"
                           value={(configData.trailLossActivate * 100).toFixed(2)}
                           onChange={(e) => updateConfigField('trailLossActivate', parseFloat(e.target.value) / 100)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          disabled={!editingFields.has('trailLossActivate')}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">When to start trailing loss (negative)</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Trail Distance (%)
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                          <span>Trail Distance (%)</span>
+                          <button
+                            onClick={() => toggleFieldEdit('trailLossDistance')}
+                            className={`p-1 rounded transition ${
+                              editingFields.has('trailLossDistance')
+                                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                            title={editingFields.has('trailLossDistance') ? 'Disable editing' : 'Enable editing'}
+                          >
+                            {editingFields.has('trailLossDistance') ? '🔓' : '✏️'}
+                          </button>
                         </label>
                         <input
                           type="number"
@@ -1093,7 +1241,8 @@ export default function SignalCenterPage() {
                           max="5"
                           value={(configData.trailLossDistance * 100).toFixed(2)}
                           onChange={(e) => updateConfigField('trailLossDistance', parseFloat(e.target.value) / 100)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          disabled={!editingFields.has('trailLossDistance')}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                         />
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Distance from bottom to exit</p>
                       </div>
@@ -1108,8 +1257,19 @@ export default function SignalCenterPage() {
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        RSI Min
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>RSI Min</span>
+                        <button
+                          onClick={() => toggleFieldEdit('rsiMin')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('rsiMin')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('rsiMin') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('rsiMin') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1117,12 +1277,24 @@ export default function SignalCenterPage() {
                         max="50"
                         value={configData.rsiMin}
                         onChange={(e) => updateConfigField('rsiMin', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('rsiMin')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        RSI Max
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>RSI Max</span>
+                        <button
+                          onClick={() => toggleFieldEdit('rsiMax')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('rsiMax')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('rsiMax') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('rsiMax') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1130,12 +1302,24 @@ export default function SignalCenterPage() {
                         max="100"
                         value={configData.rsiMax}
                         onChange={(e) => updateConfigField('rsiMax', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('rsiMax')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        ADX Min
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>ADX Min</span>
+                        <button
+                          onClick={() => toggleFieldEdit('adxMin')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('adxMin')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('adxMin') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('adxMin') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1143,12 +1327,24 @@ export default function SignalCenterPage() {
                         max="50"
                         value={configData.adxMin}
                         onChange={(e) => updateConfigField('adxMin', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('adxMin')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        ADX Max
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>ADX Max</span>
+                        <button
+                          onClick={() => toggleFieldEdit('adxMax')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('adxMax')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('adxMax') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('adxMax') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1156,12 +1352,24 @@ export default function SignalCenterPage() {
                         max="100"
                         value={configData.adxMax}
                         onChange={(e) => updateConfigField('adxMax', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('adxMax')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Volume Min (x)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Volume Min (x)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('volumeMin')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('volumeMin')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('volumeMin') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('volumeMin') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1170,12 +1378,24 @@ export default function SignalCenterPage() {
                         max="2"
                         value={configData.volumeMin}
                         onChange={(e) => updateConfigField('volumeMin', parseFloat(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('volumeMin')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Volume Max (x)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Volume Max (x)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('volumeMax')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('volumeMax')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('volumeMax') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('volumeMax') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1184,7 +1404,8 @@ export default function SignalCenterPage() {
                         max="10"
                         value={configData.volumeMax}
                         onChange={(e) => updateConfigField('volumeMax', parseFloat(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('volumeMax')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                     </div>
                   </div>
@@ -1197,8 +1418,19 @@ export default function SignalCenterPage() {
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Entry Confirmation Candles
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Entry Confirmation Candles</span>
+                        <button
+                          onClick={() => toggleFieldEdit('entryConfirmationCandles')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('entryConfirmationCandles')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('entryConfirmationCandles') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('entryConfirmationCandles') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1206,13 +1438,25 @@ export default function SignalCenterPage() {
                         max="10"
                         value={configData.entryConfirmationCandles}
                         onChange={(e) => updateConfigField('entryConfirmationCandles', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('entryConfirmationCandles')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Wait candles before entry</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Market Bias Period
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Market Bias Period</span>
+                        <button
+                          onClick={() => toggleFieldEdit('marketBiasPeriod')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('marketBiasPeriod')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('marketBiasPeriod') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('marketBiasPeriod') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1220,13 +1464,25 @@ export default function SignalCenterPage() {
                         max="200"
                         value={configData.marketBiasPeriod}
                         onChange={(e) => updateConfigField('marketBiasPeriod', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('marketBiasPeriod')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Candles for market regime detection</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Bias Threshold (%)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Bias Threshold (%)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('biasThreshold')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('biasThreshold')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('biasThreshold') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('biasThreshold') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1235,13 +1491,25 @@ export default function SignalCenterPage() {
                         max="10"
                         value={(configData.biasThreshold * 100).toFixed(2)}
                         onChange={(e) => updateConfigField('biasThreshold', parseFloat(e.target.value) / 100)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('biasThreshold')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum trend strength</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Signal Expiry (minutes)
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center justify-between">
+                        <span>Signal Expiry (minutes)</span>
+                        <button
+                          onClick={() => toggleFieldEdit('signalExpiryMinutes')}
+                          className={`p-1 rounded transition ${
+                            editingFields.has('signalExpiryMinutes')
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={editingFields.has('signalExpiryMinutes') ? 'Disable editing' : 'Enable editing'}
+                        >
+                          {editingFields.has('signalExpiryMinutes') ? '🔓' : '✏️'}
+                        </button>
                       </label>
                       <input
                         type="number"
@@ -1249,7 +1517,8 @@ export default function SignalCenterPage() {
                         max="60"
                         value={configData.signalExpiryMinutes}
                         onChange={(e) => updateConfigField('signalExpiryMinutes', parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        disabled={!editingFields.has('signalExpiryMinutes')}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Signal validity duration</p>
                     </div>
