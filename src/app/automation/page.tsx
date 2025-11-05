@@ -751,12 +751,17 @@ export default function AutomationPage() {
                   <button
                     onClick={isBotActive ? handleStopBot : handleStartBot} // Launch animation on start
                     // onClick={() => toggleBot(alphaPilotBot.botId)} // Real function (commented for demo)
-                    disabled={loading || exchangeConnections.length === 0 || isLaunching || isShuttingDown}
+                    disabled={
+                      loading || 
+                      isLaunching || 
+                      isShuttingDown || 
+                      (!isBotActive && exchangeConnections.length === 0) // ✅ Only check exchange for START, not STOP
+                    }
                     className={`w-full py-5 rounded-xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 ${
                       isBotActive
                         ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-2xl hover:shadow-red-500/40 hover:scale-105'
                         : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105'
-                    } ${(loading || exchangeConnections.length === 0 || isLaunching || isShuttingDown) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${(loading || isLaunching || isShuttingDown || (!isBotActive && exchangeConnections.length === 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {loading ? (
                       <>
@@ -1298,12 +1303,12 @@ export default function AutomationPage() {
 
                 <button
                   onClick={() => toggleBot(bot.botId)}
-                  disabled={loading || exchangeConnections.length === 0}
+                  disabled={loading || (!active && exchangeConnections.length === 0)} // ✅ Only check exchange for START
                   className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
                     active
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-xl hover:shadow-red-500/30 hover:scale-105'
                       : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:shadow-xl hover:shadow-blue-500/30 hover:scale-105'
-                  } ${(loading || exchangeConnections.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${(loading || (!active && exchangeConnections.length === 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {loading ? (
                     <>
