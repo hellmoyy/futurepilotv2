@@ -1,0 +1,85 @@
+
+======================================================================
+🚀 FUTURES SCALPER BACKTEST ENGINE
+======================================================================
+
+⚙️  CONFIGURATION:
+   Initial Balance: $10000
+   Risk per Trade: 2%
+   Leverage: 10x
+   Stop Loss: 0.8%
+   Take Profit: 0.8%
+   Strategy: Triple TF + Dual Trailing System
+
+
+======================================================================
+📊 Backtesting BTCUSDT (1m)
+======================================================================
+
+📊 Fetching BTCUSDT data...
+
+📊 Fetching BTCUSDT 1m data from 2025-10-05T18:05:42.684Z to 2025-11-04T18:05:42.684Z...
+📈 Progress: 3.5% (1500 candles fetched)📈 Progress: 6.9% (3000 candles fetched)📈 Progress: 10.4% (4500 candles fetched)📈 Progress: 13.9% (6000 candles fetched)📈 Progress: 17.4% (7500 candles fetched)📈 Progress: 20.8% (9000 candles fetched)📈 Progress: 24.3% (10500 candles fetched)📈 Progress: 27.8% (12000 candles fetched)📈 Progress: 31.3% (13500 candles fetched)📈 Progress: 34.7% (15000 candles fetched)📈 Progress: 38.2% (16500 candles fetched)📈 Progress: 41.7% (18000 candles fetched)📈 Progress: 45.1% (19500 candles fetched)📈 Progress: 48.6% (21000 candles fetched)📈 Progress: 52.1% (22500 candles fetched)📈 Progress: 55.6% (24000 candles fetched)📈 Progress: 59.0% (25500 candles fetched)📈 Progress: 62.5% (27000 candles fetched)📈 Progress: 66.0% (28500 candles fetched)📈 Progress: 69.4% (30000 candles fetched)📈 Progress: 72.9% (31500 candles fetched)📈 Progress: 76.4% (33000 candles fetched)📈 Progress: 79.9% (34500 candles fetched)📈 Progress: 83.3% (36000 candles fetched)📈 Progress: 86.8% (37500 candles fetched)📈 Progress: 90.3% (39000 candles fetched)📈 Progress: 93.8% (40500 candles fetched)📈 Progress: 97.2% (42000 candles fetched)📈 Progress: 100.0% (43200 candles fetched)
+✅ Fetched 43200 candles in 29 requests
+
+
+📊 Fetching BTCUSDT 3m data from 2025-10-05T18:05:42.684Z to 2025-11-04T18:05:42.684Z...
+📈 Progress: 10.4% (1500 candles fetched)📈 Progress: 20.8% (3000 candles fetched)📈 Progress: 31.3% (4500 candles fetched)📈 Progress: 41.7% (6000 candles fetched)📈 Progress: 52.1% (7500 candles fetched)📈 Progress: 62.5% (9000 candles fetched)📈 Progress: 72.9% (10500 candles fetched)📈 Progress: 83.3% (12000 candles fetched)📈 Progress: 93.8% (13500 candles fetched)📈 Progress: 100.0% (14400 candles fetched)
+✅ Fetched 14400 candles in 10 requests
+
+
+📊 Fetching BTCUSDT 5m data from 2025-10-05T18:05:42.684Z to 2025-11-04T18:05:42.684Z...
+📈 Progress: 17.4% (1500 candles fetched)📈 Progress: 34.7% (3000 candles fetched)📈 Progress: 52.1% (4500 candles fetched)📈 Progress: 69.5% (6000 candles fetched)📈 Progress: 86.8% (7500 candles fetched)📈 Progress: 100.0% (8640 candles fetched)
+✅ Fetched 8640 candles in 6 requests
+
+✅ Data fetched: 43200 candles (1m)
+
+
+======================================================================
+📊 BTCUSDT RESULTS
+======================================================================
+
+💰 ACCOUNT SUMMARY:
+   Initial Balance: $10000.00
+   Final Balance: $15252.64
+   Total Profit: $5252.64
+   ROI: 52.53%
+
+📈 TRADE STATISTICS:
+   Total Trades: 75
+   Wins: 58 (77.33%)
+   Losses: 17
+
+💵 PROFIT/LOSS BREAKDOWN:
+   Total Wins: $8652.64
+   Average Win: $149.18
+   Total Losses: $-3400.00
+   Average Loss: $-200.00
+   Profit Factor: 2.54
+
+🏆 TOP 5 WINS:
+   1. SELL: $299.07 (2.99%) - TP
+   2. SELL: $290.54 (2.91%) - TP
+   3. SELL: $287.63 (2.88%) - TP
+   4. SELL: $286.12 (2.86%) - TP
+   5. SELL: $284.84 (2.85%) - TP
+
+📉 TOP 5 LOSSES:
+   1. BUY: $-200.00 (-2.00%) - EMERGENCY_EXIT
+   2. SELL: $-200.00 (-2.00%) - SL
+   3. BUY: $-200.00 (-2.00%) - EMERGENCY_EXIT
+   4. SELL: $-200.00 (-2.00%) - SL
+   5. BUY: $-200.00 (-2.00%) - EMERGENCY_EXIT
+
+
+======================================================================
+📋 DETAILED TRADE LOG (ALL 75 TRADES)
+======================================================================
+
+RangeError: Invalid time value
+    at Date.toISOString (<anonymous>)
+    at /Users/hap/Documents/CODE-MASTER/futurepilotv2/backtest/run-futures-scalper.js:808:49
+    at Array.forEach (<anonymous>)
+    at backtestFuturesPair (/Users/hap/Documents/CODE-MASTER/futurepilotv2/backtest/run-futures-scalper.js:806:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/hap/Documents/CODE-MASTER/futurepilotv2/backtest/run-futures-scalper.js:863:18)

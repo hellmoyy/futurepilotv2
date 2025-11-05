@@ -1,0 +1,685 @@
+
+======================================================================
+🚀 FUTURES SCALPER BACKTEST ENGINE
+======================================================================
+
+⚙️  CONFIGURATION:
+   Initial Balance: $10000
+   Risk per Trade: 2%
+   Leverage: 10x
+   Stop Loss: 0.8%
+   Take Profit: 0.8%
+   Strategy: Triple TF + Dual Trailing System
+
+
+======================================================================
+📊 Backtesting BTCUSDT (1m)
+======================================================================
+
+📊 Fetching BTCUSDT data...
+
+📊 Fetching BTCUSDT 1m data from 2025-10-05T18:09:44.437Z to 2025-11-04T18:09:44.437Z...
+📈 Progress: 3.5% (1500 candles fetched)📈 Progress: 6.9% (3000 candles fetched)📈 Progress: 10.4% (4500 candles fetched)📈 Progress: 13.9% (6000 candles fetched)📈 Progress: 17.4% (7500 candles fetched)📈 Progress: 20.8% (9000 candles fetched)📈 Progress: 24.3% (10500 candles fetched)📈 Progress: 27.8% (12000 candles fetched)📈 Progress: 31.3% (13500 candles fetched)📈 Progress: 34.7% (15000 candles fetched)📈 Progress: 38.2% (16500 candles fetched)📈 Progress: 41.7% (18000 candles fetched)📈 Progress: 45.1% (19500 candles fetched)📈 Progress: 48.6% (21000 candles fetched)📈 Progress: 52.1% (22500 candles fetched)📈 Progress: 55.6% (24000 candles fetched)📈 Progress: 59.0% (25500 candles fetched)📈 Progress: 62.5% (27000 candles fetched)📈 Progress: 66.0% (28500 candles fetched)📈 Progress: 69.4% (30000 candles fetched)📈 Progress: 72.9% (31500 candles fetched)📈 Progress: 76.4% (33000 candles fetched)📈 Progress: 79.9% (34500 candles fetched)📈 Progress: 83.3% (36000 candles fetched)📈 Progress: 86.8% (37500 candles fetched)📈 Progress: 90.3% (39000 candles fetched)📈 Progress: 93.8% (40500 candles fetched)📈 Progress: 97.2% (42000 candles fetched)📈 Progress: 100.0% (43200 candles fetched)
+✅ Fetched 43200 candles in 29 requests
+
+
+📊 Fetching BTCUSDT 3m data from 2025-10-05T18:09:44.437Z to 2025-11-04T18:09:44.437Z...
+📈 Progress: 10.4% (1500 candles fetched)📈 Progress: 20.8% (3000 candles fetched)📈 Progress: 31.3% (4500 candles fetched)📈 Progress: 41.7% (6000 candles fetched)📈 Progress: 52.1% (7500 candles fetched)📈 Progress: 62.5% (9000 candles fetched)📈 Progress: 72.9% (10500 candles fetched)📈 Progress: 83.3% (12000 candles fetched)📈 Progress: 93.8% (13500 candles fetched)📈 Progress: 100.0% (14400 candles fetched)
+✅ Fetched 14400 candles in 10 requests
+
+
+📊 Fetching BTCUSDT 5m data from 2025-10-05T18:09:44.437Z to 2025-11-04T18:09:44.437Z...
+📈 Progress: 17.4% (1500 candles fetched)📈 Progress: 34.7% (3000 candles fetched)📈 Progress: 52.1% (4500 candles fetched)📈 Progress: 69.4% (6000 candles fetched)📈 Progress: 86.8% (7500 candles fetched)📈 Progress: 100.0% (8640 candles fetched)
+✅ Fetched 8640 candles in 6 requests
+
+✅ Data fetched: 43200 candles (1m)
+
+
+======================================================================
+📊 BTCUSDT RESULTS
+======================================================================
+
+💰 ACCOUNT SUMMARY:
+   Initial Balance: $10000.00
+   Final Balance: $17658.64
+   Total Profit: $7658.64
+   ROI: 76.59%
+
+📈 TRADE STATISTICS:
+   Total Trades: 75
+   Wins: 60 (80.00%)
+   Losses: 15
+
+💵 PROFIT/LOSS BREAKDOWN:
+   Total Wins: $10658.64
+   Average Win: $177.64
+   Total Losses: $-3000.00
+   Average Loss: $-200.00
+   Profit Factor: 3.55
+
+🏆 TOP 5 WINS:
+   1. SELL: $341.46 (3.41%) - TP
+   2. SELL: $334.77 (3.35%) - TP
+   3. SELL: $330.42 (3.30%) - TP
+   4. SELL: $326.12 (3.26%) - TP
+   5. BUY: $323.94 (3.24%) - TP
+
+📉 TOP 5 LOSSES:
+   1. BUY: $-200.00 (-2.00%) - SL
+   2. BUY: $-200.00 (-2.00%) - EMERGENCY_EXIT
+   3. SELL: $-200.00 (-2.00%) - EMERGENCY_EXIT
+   4. BUY: $-200.00 (-2.00%) - EMERGENCY_EXIT
+   5. BUY: $-200.00 (-2.00%) - SL
+
+
+======================================================================
+📋 DETAILED TRADE LOG (ALL 75 TRADES)
+======================================================================
+
+✅ Trade #1 - BUY
+   Time: N/A
+   Entry: $123001.90
+   Exit:  $123985.92
+   Size: 0.203249 BTC (Notional: $25000.00)
+   PnL: $200.00 (2.00%)
+   Exit Type: TP
+
+✅ Trade #2 - BUY
+   Time: N/A
+   Entry: $123549.20
+   Exit:  $123705.07
+   Size: 0.206396 BTC (Notional: $25500.00)
+   PnL: $32.17 (0.32%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #3 - SELL
+   Time: N/A
+   Entry: $123669.20
+   Exit:  $123149.44
+   Size: 0.206846 BTC (Notional: $25580.43)
+   PnL: $107.51 (1.08%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #4 - BUY
+   Time: N/A
+   Entry: $122035.70
+   Exit:  $122427.31
+   Size: 0.211817 BTC (Notional: $25849.20)
+   PnL: $82.95 (0.83%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #5 - BUY
+   Time: N/A
+   Entry: $122474.30
+   Exit:  $122769.68
+   Size: 0.212751 BTC (Notional: $26056.58)
+   PnL: $62.84 (0.63%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #6 - SELL
+   Time: N/A
+   Entry: $122451.90
+   Exit:  $122039.02
+   Size: 0.214073 BTC (Notional: $26213.68)
+   PnL: $88.39 (0.88%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #7 - SELL
+   Time: N/A
+   Entry: $122102.30
+   Exit:  $121808.73
+   Size: 0.216496 BTC (Notional: $26434.65)
+   PnL: $63.56 (0.64%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #8 - SELL
+   Time: N/A
+   Entry: $121924.10
+   Exit:  $121499.41
+   Size: 0.218116 BTC (Notional: $26593.54)
+   PnL: $92.63 (0.93%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #9 - BUY
+   Time: N/A
+   Entry: $121761.20
+   Exit:  $122735.29
+   Size: 0.220309 BTC (Notional: $26825.12)
+   PnL: $214.60 (2.15%)
+   Exit Type: TP
+
+✅ Trade #10 - SELL
+   Time: N/A
+   Entry: $120982.80
+   Exit:  $120014.94
+   Size: 0.226161 BTC (Notional: $27361.62)
+   PnL: $218.89 (2.19%)
+   Exit Type: TP
+
+✅ Trade #11 - BUY
+   Time: N/A
+   Entry: $120868.40
+   Exit:  $121334.50
+   Size: 0.230903 BTC (Notional: $27908.85)
+   PnL: $107.62 (1.08%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #12 - BUY
+   Time: N/A
+   Entry: $121611.70
+   Exit:  $122004.49
+   Size: 0.231704 BTC (Notional: $28177.91)
+   PnL: $91.01 (0.91%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #13 - SELL
+   Time: N/A
+   Entry: $121283.90
+   Exit:  $120313.63
+   Size: 0.234206 BTC (Notional: $28405.44)
+   PnL: $227.24 (2.27%)
+   Exit Type: TP
+
+❌ Trade #14 - BUY
+   Time: N/A
+   Entry: $112281.50
+   Exit:  $111007.24
+   Size: 0.258044 BTC (Notional: $28973.55)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+✅ Trade #15 - BUY
+   Time: N/A
+   Entry: $111669.20
+   Exit:  $111857.42
+   Size: 0.254981 BTC (Notional: $28473.55)
+   PnL: $47.99 (0.48%)
+   Exit Type: TRAILING_TP
+
+❌ Trade #16 - BUY
+   Time: N/A
+   Entry: $112401.10
+   Exit:  $110153.08
+   Size: 0.254388 BTC (Notional: $28593.53)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #17 - BUY
+   Time: N/A
+   Entry: $110962.80
+   Exit:  $111850.50
+   Size: 0.253180 BTC (Notional: $28093.53)
+   PnL: $224.75 (2.25%)
+   Exit Type: TP
+
+✅ Trade #18 - BUY
+   Time: N/A
+   Entry: $111642.40
+   Exit:  $111774.17
+   Size: 0.256671 BTC (Notional: $28655.40)
+   PnL: $33.82 (0.34%)
+   Exit Type: TRAILING_TP
+
+❌ Trade #19 - SELL
+   Time: N/A
+   Entry: $111406.20
+   Exit:  $113634.32
+   Size: 0.257974 BTC (Notional: $28739.95)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #20 - BUY
+   Time: N/A
+   Entry: $114161.00
+   Exit:  $115074.29
+   Size: 0.247370 BTC (Notional: $28239.95)
+   PnL: $225.92 (2.26%)
+   Exit Type: TP
+
+❌ Trade #21 - BUY
+   Time: N/A
+   Entry: $115402.90
+   Exit:  $113094.84
+   Size: 0.249602 BTC (Notional: $28804.75)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #22 - SELL
+   Time: N/A
+   Entry: $111572.60
+   Exit:  $110680.02
+   Size: 0.253689 BTC (Notional: $28304.75)
+   PnL: $226.44 (2.26%)
+   Exit Type: TP
+
+✅ Trade #23 - SELL
+   Time: N/A
+   Entry: $110736.70
+   Exit:  $109850.81
+   Size: 0.260716 BTC (Notional: $28870.84)
+   PnL: $230.97 (2.31%)
+   Exit Type: TP
+
+✅ Trade #24 - BUY
+   Time: N/A
+   Entry: $111053.80
+   Exit:  $111942.23
+   Size: 0.265171 BTC (Notional: $29448.26)
+   PnL: $235.59 (2.36%)
+   Exit Type: TP
+
+❌ Trade #25 - BUY
+   Time: N/A
+   Entry: $113141.30
+   Exit:  $111141.67
+   Size: 0.265484 BTC (Notional: $30037.23)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+✅ Trade #26 - SELL
+   Time: N/A
+   Entry: $110767.00
+   Exit:  $110500.61
+   Size: 0.266661 BTC (Notional: $29537.23)
+   PnL: $71.04 (0.71%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #27 - SELL
+   Time: N/A
+   Entry: $110945.40
+   Exit:  $110781.35
+   Size: 0.267833 BTC (Notional: $29714.82)
+   PnL: $43.94 (0.44%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #28 - SELL
+   Time: N/A
+   Entry: $110480.70
+   Exit:  $109596.85
+   Size: 0.269954 BTC (Notional: $29824.66)
+   PnL: $238.60 (2.39%)
+   Exit Type: TP
+
+✅ Trade #29 - SELL
+   Time: N/A
+   Entry: $111220.50
+   Exit:  $110330.74
+   Size: 0.273521 BTC (Notional: $30421.15)
+   PnL: $243.37 (2.43%)
+   Exit Type: TP
+
+✅ Trade #30 - SELL
+   Time: N/A
+   Entry: $108102.40
+   Exit:  $107707.96
+   Size: 0.287039 BTC (Notional: $31029.58)
+   PnL: $113.22 (1.13%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #31 - BUY
+   Time: N/A
+   Entry: $108149.00
+   Exit:  $109014.19
+   Size: 0.289532 BTC (Notional: $31312.63)
+   PnL: $250.50 (2.51%)
+   Exit Type: TP
+
+✅ Trade #32 - SELL
+   Time: N/A
+   Entry: $104856.60
+   Exit:  $104017.75
+   Size: 0.304596 BTC (Notional: $31938.88)
+   PnL: $255.51 (2.56%)
+   Exit Type: TP
+
+❌ Trade #33 - BUY
+   Time: N/A
+   Entry: $105683.50
+   Exit:  $104931.02
+   Size: 0.308257 BTC (Notional: $32577.66)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+✅ Trade #34 - BUY
+   Time: N/A
+   Entry: $106000.00
+   Exit:  $106848.00
+   Size: 0.302619 BTC (Notional: $32077.66)
+   PnL: $256.62 (2.57%)
+   Exit Type: TP
+
+✅ Trade #35 - BUY
+   Time: N/A
+   Entry: $106806.20
+   Exit:  $107106.61
+   Size: 0.306342 BTC (Notional: $32719.21)
+   PnL: $92.03 (0.92%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #36 - BUY
+   Time: N/A
+   Entry: $107194.70
+   Exit:  $108052.26
+   Size: 0.307378 BTC (Notional: $32949.28)
+   PnL: $263.59 (2.64%)
+   Exit Type: TP
+
+✅ Trade #37 - BUY
+   Time: N/A
+   Entry: $108378.60
+   Exit:  $109245.63
+   Size: 0.310101 BTC (Notional: $33608.27)
+   PnL: $268.87 (2.69%)
+   Exit Type: TP
+
+✅ Trade #38 - BUY
+   Time: N/A
+   Entry: $109138.20
+   Exit:  $110011.31
+   Size: 0.314101 BTC (Notional: $34280.43)
+   PnL: $274.24 (2.74%)
+   Exit Type: TP
+
+✅ Trade #39 - BUY
+   Time: N/A
+   Entry: $110257.20
+   Exit:  $111139.26
+   Size: 0.317132 BTC (Notional: $34966.04)
+   PnL: $279.73 (2.80%)
+   Exit Type: TP
+
+✅ Trade #40 - BUY
+   Time: N/A
+   Entry: $110945.40
+   Exit:  $111193.52
+   Size: 0.321468 BTC (Notional: $35665.36)
+   PnL: $79.76 (0.80%)
+   Exit Type: TRAILING_TP
+
+❌ Trade #41 - BUY
+   Time: N/A
+   Entry: $111296.20
+   Exit:  $109070.28
+   Size: 0.322246 BTC (Notional: $35864.77)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+❌ Trade #42 - SELL
+   Time: N/A
+   Entry: $107657.10
+   Exit:  $109810.24
+   Size: 0.328495 BTC (Notional: $35364.77)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #43 - BUY
+   Time: N/A
+   Entry: $113107.10
+   Exit:  $113464.18
+   Size: 0.308246 BTC (Notional: $34864.77)
+   PnL: $110.07 (1.10%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #44 - SELL
+   Time: N/A
+   Entry: $112172.60
+   Exit:  $111275.22
+   Size: 0.313267 BTC (Notional: $35139.94)
+   PnL: $281.12 (2.81%)
+   Exit Type: TP
+
+✅ Trade #45 - SELL
+   Time: N/A
+   Entry: $108067.20
+   Exit:  $107892.11
+   Size: 0.331671 BTC (Notional: $35842.74)
+   PnL: $58.07 (0.58%)
+   Exit Type: TRAILING_TP
+
+❌ Trade #46 - BUY
+   Time: N/A
+   Entry: $108215.00
+   Exit:  $106736.10
+   Size: 0.332559 BTC (Notional: $35987.92)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+✅ Trade #47 - SELL
+   Time: N/A
+   Entry: $107665.00
+   Exit:  $106803.68
+   Size: 0.329614 BTC (Notional: $35487.92)
+   PnL: $283.90 (2.84%)
+   Exit Type: TP
+
+✅ Trade #48 - BUY
+   Time: N/A
+   Entry: $107576.80
+   Exit:  $108437.41
+   Size: 0.336482 BTC (Notional: $36197.68)
+   PnL: $289.58 (2.90%)
+   Exit Type: TP
+
+✅ Trade #49 - BUY
+   Time: N/A
+   Entry: $108315.90
+   Exit:  $109182.43
+   Size: 0.340870 BTC (Notional: $36921.63)
+   PnL: $295.37 (2.95%)
+   Exit Type: TP
+
+✅ Trade #50 - SELL
+   Time: N/A
+   Entry: $109282.70
+   Exit:  $108994.41
+   Size: 0.344611 BTC (Notional: $37660.07)
+   PnL: $99.35 (0.99%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #51 - BUY
+   Time: N/A
+   Entry: $109720.80
+   Exit:  $110151.15
+   Size: 0.345499 BTC (Notional: $37908.44)
+   PnL: $148.69 (1.49%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #52 - SELL
+   Time: N/A
+   Entry: $110209.00
+   Exit:  $109327.33
+   Size: 0.347341 BTC (Notional: $38280.16)
+   PnL: $306.24 (3.06%)
+   Exit Type: TP
+
+✅ Trade #53 - BUY
+   Time: N/A
+   Entry: $109959.90
+   Exit:  $110284.45
+   Size: 0.355091 BTC (Notional: $39045.76)
+   PnL: $115.25 (1.15%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #54 - BUY
+   Time: N/A
+   Entry: $111259.90
+   Exit:  $111406.77
+   Size: 0.353531 BTC (Notional: $39333.87)
+   PnL: $51.92 (0.52%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #55 - BUY
+   Time: N/A
+   Entry: $110674.50
+   Exit:  $111050.65
+   Size: 0.356574 BTC (Notional: $39463.68)
+   PnL: $134.12 (1.34%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #56 - BUY
+   Time: N/A
+   Entry: $111379.20
+   Exit:  $111537.88
+   Size: 0.357329 BTC (Notional: $39798.99)
+   PnL: $56.70 (0.57%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #57 - BUY
+   Time: N/A
+   Entry: $111566.20
+   Exit:  $112458.73
+   Size: 0.358000 BTC (Notional: $39940.74)
+   PnL: $319.53 (3.20%)
+   Exit Type: TP
+
+❌ Trade #58 - BUY
+   Time: N/A
+   Entry: $113573.40
+   Exit:  $112820.51
+   Size: 0.358707 BTC (Notional: $40739.56)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+❌ Trade #59 - SELL
+   Time: N/A
+   Entry: $113327.20
+   Exit:  $115593.74
+   Size: 0.355074 BTC (Notional: $40239.56)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #60 - BUY
+   Time: N/A
+   Entry: $115421.50
+   Exit:  $115683.80
+   Size: 0.344299 BTC (Notional: $39739.56)
+   PnL: $90.31 (0.90%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #61 - SELL
+   Time: N/A
+   Entry: $114473.60
+   Exit:  $113557.81
+   Size: 0.349123 BTC (Notional: $39965.34)
+   PnL: $319.72 (3.20%)
+   Exit Type: TP
+
+✅ Trade #62 - SELL
+   Time: N/A
+   Entry: $112308.00
+   Exit:  $111409.54
+   Size: 0.362972 BTC (Notional: $40764.64)
+   PnL: $326.12 (3.26%)
+   Exit Type: TP
+
+❌ Trade #63 - BUY
+   Time: N/A
+   Entry: $110925.80
+   Exit:  $108777.51
+   Size: 0.374845 BTC (Notional: $41579.94)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+❌ Trade #64 - BUY
+   Time: N/A
+   Entry: $111313.50
+   Exit:  $109087.23
+   Size: 0.369047 BTC (Notional: $41079.94)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #65 - SELL
+   Time: N/A
+   Entry: $107287.70
+   Exit:  $106998.54
+   Size: 0.378235 BTC (Notional: $40579.94)
+   PnL: $109.37 (1.09%)
+   Exit Type: TRAILING_TP
+
+❌ Trade #66 - SELL
+   Time: N/A
+   Entry: $106487.80
+   Exit:  $108617.56
+   Size: 0.383644 BTC (Notional: $40853.37)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: EMERGENCY_EXIT
+
+✅ Trade #67 - BUY
+   Time: N/A
+   Entry: $109879.10
+   Exit:  $110030.32
+   Size: 0.367252 BTC (Notional: $40353.37)
+   PnL: $55.53 (0.56%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #68 - BUY
+   Time: N/A
+   Entry: $109954.80
+   Exit:  $110834.44
+   Size: 0.368262 BTC (Notional: $40492.20)
+   PnL: $323.94 (3.24%)
+   Exit Type: TP
+
+✅ Trade #69 - SELL
+   Time: N/A
+   Entry: $109511.00
+   Exit:  $108634.91
+   Size: 0.377150 BTC (Notional: $41302.05)
+   PnL: $330.42 (3.30%)
+   Exit Type: TP
+
+✅ Trade #70 - SELL
+   Time: N/A
+   Entry: $107530.10
+   Exit:  $107307.56
+   Size: 0.391779 BTC (Notional: $42128.09)
+   PnL: $87.19 (0.87%)
+   Exit Type: TRAILING_TP
+
+❌ Trade #71 - BUY
+   Time: N/A
+   Entry: $108021.10
+   Exit:  $105698.18
+   Size: 0.392017 BTC (Notional: $42346.06)
+   PnL: $-200.00 (-2.00%)
+   Exit Type: SL
+
+✅ Trade #72 - SELL
+   Time: N/A
+   Entry: $106216.10
+   Exit:  $105366.37
+   Size: 0.393971 BTC (Notional: $41846.06)
+   PnL: $334.77 (3.35%)
+   Exit Type: TP
+
+✅ Trade #73 - SELL
+   Time: N/A
+   Entry: $104570.00
+   Exit:  $103733.44
+   Size: 0.408176 BTC (Notional: $42682.98)
+   PnL: $341.46 (3.41%)
+   Exit Type: TP
+
+✅ Trade #74 - SELL
+   Time: N/A
+   Entry: $104150.10
+   Exit:  $103953.83
+   Size: 0.418018 BTC (Notional: $43536.64)
+   PnL: $82.04 (0.82%)
+   Exit Type: TRAILING_TP
+
+✅ Trade #75 - SELL
+   Time: N/A
+   Entry: $103647.90
+   Exit:  $103264.17
+   Size: 0.422023 BTC (Notional: $43741.75)
+   PnL: $161.94 (1.62%)
+   Exit Type: TRAILING_TP
+
+======================================================================
+
+
+======================================================================
+✅ Backtest completed successfully!
+======================================================================
+

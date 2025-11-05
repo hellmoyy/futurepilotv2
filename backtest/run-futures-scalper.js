@@ -794,6 +794,40 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
     console.log();
   }
   
+  // Check for --verbose flag to show ALL trades
+  const args = process.argv.slice(2);
+  const verbose = args.includes('--verbose') || args.includes('-v');
+  
+  if (verbose && trades.length > 0) {
+    console.log(`\n${'='.repeat(70)}`);
+    console.log(`📋 DETAILED TRADE LOG (ALL ${trades.length} TRADES)`);
+    console.log(`${'='.repeat(70)}\n`);
+    
+    trades.forEach((trade, index) => {
+      const icon = trade.pnl > 0 ? '✅' : '❌';
+      let timeStr = 'N/A';
+      try {
+        if (trade.entryTime) {
+          const date = typeof trade.entryTime === 'number' ? new Date(trade.entryTime) : trade.entryTime;
+          timeStr = date.toISOString().replace('T', ' ').substring(0, 19);
+        }
+      } catch (e) {
+        timeStr = String(trade.entryTime || 'N/A');
+      }
+      
+      console.log(`${icon} Trade #${index + 1} - ${trade.type}`);
+      console.log(`   Time: ${timeStr}`);
+      console.log(`   Entry: $${trade.entryPrice.toFixed(2)}`);
+      console.log(`   Exit:  $${trade.exitPrice.toFixed(2)}`);
+      console.log(`   Size: ${trade.size.toFixed(6)} BTC (Notional: $${(trade.notionalValue || trade.size * trade.entryPrice).toFixed(2)})`);
+      console.log(`   PnL: $${trade.pnl.toFixed(2)} (${trade.pnlPct.toFixed(2)}%)`);
+      console.log(`   Exit Type: ${trade.exitType}`);
+      console.log('');
+    });
+    
+    console.log(`${'='.repeat(70)}\n`);
+  }
+  
   return {
     symbol,
     trades,
