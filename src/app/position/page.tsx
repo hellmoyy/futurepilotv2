@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface Position {
@@ -58,7 +58,9 @@ export default function PositionPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPrices, setCurrentPrices] = useState<{ [key: string]: number }>({});
+  const [priceLoading, setPriceLoading] = useState(false);
   
   // Pagination states
   const [positionsPage, setPositionsPage] = useState(1);
@@ -66,55 +68,89 @@ export default function PositionPage() {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPerPage, setHistoryPerPage] = useState(10);
 
-  // Fetch current price from Binance
-  const fetchCurrentPrice = async (symbol: string) => {
+  // Batch fetch current prices from Binance (multiple symbols at once)
+  const fetchCurrentPrices = useCallback(async (symbols: string[]) => {
+    if (symbols.length === 0) return;
+    
     try {
-      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentPrices(prev => ({
-          ...prev,
-          [symbol]: parseFloat(data.price)
-        }));
+      setPriceLoading(true);
+      
+      // Binance supports batch ticker fetch with array of symbols
+      const symbolsParam = JSON.stringify(symbols);
+      const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${symbolsParam}`);
+      
+      // Handle rate limiting
+      if (response.status === 429) {
+        console.warn('⚠️ Binance API rate limit reached, using cached prices');
+        return;
       }
+      
+      if (!response.ok) {
+        throw new Error(`Binance API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Update prices in batch
+      const priceMap: { [key: string]: number } = {};
+      data.forEach((item: any) => {
+        priceMap[item.symbol] = parseFloat(item.price);
+      });
+      
+      setCurrentPrices(prev => ({ ...prev, ...priceMap }));
     } catch (error) {
-      console.error(`Error fetching price for ${symbol}:`, error);
+      console.error('Error fetching prices:', error);
+      // Don't clear existing prices on error, keep cached values
+    } finally {
+      setPriceLoading(false);
     }
-  };
+  }, []);
 
   // Fetch active bot positions
   const fetchPositions = useCallback(async () => {
     try {
+      setError(null);
       const response = await fetch('/api/bots');
-      if (response.ok) {
-        const data = await response.json();
-        const activePositions = data.filter((bot: Position) => 
-          bot.status === 'ACTIVE' && bot.currentPosition
-        );
-        setPositions(activePositions);
-        
-        // Fetch current prices for active positions
-        activePositions.forEach((pos: Position) => {
-          if (pos.currentPosition) {
-            fetchCurrentPrice(pos.currentPosition.symbol);
-          }
-        });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch positions: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const activePositions = data.filter((bot: Position) => 
+        bot.status === 'ACTIVE' && bot.currentPosition
+      );
+      setPositions(activePositions);
+      
+      // Batch fetch current prices for all active positions
+      const symbols = activePositions
+        .map((pos: Position) => pos.currentPosition?.symbol)
+        .filter(Boolean) as string[];
+      
+      if (symbols.length > 0) {
+        fetchCurrentPrices(symbols);
       }
     } catch (error) {
       console.error('Error fetching positions:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load positions');
     }
-  }, []);
+  }, [fetchCurrentPrices]);
 
   // Fetch closed trades history
   const fetchTrades = useCallback(async () => {
     try {
+      setError(null);
       const response = await fetch('/api/trades');
-      if (response.ok) {
-        const data = await response.json();
-        setTrades(data.filter((trade: Trade) => trade.status === 'closed'));
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch trades: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setTrades(data.filter((trade: Trade) => trade.status === 'closed'));
     } catch (error) {
       console.error('Error fetching trades:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load trade history');
     } finally {
       setLoading(false);
     }
@@ -193,13 +229,21 @@ export default function PositionPage() {
 
   // ============ PERFORMANCE METRICS CALCULATIONS ============
 
-  // Calculate returns array for metrics (from closed trades)
-  const calculateReturns = () => {
+  // Memoize returns calculation (used by multiple metrics)
+  const cachedReturns = useMemo(() => {
     return trades
       .filter(t => t.status === 'closed' && t.pnlPercentage !== undefined)
-      .map(t => t.pnlPercentage || 0)
-      .sort((a, b) => new Date(trades.find(t2 => t2.pnlPercentage === a)?.entryTime || 0).getTime() - 
-                       new Date(trades.find(t2 => t2.pnlPercentage === b)?.entryTime || 0).getTime());
+      .map(t => ({
+        pnlPercentage: t.pnlPercentage || 0,
+        entryTime: t.entryTime
+      }))
+      .sort((a, b) => new Date(a.entryTime).getTime() - new Date(b.entryTime).getTime())
+      .map(t => t.pnlPercentage);
+  }, [trades]);
+
+  // Calculate returns array for metrics (from closed trades)
+  const calculateReturns = () => {
+    return cachedReturns;
   };
 
   // Calculate Sharpe Ratio (risk-adjusted return)
@@ -358,8 +402,8 @@ export default function PositionPage() {
     setHistoryPage(1);
   }, [activeTab]);
 
-  // Get performance metrics
-  const performanceMetrics = {
+  // Get performance metrics (memoized to prevent recalculation)
+  const performanceMetrics = useMemo(() => ({
     sharpeRatio: calculateSharpeRatio(),
     maxDrawdown: calculateMaxDrawdown(),
     profitFactor: calculateProfitFactor(),
@@ -370,7 +414,7 @@ export default function PositionPage() {
     calmarRatio: calculateCalmarRatio(),
     streaks: calculateStreaks(),
     totalFees: calculateTotalFees(),
-  };
+  }), [trades]); // Only recalculate when trades change
 
   if (loading) {
     return (
@@ -383,16 +427,54 @@ export default function PositionPage() {
     );
   }
 
+  // Error state with retry button
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white dark:text-white light:text-gray-900 mb-2">Failed to Load Data</h2>
+          <p className="text-gray-400 dark:text-gray-400 light:text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              fetchPositions();
+              fetchTrades();
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl font-semibold text-white hover:shadow-xl transition-all hover:scale-105"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/10 dark:to-cyan-500/10 light:from-blue-100 light:to-cyan-100 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/20 dark:border-white/20 light:border-blue-200">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
-            Trading Overview
-          </span>
-        </h1>
-        <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-sm sm:text-base lg:text-lg">Monitor your open positions and trading history</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3">
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 dark:from-blue-400 dark:to-cyan-400 light:from-blue-600 light:to-cyan-600 bg-clip-text text-transparent">
+                Trading Overview
+              </span>
+            </h1>
+            <p className="text-gray-300 dark:text-gray-300 light:text-gray-700 text-sm sm:text-base lg:text-lg">Monitor your open positions and trading history</p>
+          </div>
+          {priceLoading && (
+            <div className="flex items-center gap-2 text-blue-400 text-sm">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="hidden sm:inline">Updating prices...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tab Navigation */}
