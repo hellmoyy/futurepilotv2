@@ -21,7 +21,7 @@ interface NewsItem {
 export default function LiveNewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'bullish' | 'bearish' | 'neutral'>('all');
+  const [filter, setFilter] = useState<'all' | 'bullish' | 'bearish'>('all');
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -165,7 +165,7 @@ export default function LiveNewsPage() {
           transition={{ delay: 0.1 }}
           className="flex flex-wrap gap-2 sm:gap-3"
         >
-          {['all', 'bullish', 'bearish', 'neutral'].map((filterType) => (
+          {['all', 'bullish', 'bearish'].map((filterType) => (
             <button
               key={filterType}
               onClick={() => handleFilterChange(filterType as any)}
@@ -179,13 +179,11 @@ export default function LiveNewsPage() {
                 {filterType === 'all' ? '📋 All' : ''}
                 {filterType === 'bullish' ? '📈 Bullish' : ''}
                 {filterType === 'bearish' ? '📉 Bearish' : ''}
-                {filterType === 'neutral' ? '➖ Neutral' : ''}
               </span>
               <span className="sm:hidden">
                 {filterType === 'all' ? '📋' : ''}
                 {filterType === 'bullish' ? '📈' : ''}
                 {filterType === 'bearish' ? '📉' : ''}
-                {filterType === 'neutral' ? '➖' : ''}
               </span>
             </button>
           ))}
