@@ -311,6 +311,430 @@ else tier = 'bronze';
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
+---
+
+## ⚙️ SIGNAL CENTER CONFIGURATION SYSTEM
+
+### 🎯 Overview
+
+**Configuration System** adalah database-backed system untuk menyimpan dan mengelola parameter trading strategy. Semua komponen (Signal Generator, Backtest Engine, Bot Executor) menggunakan **SATU SUMBER KEBENARAN** dari database.
+
+### 🔗 100% Sinkronisasi
+
+**Principle:** Configuration Tab → Database → All Systems
+
+```
+┌─────────────────────────┐
+│  Configuration Tab (UI) │  ← Admin edits parameters
+└───────────┬─────────────┘
+            │ Save
+            ▼
+┌─────────────────────────┐
+│   SignalCenterConfig    │  ← Single source of truth (MongoDB)
+│      (Database)         │
+└───────────┬─────────────┘
+            │ Load active config
+            ▼
+┌─────────────────────────────────────────────┐
+│  ✅ Signal Generator (Live Trading)         │
+│  ✅ Backtest Engine (Historical Testing)    │
+│  ✅ Bot Executor (Auto Trading)             │
+│  ✅ Risk Manager (Position Sizing)          │
+└─────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- ✅ **Real-time Updates:** Edit di UI → Save → Langsung dipakai semua sistem
+- ✅ **Multiple Configs:** Support untuk "default", "aggressive", "conservative", dll
+- ✅ **Active Config System:** Only 1 config active at a time
+- ✅ **Validation:** Min/max ranges untuk semua parameter
+- ✅ **Auto-Fallback:** Jika database error, gunakan DEFAULT_CONFIG
+- ✅ **Admin Only:** Protected dengan JWT authentication
+
+### 📁 Core Files
+
+#### 1. Database Model: `/src/models/SignalCenterConfig.ts`
+
+**Purpose:** MongoDB schema untuk menyimpan strategy configuration
+
+**Key Fields:**
+```typescript
+interface ISignalCenterConfig {
+  // Identification
+  name: string;              // "default", "aggressive", "conservative"
+  description?: string;
+  isActive: boolean;         // Only one active at a time
+  
+  // Trading Parameters (20+ fields)
+  symbols: string[];         // ['BTCUSDT']
+  primaryTimeframe: string;  // '1m'
+  confirmationTimeframes: string[]; // ['3m', '5m']
+  riskPerTrade: number;      // 0.02 = 2%
+  leverage: number;          // 10x
+  stopLossPercent: number;   // 0.008 = 0.8%
+  takeProfitPercent: number; // 0.008 = 0.8%
+  
+  // Trailing Stops
+  trailProfitActivate: number;  // 0.004 = +0.4%
+  trailProfitDistance: number;  // 0.003 = 0.3%
+  trailLossActivate: number;    // -0.003 = -0.3%
+  trailLossDistance: number;    // 0.002 = 0.2%
+  
+  // Strategy Filters
+  macdMinStrength: number;   // 0.00003
+  volumeMin: number;         // 0.8x average
+  volumeMax: number;         // 2.0x average
+  adxMin: number;            // 20
+  adxMax: number;            // 50
+  rsiMin: number;            // 35
+  rsiMax: number;            // 68
+  
+  // Confirmation
+  entryConfirmationCandles: number; // 2
+  marketBiasPeriod: number;  // 100
+  biasThreshold: number;     // 0.02 = 2%
+  
+  // Signal Settings
+  signalExpiryMinutes: number; // 5 minutes
+  broadcastEnabled: boolean;
+  broadcastChannel: string;
+}
+```
+
+**Static Methods:**
+```typescript
+// Get active configuration (with auto-create default)
+const config = await SignalCenterConfig.getActiveConfig();
+
+// Set config as active (deactivates others)
+await SignalCenterConfig.setActiveConfig(configId);
+```
+
+**Validation:**
+- All numeric fields have min/max validation
+- Example: `riskPerTrade: min 0.001, max 0.1` (0.1%-10%)
+- Example: `leverage: min 1, max 20`
+- Auto-creates default config if none exists
+
+**Location:** `/src/models/SignalCenterConfig.ts` (~280 lines)
+
+---
+
+#### 2. CRUD API: `/src/app/api/signal-center/config/route.ts`
+
+**Purpose:** Admin endpoints untuk manage configurations
+
+**Endpoints:**
+
+**GET /api/signal-center/config**
+```typescript
+// Get active config
+GET /api/signal-center/config
+Response: { config: ISignalCenterConfig }
+
+// Get all configs
+GET /api/signal-center/config?all=true
+Response: { configs: ISignalCenterConfig[] }
+```
+
+**POST /api/signal-center/config**
+```typescript
+// Create new config
+POST /api/signal-center/config
+Body: { name, description, ...parameters }
+Response: { config: ISignalCenterConfig }
+
+// Update existing config
+POST /api/signal-center/config?configId=xxx
+Body: { ...parameters }
+Response: { config: ISignalCenterConfig }
+```
+
+**PUT /api/signal-center/config**
+```typescript
+// Set active config (deactivates others)
+PUT /api/signal-center/config
+Body: { configId: "xxx" }
+Response: { config: ISignalCenterConfig }
+```
+
+**DELETE /api/signal-center/config**
+```typescript
+// Delete config (cannot delete active)
+DELETE /api/signal-center/config
+Body: { configId: "xxx" }
+Response: { success: true }
+```
+
+**Security:**
+- All endpoints require admin authentication
+- Uses `verifyAdminAuth()` from `/src/lib/adminAuth.ts`
+- JWT token validation from cookies
+
+**Location:** `/src/app/api/signal-center/config/route.ts` (~244 lines)
+
+---
+
+#### 3. Signal Engine: `/src/lib/signal-center/SignalEngine.ts`
+
+**Purpose:** Core engine untuk generate trading signals
+
+**Database Integration:**
+
+**OLD (Hardcoded):**
+```typescript
+const engine = new SignalEngine(); // Uses DEFAULT_CONFIG
+```
+
+**NEW (Database-backed):**
+```typescript
+// Load active config from database
+const engine = await SignalEngine.createFromDatabase();
+
+// Automatically uses Configuration tab settings
+// Falls back to DEFAULT_CONFIG if database error
+```
+
+**Static Method:**
+```typescript
+static async createFromDatabase(): Promise<SignalEngine> {
+  try {
+    const { SignalCenterConfig } = await import('@/models/SignalCenterConfig');
+    const activeConfig = await SignalCenterConfig.getActiveConfig();
+    
+    if (activeConfig) {
+      console.log('✅ SignalEngine loaded config from database:', activeConfig.name);
+      return new SignalEngine({
+        symbols: activeConfig.symbols,
+        riskPerTrade: activeConfig.riskPerTrade,
+        leverage: activeConfig.leverage,
+        // ... all 20+ parameters
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to load config from database, using DEFAULT_CONFIG');
+  }
+  
+  return new SignalEngine(); // Fallback
+}
+```
+
+**Usage in Signal Generator:**
+```typescript
+// /src/app/api/cron/generate-signals/route.ts
+
+// Before: const engine = new SignalEngine();
+const engine = await SignalEngine.createFromDatabase(); // ✅ Uses Configuration tab
+
+const result = await engine.analyze(symbol, candles1m, candles3m, candles5m);
+```
+
+**Location:** `/src/lib/signal-center/SignalEngine.ts` (~450 lines)
+
+---
+
+#### 4. Backtest Integration: `/src/app/api/backtest/run/route.ts`
+
+**Purpose:** Run backtest dengan configuration dari database
+
+**Parameters:**
+```typescript
+POST /api/backtest/run
+Body: {
+  symbol?: string,
+  period?: string,
+  useActiveConfig?: boolean,  // ✅ NEW: Use database config
+  configId?: string,          // ✅ NEW: Use specific config
+  // ... manual parameters (fallback)
+}
+```
+
+**Logic:**
+```typescript
+// 1. Load config from database (if useActiveConfig=true)
+let config;
+if (useActiveConfig) {
+  config = await SignalCenterConfig.getActiveConfig();
+  console.log('✅ Using active config:', config.name);
+}
+
+// 2. Or load specific config by ID
+if (configId) {
+  config = await SignalCenterConfig.findById(configId);
+}
+
+// 3. Build backtest command with all parameters
+const command = `node backtest/run-futures-scalper.js 
+  --symbol=${config.symbols[0]}
+  --period=${period}
+  --risk=${config.riskPerTrade}
+  --leverage=${config.leverage}
+  --sl=${config.stopLossPercent}
+  --tp=${config.takeProfitPercent}
+  // ... all 20+ parameters
+`;
+
+// 4. Execute backtest with spawn()
+const backtest = spawn('node', args);
+
+// 5. Return results with config metadata
+return {
+  success: true,
+  results: backtestResults,
+  config: {
+    id: config._id,
+    name: config.name,
+    description: config.description,
+    isActive: config.isActive,
+  }
+};
+```
+
+**Response Includes:**
+- Backtest results (ROI, win rate, trades, etc.)
+- Config metadata (which config was used)
+- All parameters used in backtest
+
+**Location:** `/src/app/api/backtest/run/route.ts` (~200 lines)
+
+---
+
+### 🔄 Complete Workflow
+
+**1. Admin Edits Configuration:**
+```
+Admin opens /administrator/signal-center
+→ Goes to "Configuration" tab
+→ Edits parameters (e.g., leverage 10x → 15x)
+→ Clicks "Save Configuration"
+→ POST /api/signal-center/config
+→ Database updated with new values
+```
+
+**2. Backtest Uses Configuration:**
+```
+Admin clicks "Run Backtest" (in Configuration tab)
+→ POST /api/backtest/run with useActiveConfig=true
+→ API loads active config from database
+→ Backtest script executes with exact parameters
+→ Results returned with config metadata
+→ Admin sees: "Backtest using config: default (leverage 15x)"
+```
+
+**3. Signal Generator Uses Configuration:**
+```
+Cron job triggers /api/cron/generate-signals
+→ SignalEngine.createFromDatabase()
+→ Loads active config from database
+→ Analyzes market with exact parameters
+→ Generates signal with correct risk settings
+→ Console: "✅ SignalEngine loaded config: default"
+```
+
+**4. Bot Executes Trade:**
+```
+SignalListener receives signal
+→ BotExecutor validates signal
+→ Uses same config for position sizing
+→ Risk = config.riskPerTrade (2%)
+→ Leverage = config.leverage (15x)
+→ SL = config.stopLossPercent (0.8%)
+→ TP = config.takeProfitPercent (0.8%)
+```
+
+**Result: 100% consistency across all systems!**
+
+---
+
+### 🛠️ Usage Examples
+
+**Example 1: Create New Config**
+```bash
+curl -X POST http://localhost:3000/api/signal-center/config \
+  -H "Content-Type: application/json" \
+  -H "Cookie: admin_token=xxx" \
+  -d '{
+    "name": "aggressive",
+    "description": "High risk, high reward strategy",
+    "riskPerTrade": 0.05,
+    "leverage": 20,
+    "stopLossPercent": 0.01,
+    "takeProfitPercent": 0.02
+  }'
+```
+
+**Example 2: Set Active Config**
+```bash
+curl -X PUT http://localhost:3000/api/signal-center/config \
+  -H "Content-Type: application/json" \
+  -H "Cookie: admin_token=xxx" \
+  -d '{ "configId": "675xxxxx" }'
+```
+
+**Example 3: Run Backtest with Active Config**
+```bash
+curl -X POST http://localhost:3000/api/backtest/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "symbol": "BTCUSDT",
+    "period": "3m",
+    "useActiveConfig": true
+  }'
+```
+
+**Example 4: Load Config in Code**
+```typescript
+// In any backend file
+import { SignalCenterConfig } from '@/models/SignalCenterConfig';
+
+const config = await SignalCenterConfig.getActiveConfig();
+console.log('Current strategy:', config.name);
+console.log('Risk per trade:', config.riskPerTrade * 100 + '%');
+```
+
+---
+
+### ⚠️ Important Notes
+
+**1. Single Source of Truth:**
+- ✅ Database is the ONLY source for configuration
+- ❌ Don't hardcode parameters in multiple files
+- ❌ Don't use DEFAULT_CONFIG directly (use createFromDatabase())
+
+**2. Error Handling:**
+- ✅ Always have fallback to DEFAULT_CONFIG
+- ✅ Log when using database vs fallback
+- ✅ Validate parameters before use
+
+**3. Testing:**
+- ✅ Test with active config
+- ✅ Test with specific config by ID
+- ✅ Test fallback when database unavailable
+- ✅ Verify all 20+ parameters passed correctly
+
+**4. Deployment:**
+- ✅ Ensure MongoDB connection in production
+- ✅ Create default config on first deploy
+- ✅ Backup configs before major changes
+- ✅ Monitor config changes in admin logs
+
+---
+
+### 📚 Documentation
+
+**Complete Guide:**
+- `/docs/SIGNAL_CENTER_CONFIG_DATABASE.md` - Full documentation
+- Includes: API reference, usage examples, testing guide
+
+**Related Files:**
+- `/src/models/SignalCenterConfig.ts` - Database model
+- `/src/app/api/signal-center/config/route.ts` - CRUD API
+- `/src/lib/signal-center/SignalEngine.ts` - Signal generator
+- `/src/app/api/backtest/run/route.ts` - Backtest integration
+- `/src/app/api/cron/generate-signals/route.ts` - Auto signal generation
+
+---
+
 ## 🔐 Environment Variables
 
 **IMPORTANT:** Gunakan **HANYA `.env`** untuk semua environment variables!

@@ -57,6 +57,12 @@ export interface ISignalCenterConfig extends Document {
   updatedAt: Date;
 }
 
+// Model with static methods
+export interface ISignalCenterConfigModel extends Model<ISignalCenterConfig> {
+  getActiveConfig(): Promise<ISignalCenterConfig>;
+  setActiveConfig(configId: string): Promise<ISignalCenterConfig | null>;
+}
+
 const SignalCenterConfigSchema = new Schema<ISignalCenterConfig>(
   {
     name: {
@@ -263,6 +269,5 @@ SignalCenterConfigSchema.statics.setActiveConfig = async function (configId: str
   return config;
 };
 
-export const SignalCenterConfig: Model<ISignalCenterConfig> =
-  mongoose.models.signalcenterconfigs ||
-  mongoose.model<ISignalCenterConfig>('signalcenterconfigs', SignalCenterConfigSchema, 'signalcenterconfigs');
+export const SignalCenterConfig = (mongoose.models.signalcenterconfigs as ISignalCenterConfigModel) ||
+  mongoose.model<ISignalCenterConfig, ISignalCenterConfigModel>('signalcenterconfigs', SignalCenterConfigSchema, 'signalcenterconfigs');

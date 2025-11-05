@@ -83,6 +83,60 @@ export class SignalEngine {
   }
   
   /**
+   * 🔥 NEW: Load config from database
+   * Use active config from Configuration tab
+   */
+  static async createFromDatabase(): Promise<SignalEngine> {
+    try {
+      // Import SignalCenterConfig (dynamic to avoid circular deps)
+      const { SignalCenterConfig } = await import('@/models/SignalCenterConfig');
+      
+      // Get active config from database
+      const activeConfig = await SignalCenterConfig.getActiveConfig();
+      
+      if (activeConfig) {
+        console.log('✅ SignalEngine loaded config from database:', activeConfig.name);
+        
+        // Convert database config to SignalEngineConfig
+        const engineConfig: Partial<SignalEngineConfig> = {
+          symbols: activeConfig.symbols,
+          primaryTimeframe: activeConfig.primaryTimeframe as Timeframe,
+          confirmationTimeframes: activeConfig.confirmationTimeframes as Timeframe[],
+          riskPerTrade: activeConfig.riskPerTrade,
+          leverage: activeConfig.leverage,
+          stopLossPercent: activeConfig.stopLossPercent,
+          takeProfitPercent: activeConfig.takeProfitPercent,
+          trailProfitActivate: activeConfig.trailProfitActivate,
+          trailProfitDistance: activeConfig.trailProfitDistance,
+          trailLossActivate: activeConfig.trailLossActivate,
+          trailLossDistance: activeConfig.trailLossDistance,
+          macdMinStrength: activeConfig.macdMinStrength,
+          volumeMin: activeConfig.volumeMin,
+          volumeMax: activeConfig.volumeMax,
+          adxMin: activeConfig.adxMin,
+          adxMax: activeConfig.adxMax,
+          rsiMin: activeConfig.rsiMin,
+          rsiMax: activeConfig.rsiMax,
+          entryConfirmationCandles: activeConfig.entryConfirmationCandles,
+          marketBiasPeriod: activeConfig.marketBiasPeriod,
+          biasThreshold: activeConfig.biasThreshold,
+          signalExpiryMinutes: activeConfig.signalExpiryMinutes,
+          broadcastEnabled: activeConfig.broadcastEnabled,
+          broadcastChannel: activeConfig.broadcastChannel,
+        };
+        
+        return new SignalEngine(engineConfig);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load config from database, using DEFAULT_CONFIG:', error);
+    }
+    
+    // Fallback to default config
+    console.log('📋 SignalEngine using DEFAULT_CONFIG');
+    return new SignalEngine();
+  }
+  
+  /**
    * Analyze market and generate signal
    */
   async analyze(

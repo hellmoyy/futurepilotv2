@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
       throw new Error('Invalid candles data');
     }
     
-    const engine = new SignalEngine();
+    // 🔥 NEW: Load config from database (Configuration tab)
+    console.log('📋 Loading active config from database...');
+    const engine = await SignalEngine.createFromDatabase();
+    
     const result = await engine.analyze(symbol, candles['1m'], candles['3m'], candles['5m']);
     
     if (!result.signal) {
