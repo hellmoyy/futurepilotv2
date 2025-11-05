@@ -75,7 +75,6 @@ const SignalCenterConfigSchema = new Schema<ISignalCenterConfig>(
     isActive: {
       type: Boolean,
       default: false,
-      index: true,
     },
     
     // Symbols

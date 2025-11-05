@@ -378,12 +378,19 @@ export default function SignalCenterPage() {
     setConfigError('');
     
     try {
+      // Extract _id and prepare payload
+      const { _id, __v, createdAt, updatedAt, ...cleanConfigData } = configData;
+      
+      const payload = _id 
+        ? { configId: _id, ...cleanConfigData }  // Update existing config
+        : cleanConfigData;                        // Create new config
+      
       const res = await fetch('/api/signal-center/config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(configData),
+        body: JSON.stringify(payload),
       });
       
       const data = await res.json();
