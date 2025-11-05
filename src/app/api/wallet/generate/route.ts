@@ -6,39 +6,33 @@ import { User } from '@/models/User';
 import crypto from 'crypto';
 import { ethers } from 'ethers';
 
-// ✅ CRITICAL: Force encryption key to be set - NO DEFAULT FALLBACK
+// ✅ Get encryption keys from environment (validation happens at runtime)
 const ENCRYPTION_KEY = process.env.ENCRYPTION_SECRET_KEY;
 const ENCRYPTION_KEY_LEGACY = process.env.ENCRYPTION_SECRET_KEY_LEGACY; // For old wallets
 
-if (!ENCRYPTION_KEY) {
-  throw new Error(
-    '🚨 CRITICAL SECURITY ERROR: ENCRYPTION_SECRET_KEY environment variable is not set!\n\n' +
-    'This is REQUIRED for wallet security to protect user private keys.\n\n' +
-    'To fix:\n' +
-    '1. Generate a strong key: openssl rand -hex 32\n' +
-    '2. Add to .env.local: ENCRYPTION_SECRET_KEY=<your_generated_key>\n' +
-    '3. Restart the server\n\n' +
-    'NEVER use a default or weak key in production!'
-  );
+// ✅ Helper function to validate and get encryption key
+function getEncryptionKey(): Buffer {
+  if (!ENCRYPTION_KEY) {
+    console.error('🚨 CRITICAL: ENCRYPTION_SECRET_KEY not set in environment!');
+    throw new Error('Server configuration error: Encryption key not configured');
+  }
+
+  if (ENCRYPTION_KEY.length < 32) {
+    console.error(`🚨 CRITICAL: ENCRYPTION_SECRET_KEY too short (${ENCRYPTION_KEY.length} chars, need 32+)`);
+    throw new Error('Server configuration error: Invalid encryption key length');
+  }
+
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
 }
 
-// ✅ Validate key strength
-if (ENCRYPTION_KEY.length < 32) {
-  throw new Error(
-    `🚨 CRITICAL SECURITY ERROR: ENCRYPTION_SECRET_KEY is too short!\n\n` +
-    `Current length: ${ENCRYPTION_KEY.length} characters\n` +
-    `Required: At least 32 characters\n\n` +
-    `Generate a strong key: openssl rand -hex 32`
-  );
+// ✅ Helper to get legacy key
+function getLegacyKey(): Buffer | null {
+  if (!ENCRYPTION_KEY_LEGACY) return null;
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY_LEGACY).digest();
 }
-
-// Create 32-byte keys from the provided keys
-const key = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
-const keyLegacy = ENCRYPTION_KEY_LEGACY 
-  ? crypto.createHash('sha256').update(ENCRYPTION_KEY_LEGACY).digest()
-  : null;
 
 function encrypt(text: string): string {
+  const key = getEncryptionKey(); // Get key at runtime
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -47,6 +41,9 @@ function encrypt(text: string): string {
 }
 
 function decrypt(text: string): string {
+  const key = getEncryptionKey(); // Get key at runtime
+  const keyLegacy = getLegacyKey();
+  
   const parts = text.split(':');
   const iv = Buffer.from(parts.shift()!, 'hex');
   const encryptedData = parts.join(':');
