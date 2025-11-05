@@ -97,15 +97,15 @@ export async function POST(req: NextRequest) {
         );
       }
       
-      console.log(`⚙️  Config updated: ${config.name} by ${authResult.user?.email}`);
+      console.log(`⚙️  Config updated: ${config.name} by ${authResult.admin?.email}`);
     } else {
       // Create new config
       config = await SignalCenterConfig.create({
         ...configData,
-        createdBy: authResult.user?.email,
+        createdBy: authResult.admin?.email,
       });
       
-      console.log(`✅ Config created: ${config.name} by ${authResult.user?.email}`);
+      console.log(`✅ Config created: ${config.name} by ${authResult.admin?.email}`);
     }
     
     return NextResponse.json({
@@ -166,7 +166,7 @@ export async function PUT(req: NextRequest) {
       );
     }
     
-    console.log(`🎯 Active config set to: ${config.name} by ${authResult.user?.email}`);
+    console.log(`🎯 Active config set to: ${config.name} by ${authResult.admin?.email}`);
     
     return NextResponse.json({
       success: true,
@@ -227,7 +227,7 @@ export async function DELETE(req: NextRequest) {
     
     await SignalCenterConfig.findByIdAndDelete(configId);
     
-    console.log(`🗑️  Config deleted: ${config.name} by ${authResult.user?.email}`);
+    console.log(`🗑️  Config deleted: ${config.name} by ${authResult.admin?.email}`);
     
     return NextResponse.json({
       success: true,
