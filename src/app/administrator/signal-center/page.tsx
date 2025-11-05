@@ -1727,9 +1727,11 @@ export default function SignalCenterPage() {
                           <div className="px-3 py-1 bg-green-100 dark:bg-green-800 rounded-full text-xs font-medium text-green-800 dark:text-green-200">
                             ⚙️ Active Config from Configuration Tab
                           </div>
-                          <div className="text-xs text-green-600 dark:text-green-500 mt-1">
-                            Risk: {configData.riskPerTrade * 100}% | Leverage: {configData.leverage}x | SL: {configData.stopLossPercent * 100}%
-                          </div>
+                          {configData && (
+                            <div className="text-xs text-green-600 dark:text-green-500 mt-1">
+                              Risk: {(configData.riskPerTrade * 100).toFixed(1)}% | Leverage: {configData.leverage}x | SL: {(configData.stopLossPercent * 100).toFixed(1)}%
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1888,56 +1890,58 @@ export default function SignalCenterPage() {
                     )}
                     
                     {/* Strategy Configuration Used */}
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
-                        ⚙️ Configuration Parameters
-                        <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs">
-                          From Configuration Tab
-                        </span>
-                      </h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Risk per Trade: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.riskPerTrade * 100).toFixed(1)}%</span>
+                    {configData && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
+                          ⚙️ Configuration Parameters
+                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs">
+                            From Configuration Tab
+                          </span>
+                        </h4>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Risk per Trade: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.riskPerTrade * 100).toFixed(1)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Leverage: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{configData.leverage}x</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Stop Loss: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.stopLossPercent * 100).toFixed(1)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Take Profit: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.takeProfitPercent * 100).toFixed(1)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Trailing Profit: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.trailProfitActivate * 100).toFixed(2)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Trailing Loss: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{(Math.abs(configData.trailLossActivate) * 100).toFixed(2)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">RSI Range: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{configData.rsiMin}-{configData.rsiMax}</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">ADX Range: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{configData.adxMin}-{configData.adxMax}</span>
+                          </div>
+                          <div>
+                            <span className="text-blue-800 dark:text-blue-300">Volume Filter: </span>
+                            <span className="font-mono text-blue-900 dark:text-blue-200">{configData.volumeMin}x-{configData.volumeMax}x</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Leverage: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{configData.leverage}x</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Stop Loss: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.stopLossPercent * 100).toFixed(1)}%</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Take Profit: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.takeProfitPercent * 100).toFixed(1)}%</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Trailing Profit: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{(configData.trailProfitActivate * 100).toFixed(2)}%</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Trailing Loss: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{(Math.abs(configData.trailLossActivate) * 100).toFixed(2)}%</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">RSI Range: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{configData.rsiMin}-{configData.rsiMax}</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">ADX Range: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{configData.adxMin}-{configData.adxMax}</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-800 dark:text-blue-300">Volume Filter: </span>
-                          <span className="font-mono text-blue-900 dark:text-blue-200">{configData.volumeMin}x-{configData.volumeMax}x</span>
+                        <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700 text-xs text-blue-700 dark:text-blue-400">
+                          💡 These parameters are loaded from the active configuration in the Configuration tab. 
+                          Edit and save configuration to test different strategies.
                         </div>
                       </div>
-                      <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700 text-xs text-blue-700 dark:text-blue-400">
-                        💡 These parameters are loaded from the active configuration in the Configuration tab. 
-                        Edit and save configuration to test different strategies.
-                      </div>
-                    </div>
+                    )}
                     
                     {/* Trade List Table */}
                     {backtestResults.trades && backtestResults.trades.length > 0 && (
