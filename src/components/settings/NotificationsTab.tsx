@@ -33,11 +33,11 @@ export default function NotificationsTab() {
 
   const fetchNotificationSettings = async () => {
     try {
-      const response = await fetch('/api/user/notifications');
+      const response = await fetch('/api/user/profile');
       if (response.ok) {
         const data = await response.json();
-        if (data.settings) {
-          setNotifications(data.settings);
+        if (data.profile?.notificationSettings) {
+          setNotifications(data.profile.notificationSettings);
         }
       }
     } catch (error) {

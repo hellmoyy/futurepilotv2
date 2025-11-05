@@ -67,6 +67,43 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    await connectDB();
+
+    const body = await request.json();
+    
+    // Update notification settings (from NotificationsTab)
+    const User = mongoose.models.futurepilotcol || mongoose.model('futurepilotcol', new mongoose.Schema({}, { strict: false }));
+    
+    await User.findByIdAndUpdate(
+      session.user.id,
+      { $set: { notificationSettings: body } },
+      { new: true }
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Notification settings updated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error updating notification settings:', error);
+    return NextResponse.json(
+      { error: 'Failed to update notification settings', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
