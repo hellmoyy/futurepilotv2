@@ -209,7 +209,7 @@ export default function ExchangeTab() {
     if (!confirm('Are you sure you want to remove this connection?')) return;
 
     try {
-      const response = await fetch(`/api/exchange/connections?id=${connectionId}`, {
+      const response = await fetch(`/api/exchange/connections/${connectionId}`, {
         method: 'DELETE',
       });
 
