@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
+import fs from 'fs';
 import { SignalCenterConfig } from '@/models/SignalCenterConfig';
 import connectDB from '@/lib/mongodb';
 
@@ -65,8 +66,24 @@ export async function POST(req: NextRequest) {
     const backtestDir = path.join(process.cwd(), 'backtest');
     const scriptPath = path.join(backtestDir, 'run-futures-scalper.js');
     
-    // Build command with config parameters
-    let command = `cd ${backtestDir} && node run-futures-scalper.js --symbol=${symbol} --period=${period} --balance=${balance} --verbose`;
+    // Verify backtest directory exists
+    const fs = require('fs');
+    if (!fs.existsSync(backtestDir)) {
+      return NextResponse.json({
+        success: false,
+        error: `Backtest directory not found: ${backtestDir}`,
+      }, { status: 500 });
+    }
+    
+    if (!fs.existsSync(scriptPath)) {
+      return NextResponse.json({
+        success: false,
+        error: `Backtest script not found: ${scriptPath}`,
+      }, { status: 500 });
+    }
+    
+    // Build command with absolute path (no cd required)
+    let command = `node ${scriptPath} --symbol=${symbol} --period=${period} --balance=${balance} --verbose`;
     
     // Add config parameters if available
     if (config) {
