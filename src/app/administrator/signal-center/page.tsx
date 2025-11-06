@@ -1020,6 +1020,64 @@ export default function SignalCenterPage() {
                 {!configLoading && configData && (
                 <div className="space-y-6">
                 
+                {/* Trading Pairs Selection */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span>📊</span> Trading Pairs
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Select pairs to generate trading signals for. Multiple pairs can be monitored simultaneously.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT'].map((pair) => {
+                      const isSelected = configData.symbols?.includes(pair) || (pair === 'BTCUSDT' && !configData.symbols);
+                      return (
+                        <label
+                          key={pair}
+                          className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              const currentSymbols = configData.symbols || ['BTCUSDT'];
+                              let newSymbols;
+                              if (e.target.checked) {
+                                newSymbols = [...currentSymbols, pair];
+                              } else {
+                                newSymbols = currentSymbols.filter((s: string) => s !== pair);
+                                // Ensure at least one symbol selected
+                                if (newSymbols.length === 0) {
+                                  newSymbols = ['BTCUSDT'];
+                                }
+                              }
+                              updateConfigField('symbols', newSymbols);
+                            }}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                          <div>
+                            <div className="font-medium text-sm text-gray-900 dark:text-white">
+                              {pair.replace('USDT', '')}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {pair}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      💡 <strong>Selected:</strong> {(configData.symbols || ['BTCUSDT']).join(', ')}
+                    </p>
+                  </div>
+                </div>
+                
                 {/* Risk Management */}
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
