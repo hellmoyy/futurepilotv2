@@ -291,16 +291,18 @@ function parseBacktestOutput(output: string, period: string) {
           const match = line.match(/Time:\s+(.+)/);
           if (match) currentTrade.time = match[1].trim();
         } else if (line.includes('Entry:')) {
-          const match = line.match(/\$([0-9,.]+)/);
+          const match = line.match(/Entry:\s*\$([0-9,.]+)/);
           if (match) {
             currentTrade.entry = parseFloat(match[1].replace(/,/g, ''));
             currentTrade.entryPrice = currentTrade.entry; // Keep both for compatibility
+            console.log(`  ✅ Parsed entry: $${currentTrade.entry}`);
           }
         } else if (line.includes('Exit:')) {
-          const match = line.match(/\$([0-9,.]+)/);
+          const match = line.match(/Exit:\s*\$([0-9,.]+)/);
           if (match) {
             currentTrade.exit = parseFloat(match[1].replace(/,/g, ''));
             currentTrade.exitPrice = currentTrade.exit; // Keep both for compatibility
+            console.log(`  ✅ Parsed exit: $${currentTrade.exit}`);
           }
         } else if (line.includes('Size:')) {
           const sizeMatch = line.match(/Size:\s+([0-9.]+)/);
