@@ -17,10 +17,6 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
     
-    // Ensure SignalCenterConfig model is registered
-    // This import is required for .populate() to work
-    const _ = SignalCenterConfig;
-    
     // Get query parameters
     const searchParams = req.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '30');
@@ -32,12 +28,27 @@ export async function GET(req: NextRequest) {
     if (symbol) query.symbol = symbol;
     if (configId) query.configId = configId;
     
-    // Get results with pagination
+    // Get results without populate (avoid schema registration issues)
     const results = await BacktestResult.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
-      .populate('configId', 'name description')
       .lean();
+    
+    // Manually fetch config names (more reliable than populate)
+    for (const result of results) {
+      if (result.configId) {
+        try {
+          const config = await SignalCenterConfig.findById(result.configId).lean();
+          if (config) {
+            (result as any).configName = config.name;
+            (result as any).configDescription = config.description;
+          }
+        } catch (err) {
+          // Config not found or deleted, use stored name
+          (result as any).configName = result.configName || 'Unknown';
+        }
+      }
+    }
     
     // Get summary statistics (last 7 days)
     const sevenDaysAgo = new Date();
