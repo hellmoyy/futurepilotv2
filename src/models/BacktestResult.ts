@@ -207,9 +207,10 @@ BacktestResultSchema.statics.cleanupOldResults = async function() {
     const results = await this.find({ symbol })
       .sort({ createdAt: -1 })
       .skip(100)
-      .select('_id');
+      .select('_id')
+      .lean();
     
-    const idsToDelete = results.map(r => r._id);
+    const idsToDelete = results.map((r: { _id: mongoose.Types.ObjectId }) => r._id);
     
     if (idsToDelete.length > 0) {
       await this.deleteMany({ _id: { $in: idsToDelete } });
