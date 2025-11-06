@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import BacktestResult from '@/models/BacktestResult';
+import { SignalCenterConfig } from '@/models/SignalCenterConfig';
 import connectDB from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
