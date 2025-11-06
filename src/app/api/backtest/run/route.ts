@@ -278,12 +278,14 @@ function parseBacktestOutput(output: string, period: string) {
       }
       
       // Stop parsing trades after trade log section ends
-      if (inTradeLog && line.includes('='.repeat(20))) {
+      // Only stop if we have some trades already (ignore separator lines at start)
+      if (inTradeLog && line.includes('='.repeat(20)) && results.trades.length > 0) {
         if (currentTrade && currentTrade.exitType) {
           results.trades.push(currentTrade);
           currentTrade = null;
         }
         inTradeLog = false;
+        console.log(`🛑 Stopped parsing at separator line (${results.trades.length} trades collected)`);
         continue;
       }
       
