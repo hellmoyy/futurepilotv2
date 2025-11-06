@@ -292,10 +292,16 @@ function parseBacktestOutput(output: string, period: string) {
           if (match) currentTrade.time = match[1].trim();
         } else if (line.includes('Entry:')) {
           const match = line.match(/\$([0-9,.]+)/);
-          if (match) currentTrade.entryPrice = parseFloat(match[1].replace(/,/g, ''));
+          if (match) {
+            currentTrade.entry = parseFloat(match[1].replace(/,/g, ''));
+            currentTrade.entryPrice = currentTrade.entry; // Keep both for compatibility
+          }
         } else if (line.includes('Exit:')) {
           const match = line.match(/\$([0-9,.]+)/);
-          if (match) currentTrade.exitPrice = parseFloat(match[1].replace(/,/g, ''));
+          if (match) {
+            currentTrade.exit = parseFloat(match[1].replace(/,/g, ''));
+            currentTrade.exitPrice = currentTrade.exit; // Keep both for compatibility
+          }
         } else if (line.includes('Size:')) {
           const sizeMatch = line.match(/Size:\s+([0-9.]+)/);
           const notionalMatch = line.match(/Notional:\s+\$([0-9,.]+)/);
@@ -305,10 +311,16 @@ function parseBacktestOutput(output: string, period: string) {
           const pnlMatch = line.match(/PnL:\s+\$([0-9,.+-]+)/);
           const pctMatch = line.match(/\(([0-9.+-]+)%\)/);
           if (pnlMatch) currentTrade.pnl = parseFloat(pnlMatch[1].replace(/,/g, ''));
-          if (pctMatch) currentTrade.pnlPct = parseFloat(pctMatch[1]);
+          if (pctMatch) {
+            currentTrade.pnlPercent = parseFloat(pctMatch[1]);
+            currentTrade.pnlPct = currentTrade.pnlPercent; // Keep both for compatibility
+          }
         } else if (line.includes('Exit Type:')) {
           const match = line.match(/Exit Type:\s+(.+)/);
           if (match) currentTrade.exitType = match[1].trim();
+        } else if (line.includes('Duration:')) {
+          const match = line.match(/Duration:\s+(.+)/);
+          if (match) currentTrade.duration = match[1].trim();
         }
         
         // Check if we've reached end of this trade (empty line)
@@ -506,28 +518,68 @@ function extractSampleTrades(trades: any[]) {
    * Validate and normalize trade data
    * Ensures all required fields exist with proper fallbacks
    */
-  const validateTrade = (trade: any) => {
-    // Calculate pnlPercent if missing
-    const pnlPercent = trade.pnlPercent !== undefined 
-      ? trade.pnlPercent 
-      : trade.entry && trade.exit 
-        ? ((trade.exit - trade.entry) / trade.entry) * 100 * (trade.type === 'SHORT' ? -1 : 1)
-        : (trade.pnl / (trade.entry || 1)) * 100;
+  const validateTrade = (trade: any, avgPrice: number = 68000) => {
+    // Use provided entry/exit if available
+    let entry = trade.entry || trade.entryPrice || 0;
+    let exit = trade.exit || trade.exitPrice || 0;
+    
+    // If entry/exit still missing, estimate from pnl and average price
+    if (!entry && !exit && trade.pnl && avgPrice) {
+      // Estimate position size from PnL (assuming ~0.5% move)
+      const estimatedMove = 0.005; // 0.5% average move
+      const estimatedSize = Math.abs(trade.pnl) / (avgPrice * estimatedMove);
+      
+      // Calculate entry/exit based on trade type
+      if (trade.type === 'BUY' || trade.type === 'LONG') {
+        entry = avgPrice;
+        exit = trade.pnl > 0 
+          ? avgPrice + (Math.abs(trade.pnl) / (trade.size || estimatedSize))
+          : avgPrice - (Math.abs(trade.pnl) / (trade.size || estimatedSize));
+      } else {
+        entry = avgPrice;
+        exit = trade.pnl > 0
+          ? avgPrice - (Math.abs(trade.pnl) / (trade.size || estimatedSize))
+          : avgPrice + (Math.abs(trade.pnl) / (trade.size || estimatedSize));
+      }
+    }
+    
+    // Calculate pnlPercent
+    let pnlPercent = trade.pnlPercent || trade.pnlPct || 0;
+    
+    if (!pnlPercent && entry && exit) {
+      // Calculate from entry/exit
+      pnlPercent = ((exit - entry) / entry) * 100;
+      if (trade.type === 'SHORT' || trade.type === 'SELL') {
+        pnlPercent *= -1; // Invert for SHORT trades
+      }
+    } else if (!pnlPercent && trade.pnl && entry) {
+      // Calculate from PnL and entry
+      const estimatedSize = trade.size || (trade.notional ? trade.notional / entry : 1);
+      pnlPercent = (trade.pnl / (entry * estimatedSize)) * 100;
+    }
     
     return {
       id: trade.id || 0,
       time: trade.time || new Date().toISOString(),
       type: trade.type || 'LONG',
-      entry: trade.entry || 0,
-      exit: trade.exit || trade.entry || 0,
+      entry: entry,
+      exit: exit,
       size: trade.size || 0,
       pnl: trade.pnl || 0,
-      pnlPercent: pnlPercent || 0,
+      pnlPercent: pnlPercent,
       exitType: trade.exitType || 'UNKNOWN',
       duration: trade.duration || '0m',
       icon: trade.pnl > 0 ? '✅' : '❌'
     };
   };
+  
+  // Calculate average price from trades with entry/exit data
+  const tradesWithPrice = trades.filter((t: any) => t.entry || t.entryPrice);
+  const avgPrice = tradesWithPrice.length > 0
+    ? tradesWithPrice.reduce((sum: number, t: any) => sum + (t.entry || t.entryPrice || 0), 0) / tradesWithPrice.length
+    : 68000; // Default fallback for Bitcoin
+  
+  console.log(`💹 Average trade price: $${avgPrice.toFixed(2)} (from ${tradesWithPrice.length} trades with price data)`);
   
   // Separate wins and losses
   const wins = trades.filter(t => t.pnl > 0).sort((a, b) => b.pnl - a.pnl);
@@ -538,31 +590,31 @@ function extractSampleTrades(trades: any[]) {
   
   // Best Win (highest profit)
   if (wins.length > 0) {
-    sampleTrades.bestWin = validateTrade(wins[0]);
+    sampleTrades.bestWin = validateTrade(wins[0], avgPrice);
   }
   
   // Average Win (median of winning trades)
   if (wins.length > 0) {
     const medianIndex = Math.floor(wins.length / 2);
-    sampleTrades.avgWin = validateTrade(wins[medianIndex]);
+    sampleTrades.avgWin = validateTrade(wins[medianIndex], avgPrice);
   }
   
   // Worst Loss (largest loss)
   if (losses.length > 0) {
-    sampleTrades.worstLoss = validateTrade(losses[0]);
+    sampleTrades.worstLoss = validateTrade(losses[0], avgPrice);
   }
   
   // Average Loss (median of losing trades)
   if (losses.length > 0) {
     const medianIndex = Math.floor(losses.length / 2);
-    sampleTrades.avgLoss = validateTrade(losses[medianIndex]);
+    sampleTrades.avgLoss = validateTrade(losses[medianIndex], avgPrice);
   }
   
   // First Trade (strategy entry point)
-  sampleTrades.firstTrade = validateTrade(trades[0]);
+  sampleTrades.firstTrade = validateTrade(trades[0], avgPrice);
   
   // Last Trade (strategy exit point)
-  sampleTrades.lastTrade = validateTrade(trades[trades.length - 1]);
+  sampleTrades.lastTrade = validateTrade(trades[trades.length - 1], avgPrice);
   
   console.log(`📚 Extracted sample trades: ${Object.keys(sampleTrades).length} samples`);
   console.log(`   - Best Win: $${sampleTrades.bestWin?.pnl.toFixed(2) || 0}`);
