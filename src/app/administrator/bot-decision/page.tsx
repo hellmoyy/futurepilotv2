@@ -1839,17 +1839,521 @@ function LearningTab() {
 }
 
 function DecisionsTab() {
+  const [loading, setLoading] = useState(false);
+  const [decisions, setDecisions] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDecision, setSelectedDecision] = useState<any>(null);
+
+  // Filters
+  const [decisionFilter, setDecisionFilter] = useState('all');
+  const [symbolFilter, setSymbolFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
+
+  const fetchDecisions = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+        decision: decisionFilter,
+      });
+
+      if (symbolFilter) params.set('symbol', symbolFilter);
+      if (searchQuery) params.set('search', searchQuery);
+      if (dateFrom) params.set('dateFrom', dateFrom);
+      if (dateTo) params.set('dateTo', dateTo);
+
+      const res = await fetch(`/api/admin/bot-decision/decisions?${params}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setDecisions(data.decisions || []);
+        setPagination(data.pagination || null);
+      } else {
+        setError(data.error || 'Failed to load decisions');
+      }
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportCSV = () => {
+    const params = new URLSearchParams({
+      decision: decisionFilter,
+      export: 'csv',
+    });
+
+    if (symbolFilter) params.set('symbol', symbolFilter);
+    if (searchQuery) params.set('search', searchQuery);
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+
+    window.open(`/api/admin/bot-decision/decisions?${params}`, '_blank');
+  };
+
+  useEffect(() => {
+    fetchDecisions();
+  }, [page, decisionFilter, symbolFilter, searchQuery, dateFrom, dateTo]);
+
+  const getDecisionColor = (decision: string) => {
+    return decision === 'EXECUTE' 
+      ? 'bg-green-500 text-white' 
+      : 'bg-red-500 text-white';
+  };
+
+  const getResultColor = (result: string) => {
+    if (result === 'WIN') return 'text-green-600 font-bold';
+    if (result === 'LOSS') return 'text-red-600 font-bold';
+    return 'text-gray-500';
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <span>📝</span> Decision Log
-      </h2>
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-300">
-          🚧 <strong>Coming Soon:</strong> Real-time decision history with filters (executed/rejected), confidence breakdown, 
-          AI reasoning for each decision, and export to CSV functionality.
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span>📝</span> Decision Log
+          {pagination && (
+            <span className="text-sm font-normal text-gray-500">
+              ({pagination.total} total)
+            </span>
+          )}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportCSV}
+            className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+          >
+            📥 Export CSV
+          </button>
+          <button
+            onClick={fetchDecisions}
+            disabled={loading}
+            className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Decision Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Decision Type
+            </label>
+            <select
+              value={decisionFilter}
+              onChange={(e) => { setDecisionFilter(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="all">All Decisions</option>
+              <option value="EXECUTE">✅ Executed Only</option>
+              <option value="SKIP">⏭️ Skipped Only</option>
+            </select>
+          </div>
+
+          {/* Symbol Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Symbol
+            </label>
+            <input
+              type="text"
+              value={symbolFilter}
+              onChange={(e) => { setSymbolFilter(e.target.value); setPage(1); }}
+              placeholder="e.g., BTCUSDT"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Date From */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Date From
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Date To */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Date To
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Search in Reason
+          </label>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            placeholder="Search by keyword in AI reasoning..."
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+        </div>
+
+        {/* Active Filters */}
+        {(decisionFilter !== 'all' || symbolFilter || searchQuery || dateFrom || dateTo) && (
+          <div className="mt-4 flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Active filters:</span>
+            {decisionFilter !== 'all' && (
+              <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded">
+                Decision: {decisionFilter}
+              </span>
+            )}
+            {symbolFilter && (
+              <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded">
+                Symbol: {symbolFilter}
+              </span>
+            )}
+            {searchQuery && (
+              <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded">
+                Search: "{searchQuery}"
+              </span>
+            )}
+            {(dateFrom || dateTo) && (
+              <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded">
+                Date: {dateFrom || '...'} to {dateTo || '...'}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setDecisionFilter('all');
+                setSymbolFilter('');
+                setSearchQuery('');
+                setDateFrom('');
+                setDateTo('');
+                setPage(1);
+              }}
+              className="text-xs text-red-600 hover:text-red-700 dark:text-red-400"
+            >
+              ✕ Clear All
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Loading / Error */}
+      {loading && <div className="text-sm text-gray-500 dark:text-gray-400">Loading decisions...</div>}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-sm text-red-600 dark:text-red-400">❌ Error: {error}</p>
+        </div>
+      )}
+
+      {/* Decisions List */}
+      <div className="space-y-3">
+        {decisions.length === 0 && !loading && (
+          <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
+            <p className="text-gray-500 dark:text-gray-400">
+              📭 No decisions found with current filters.
+            </p>
+          </div>
+        )}
+
+        {decisions.map((d: any) => (
+          <div 
+            key={d._id} 
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => setSelectedDecision(d)}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(d.timestamp).toLocaleString()}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${getDecisionColor(d.decision)}`}>
+                    {d.decision === 'EXECUTE' ? '✅ EXECUTED' : '⏭️ SKIPPED'}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {d.signal?.symbol} {d.signal?.action}
+                  </span>
+                  {d.userId?.email && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      by {d.userId.email}
+                    </span>
+                  )}
+                </div>
+
+                {/* Confidence Breakdown */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-4 text-sm mb-2">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Final: </span>
+                      <span className="font-bold text-gray-900 dark:text-white">
+                        {(d.confidenceBreakdown?.total * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Technical: </span>
+                      <span>{(d.confidenceBreakdown?.technical * 100).toFixed(1)}%</span>
+                    </div>
+                    {d.confidenceBreakdown?.news !== 0 && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">News: </span>
+                        <span className={d.confidenceBreakdown?.news > 0 ? 'text-green-600' : 'text-red-600'}>
+                          {d.confidenceBreakdown?.news > 0 ? '+' : ''}
+                          {(d.confidenceBreakdown?.news * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reason */}
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  {d.reason}
+                </p>
+
+                {/* Execution Result */}
+                {d.execution && (
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Result: </span>
+                        <span className={getResultColor(d.execution.result)}>
+                          {d.execution.result === 'WIN' ? '🎉 WIN' : d.execution.result === 'LOSS' ? '❌ LOSS' : 'PENDING'}
+                        </span>
+                      </div>
+                      {d.execution.profit && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Profit: </span>
+                          <span className={d.execution.profit > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                            ${d.execution.profit.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {d.execution.executedAt && (
+                        <div className="text-xs text-gray-400">
+                          Executed: {new Date(d.execution.executedAt).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Click to expand indicator */}
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Page {pagination.page} of {pagination.totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={!pagination.hasPrev}
+              className="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              ← Previous
+            </button>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={!pagination.hasNext}
+              className="px-4 py-2 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Decision Detail Modal */}
+      {selectedDecision && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white">� Decision Details</h3>
+                <button 
+                  onClick={() => setSelectedDecision(null)}
+                  className="text-white hover:text-gray-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Timestamp</div>
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {new Date(selectedDecision.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Decision</div>
+                  <div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${getDecisionColor(selectedDecision.decision)}`}>
+                      {selectedDecision.decision}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signal Details */}
+              <div>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-3">📊 Signal Information</h4>
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm text-gray-500">Symbol:</span>
+                      <span className="ml-2 font-medium">{selectedDecision.signal?.symbol}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500">Action:</span>
+                      <span className="ml-2 font-medium">{selectedDecision.signal?.action}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500">Entry:</span>
+                      <span className="ml-2 font-medium">${selectedDecision.signal?.entryPrice}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500">Stop Loss:</span>
+                      <span className="ml-2 font-medium">${selectedDecision.signal?.stopLoss}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500">Take Profit:</span>
+                      <span className="ml-2 font-medium">${selectedDecision.signal?.takeProfit}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500">Technical:</span>
+                      <span className="ml-2 font-medium">
+                        {(selectedDecision.signal?.technicalConfidence * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Confidence Breakdown */}
+              <div>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-3">🎯 Confidence Breakdown</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Technical Confidence</span>
+                    <span className="font-medium">
+                      {(selectedDecision.confidenceBreakdown?.technical * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">News Impact</span>
+                    <span className={`font-medium ${selectedDecision.confidenceBreakdown?.news > 0 ? 'text-green-600' : selectedDecision.confidenceBreakdown?.news < 0 ? 'text-red-600' : ''}`}>
+                      {selectedDecision.confidenceBreakdown?.news > 0 ? '+' : ''}
+                      {(selectedDecision.confidenceBreakdown?.news * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Backtest Impact</span>
+                    <span className={`font-medium ${selectedDecision.confidenceBreakdown?.backtest > 0 ? 'text-green-600' : selectedDecision.confidenceBreakdown?.backtest < 0 ? 'text-red-600' : ''}`}>
+                      {selectedDecision.confidenceBreakdown?.backtest > 0 ? '+' : ''}
+                      {(selectedDecision.confidenceBreakdown?.backtest * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Learning Impact</span>
+                    <span className={`font-medium ${selectedDecision.confidenceBreakdown?.learning > 0 ? 'text-green-600' : selectedDecision.confidenceBreakdown?.learning < 0 ? 'text-red-600' : ''}`}>
+                      {selectedDecision.confidenceBreakdown?.learning > 0 ? '+' : ''}
+                      {(selectedDecision.confidenceBreakdown?.learning * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <span className="font-medium">Final Confidence</span>
+                    <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                      {(selectedDecision.confidenceBreakdown?.total * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Reasoning */}
+              <div>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-3">🤖 AI Reasoning</h4>
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {selectedDecision.reason}
+                  </p>
+                </div>
+              </div>
+
+              {/* Execution Details (if available) */}
+              {selectedDecision.execution && (
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-3">⚡ Execution Details</h4>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Result</span>
+                      <span className={getResultColor(selectedDecision.execution.result)}>
+                        {selectedDecision.execution.result}
+                      </span>
+                    </div>
+                    {selectedDecision.execution.profit && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Profit/Loss</span>
+                        <span className={selectedDecision.execution.profit > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                          ${selectedDecision.execution.profit.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedDecision.execution.executedAt && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Executed At</span>
+                        <span className="text-sm">
+                          {new Date(selectedDecision.execution.executedAt).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
