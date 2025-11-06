@@ -14,7 +14,7 @@
 require('dotenv').config({ path: '.env' });
 
 // Test configuration
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 const ADMIN_TOKEN = process.env.ADMIN_TEST_TOKEN || ''; // Set this after login
 
 // Colors for console output
@@ -271,8 +271,9 @@ async function testHealthCheck() {
       method: 'GET',
     });
     
-    if (!response.ok) {
-      throw new Error('Dev server not responding');
+    // Accept 200, 503 (degraded), or 404
+    if (!response.ok && response.status !== 503 && response.status !== 404) {
+      throw new Error(`Dev server returned ${response.status}`);
     }
     
     log('✅ Dev server is running', 'green');
@@ -383,7 +384,8 @@ async function runTests() {
 async function checkDevServer() {
   try {
     const response = await fetch(`${BASE_URL}/api/health`);
-    return response.ok || response.status === 404; // 404 is OK if health endpoint doesn't exist
+    // Accept 200, 404, or 503 (degraded but running)
+    return response.ok || response.status === 404 || response.status === 503;
   } catch (error) {
     return false;
   }
