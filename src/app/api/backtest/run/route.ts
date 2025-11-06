@@ -378,6 +378,37 @@ function parseBacktestOutput(output: string, period: string) {
     
     console.log(`🎯 Total trades collected: ${results.trades.length}`);
     
+    // Calculate Largest Win/Loss from parsed trades (more accurate than text parsing)
+    if (results.trades.length > 0) {
+      const wins = results.trades.filter((t: any) => t.pnl > 0);
+      const losses = results.trades.filter((t: any) => t.pnl < 0);
+      
+      if (wins.length > 0) {
+        results.largestWin = Math.max(...wins.map((t: any) => t.pnl));
+        console.log(`💰 Largest Win: $${results.largestWin.toFixed(2)} (from ${wins.length} wins)`);
+      }
+      
+      if (losses.length > 0) {
+        results.largestLoss = Math.min(...losses.map((t: any) => t.pnl));
+        console.log(`📉 Largest Loss: $${results.largestLoss.toFixed(2)} (from ${losses.length} losses)`);
+      }
+      
+      // Recalculate win/loss stats from trades
+      results.winningTrades = wins.length;
+      results.losingTrades = losses.length;
+      results.totalTrades = results.trades.length;
+      results.winRate = (wins.length / results.trades.length) * 100;
+      
+      if (wins.length > 0) {
+        results.avgWin = wins.reduce((sum: number, t: any) => sum + t.pnl, 0) / wins.length;
+      }
+      if (losses.length > 0) {
+        results.avgLoss = losses.reduce((sum: number, t: any) => sum + t.pnl, 0) / losses.length;
+      }
+      
+      console.log(`📊 Stats from trades: ${wins.length} wins, ${losses.length} losses, ${results.winRate.toFixed(1)}% win rate`);
+    }
+    
     // Calculate max drawdown if not provided (estimate from largest loss)
     if (results.maxDrawdown === 0 && results.largestLoss < 0) {
       results.maxDrawdown = Math.abs((results.largestLoss / results.initialBalance) * 100);
