@@ -1966,6 +1966,9 @@ export default function SignalCenterPage() {
                                   #
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  Token
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Time
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1994,17 +1997,40 @@ export default function SignalCenterPage() {
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                               {backtestResults.trades
                                 .slice((tradePage - 1) * tradesPerPage, tradePage * tradesPerPage)
-                                .map((trade: any, index: number) => (
+                                .map((trade: any, index: number) => {
+                                  // Format time: "2025-11-06 14:23:15" or full ISO if available
+                                  let formattedTime = 'N/A';
+                                  if (trade.time && trade.time !== 'N/A') {
+                                    try {
+                                      // Try to parse and format the time
+                                      const timeStr = trade.time.replace(' ', 'T');
+                                      const date = new Date(timeStr);
+                                      if (!isNaN(date.getTime())) {
+                                        formattedTime = date.toISOString()
+                                          .replace('T', ' ')
+                                          .substring(0, 19); // "2025-11-06 14:23:15"
+                                      } else {
+                                        formattedTime = trade.time.substring(0, 19);
+                                      }
+                                    } catch (e) {
+                                      formattedTime = trade.time.substring(0, 19) || 'N/A';
+                                    }
+                                  }
+                                  
+                                  return (
                                 <tr key={trade.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     {trade.icon} #{trade.id}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 font-mono">
-                                    {trade.time?.substring(0, 16) || 'N/A'}
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-orange-600 dark:text-orange-400">
+                                    BTCUSDT
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 font-mono">
+                                    {formattedTime}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                      trade.type === 'BUY' 
+                                      trade.type === 'BUY' || trade.type === 'LONG'
                                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                         : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                     }`}>
@@ -2038,7 +2064,8 @@ export default function SignalCenterPage() {
                                     {trade.exitType}
                                   </td>
                                 </tr>
-                              ))}
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
