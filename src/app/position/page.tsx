@@ -414,6 +414,7 @@ export default function PositionPage() {
     calmarRatio: calculateCalmarRatio(),
     streaks: calculateStreaks(),
     totalFees: calculateTotalFees(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [trades]); // Only recalculate when trades change
 
   if (loading) {

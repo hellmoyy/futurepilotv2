@@ -182,6 +182,7 @@ export default function DashboardPage() {
     const interval = setInterval(fetchPrices, 10000); // Update every 10 seconds (aggregated = safe)
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

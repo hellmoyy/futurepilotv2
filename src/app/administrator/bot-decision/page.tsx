@@ -268,9 +268,9 @@ function OverviewTab() {
           </div>
         </div>
 
-        {/* Today's Decisions */}
+        {/* Today&apos;s Decisions */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
-          <div className="text-sm font-medium opacity-90 mb-1">Today's Decisions</div>
+          <div className="text-sm font-medium opacity-90 mb-1">Today&apos;s Decisions</div>
           <div className="text-3xl font-bold">{stats.todayDecisions}</div>
           <div className="text-xs opacity-75 mt-2">
             {stats.todayExecuted} executed • {stats.todaySkipped} skipped
@@ -527,6 +527,7 @@ function UserBotsTab() {
 
   useEffect(() => {
     fetchUserBots();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter, searchQuery]);
 
   const fetchUserBots = async () => {
@@ -1408,7 +1409,7 @@ function NewsTab() {
         {news.length === 0 && !loading && (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
             <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-3">
-              📭 No news in database. Click "Fetch from CryptoNews" to sync latest articles.
+              📭 No news in database. Click &quot;Fetch from CryptoNews&quot; to sync latest articles.
             </p>
             <button
               onClick={syncNews}
@@ -1492,6 +1493,7 @@ function NewsTab() {
               {/* Image */}
               {n.imageUrl && (
                 <div className="flex-shrink-0 w-40 h-28 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img 
                     src={n.imageUrl} 
                     alt={n.title} 
@@ -1555,10 +1557,12 @@ function LearningTab() {
   useEffect(() => {
     fetchStats();
     fetchPatterns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchPatterns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, sortBy]);
 
   const getPatternTypeColor = (type: string) => {
@@ -1900,6 +1904,7 @@ function DecisionsTab() {
 
   useEffect(() => {
     fetchDecisions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, decisionFilter, symbolFilter, searchQuery, dateFrom, dateTo]);
 
   const getDecisionColor = (decision: string) => {
@@ -2033,7 +2038,7 @@ function DecisionsTab() {
             )}
             {searchQuery && (
               <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded">
-                Search: "{searchQuery}"
+                Search: &quot;{searchQuery}&quot;
               </span>
             )}
             {(dateFrom || dateTo) && (
