@@ -141,6 +141,16 @@ export async function POST(req: NextRequest) {
     }
     
     console.log('✅ Backtest completed successfully');
+    console.log(`📊 Parsed ${results.trades?.length || 0} trades from backtest output`);
+    
+    // Debug: Log first 2000 chars of output to see structure
+    if (results.trades?.length === 0) {
+      console.log('⚠️ No trades parsed! Output sample (first 2000 chars):');
+      console.log(output.substring(0, 2000));
+      console.log('...');
+      console.log('Last 500 chars:');
+      console.log(output.substring(output.length - 500));
+    }
     
     return NextResponse.json({
       success: true,
@@ -204,25 +214,27 @@ function parseBacktestOutput(output: string, period: string) {
     
     // Extract values from output (matching actual script format)
     for (const line of lines) {
-      // Detect trade log section
-      if (line.includes('DETAILED TRADE LOG')) {
+      // Detect trade log section (more flexible matching)
+      if (line.includes('DETAILED TRADE LOG') || line.includes('📋')) {
         inTradeLog = true;
+        console.log('✅ Found DETAILED TRADE LOG section');
         continue;
       }
       
-      // Parse individual trades
-      if (inTradeLog && line.match(/^[✅❌]\s+Trade\s+#/)) {
+      // Parse individual trades (more flexible pattern)
+      if (inTradeLog && (line.match(/^[✅❌]\s+Trade\s+#/) || line.match(/Trade\s+#\d+/))) {
         // Start new trade
         if (currentTrade) {
           results.trades.push(currentTrade);
         }
         
-        const tradeMatch = line.match(/Trade #(\d+) - (\w+)/);
+        const tradeMatch = line.match(/Trade\s+#(\d+)\s*-?\s*(\w+)?/);
         currentTrade = {
           id: tradeMatch ? parseInt(tradeMatch[1]) : results.trades.length + 1,
-          type: tradeMatch ? tradeMatch[2] : 'UNKNOWN',
-          icon: line.startsWith('✅') ? '✅' : '❌',
+          type: tradeMatch && tradeMatch[2] ? tradeMatch[2] : 'UNKNOWN',
+          icon: line.includes('✅') || line.startsWith('✅') ? '✅' : '❌',
         };
+        console.log(`📝 Parsing trade #${currentTrade.id}`);
         continue;
       }
       

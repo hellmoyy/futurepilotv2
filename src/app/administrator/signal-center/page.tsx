@@ -476,6 +476,8 @@ export default function SignalCenterPage() {
       if (data.success) {
         console.log('✅ Backtest completed:', data.results);
         console.log('📊 Config used:', data.config); // Log which config was used
+        console.log('📋 Trades received:', data.results.trades?.length || 0, 'trades');
+        console.log('📝 First 3 trades:', data.results.trades?.slice(0, 3));
         setBacktestResults(data.results);
         setTradePage(1); // Reset to first page
       } else {
