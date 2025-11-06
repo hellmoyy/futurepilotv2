@@ -225,6 +225,12 @@ function parseBacktestOutput(output: string, period: string) {
       // Match: "✅ Trade #1 - LONG" or "❌ Trade #2 - SHORT"
       if (inTradeLog) {
         const trimmed = line.trim();
+        
+        // Debug: Log every non-empty line in trade log section
+        if (trimmed && !trimmed.startsWith('=')) {
+          console.log(`🔍 Line: "${trimmed.substring(0, 80)}"`);
+        }
+        
         if (trimmed.match(/^[✅❌].+Trade\s+#\d+/) || trimmed.match(/Trade\s+#\d+\s*-\s*(LONG|SHORT|BUY|SELL)/i)) {
           // Start new trade
           if (currentTrade) {
