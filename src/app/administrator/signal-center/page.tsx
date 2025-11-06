@@ -68,6 +68,11 @@ export default function SignalCenterPage() {
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestResults, setBacktestResults] = useState<any>(null);
   
+  // Multi-symbol backtest state
+  const [multiSymbolResults, setMultiSymbolResults] = useState<{[symbol: string]: any}>({});
+  const [activeSymbolTab, setActiveSymbolTab] = useState<string>('BTCUSDT');
+  const [backtestProgress, setBacktestProgress] = useState<{current: number, total: number}>({current: 0, total: 0});
+  
   // Pagination for trade list
   const [tradePage, setTradePage] = useState(1);
   const tradesPerPage = 10;
@@ -457,43 +462,68 @@ export default function SignalCenterPage() {
     setBacktestLoading(true);
     setError('');
     setBacktestResults(null);
+    setMultiSymbolResults({});
     
     // Get symbols from configuration
     const symbols = configData?.symbols || ['BTCUSDT'];
-    const primarySymbol = symbols[0]; // Use first symbol for now
+    setBacktestProgress({ current: 0, total: symbols.length });
     
     try {
-      console.log(`🧪 Running backtest for ${primarySymbol} ${backtestPeriod} with active config...`);
-      console.log(`📊 Configuration symbols: ${symbols.join(', ')}`);
-      const res = await fetch('/api/backtest/run', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          symbol: primarySymbol,
-          period: backtestPeriod,
-          balance: 10000,
-          useActiveConfig: true, // ✅ Use configuration from Configuration tab
-        }),
-      });
+      console.log(`🧪 Running backtest for ${symbols.length} symbol(s): ${symbols.join(', ')}`);
       
-      const data = await res.json();
+      const results: {[symbol: string]: any} = {};
       
-      if (data.success) {
-        console.log('✅ Backtest completed:', data.results);
-        console.log('📊 Config used:', data.config); // Log which config was used
-        console.log('📋 Trades received:', data.results.trades?.length || 0, 'trades');
-        console.log('📝 First 3 trades:', data.results.trades?.slice(0, 3));
-        setBacktestResults(data.results);
-        setTradePage(1); // Reset to first page
-      } else {
-        setError(data.error || 'Failed to run backtest');
+      // Run backtest for each symbol sequentially
+      for (let i = 0; i < symbols.length; i++) {
+        const symbol = symbols[i];
+        setBacktestProgress({ current: i + 1, total: symbols.length });
+        
+        console.log(`📊 [${i + 1}/${symbols.length}] Running backtest for ${symbol}...`);
+        
+        const res = await fetch('/api/backtest/run', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol: symbol,
+            period: backtestPeriod,
+            balance: 10000,
+            useActiveConfig: true, // ✅ Use configuration from Configuration tab
+          }),
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          console.log(`✅ [${i + 1}/${symbols.length}] ${symbol} completed: ${data.results.trades?.length || 0} trades`);
+          results[symbol] = data.results;
+        } else {
+          console.error(`❌ [${i + 1}/${symbols.length}] ${symbol} failed:`, data.error);
+          results[symbol] = { error: data.error || 'Failed to run backtest' };
+        }
       }
+      
+      // Set results
+      setMultiSymbolResults(results);
+      
+      // Set active tab to first symbol
+      setActiveSymbolTab(symbols[0]);
+      
+      // Set backtestResults to first symbol for backward compatibility
+      setBacktestResults(results[symbols[0]]);
+      
+      // Reset pagination
+      setTradePage(1);
+      
+      console.log(`🎉 All backtests completed successfully!`);
+      
     } catch (err: any) {
-      setError(err.message);
+      console.error('❌ Backtest error:', err);
+      setError(err.message || 'Failed to run backtest');
     } finally {
       setBacktestLoading(false);
+      setBacktestProgress({ current: 0, total: 0 });
     }
   };
   
@@ -1844,7 +1874,11 @@ export default function SignalCenterPage() {
                     {backtestLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Running Backtest ({backtestPeriod.toUpperCase()})...
+                        {backtestProgress.total > 0 ? (
+                          <>Running Backtest ({backtestProgress.current}/{backtestProgress.total})...</>
+                        ) : (
+                          <>Running Backtest ({backtestPeriod.toUpperCase()})...</>
+                        )}
                       </>
                     ) : (
                       <>
@@ -1853,12 +1887,94 @@ export default function SignalCenterPage() {
                     )}
                   </button>
                   
+                  {/* Progress Bar for Multi-Symbol */}
+                  {backtestLoading && backtestProgress.total > 1 && (
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                        <span>Processing {(configData?.symbols || [])[backtestProgress.current - 1] || '...'}</span>
+                        <span>{Math.round((backtestProgress.current / backtestProgress.total) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(backtestProgress.current / backtestProgress.total) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {error && (
                     <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-300">
                       ❌ {error}
                     </div>
                   )}
                 </div>
+                
+                {/* Symbol Tabs (Multi-Symbol Results) */}
+                {Object.keys(multiSymbolResults).length > 1 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      📊 Select Trading Pair to View Results:
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.keys(multiSymbolResults).map((symbol) => {
+                        const result = multiSymbolResults[symbol];
+                        const hasError = result.error;
+                        const isActive = activeSymbolTab === symbol;
+                        
+                        return (
+                          <button
+                            key={symbol}
+                            onClick={() => {
+                              setActiveSymbolTab(symbol);
+                              setBacktestResults(result);
+                              setTradePage(1); // Reset pagination
+                            }}
+                            className={`
+                              px-4 py-2 rounded-lg font-medium text-sm transition-all
+                              ${isActive 
+                                ? 'bg-blue-500 text-white shadow-lg' 
+                                : hasError
+                                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              }
+                            `}
+                          >
+                            <span className="mr-2">{hasError ? '❌' : '✅'}</span>
+                            {symbol.replace('USDT', '')}
+                            {!hasError && result.roi && (
+                              <span className={`ml-2 text-xs ${isActive ? 'text-white' : 'text-green-600 dark:text-green-400'}`}>
+                                +{result.roi.toFixed(0)}%
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Comparison Summary */}
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {Object.entries(multiSymbolResults).map(([symbol, result]: [string, any]) => {
+                          if (result.error) return null;
+                          return (
+                            <div key={symbol} className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                {symbol.replace('USDT', '')}
+                              </div>
+                              <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                                +{result.roi?.toFixed(0) || 0}%
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-500">
+                                {result.totalTrades || 0} trades
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Backtest Results */}
                 {backtestResults && (
@@ -1867,7 +1983,11 @@ export default function SignalCenterPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-semibold text-green-900 dark:text-green-200 mb-2">
-                            ✅ Backtest Complete
+                            ✅ Backtest Complete {Object.keys(multiSymbolResults).length > 0 && (
+                              <span className="ml-2 px-2 py-1 bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded text-xs">
+                                {activeSymbolTab.replace('USDT', '')}
+                              </span>
+                            )}
                           </h3>
                           <p className="text-sm text-green-800 dark:text-green-300">
                             Strategy tested with {backtestResults.totalTrades} trades over {backtestResults.period}
@@ -2174,7 +2294,7 @@ export default function SignalCenterPage() {
                                     {trade.icon} #{trade.id}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-orange-600 dark:text-orange-400">
-                                    {(configData?.symbols || ['BTCUSDT'])[0]}
+                                    {activeSymbolTab.replace('USDT', '')}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 font-mono">
                                     {formattedTime}
