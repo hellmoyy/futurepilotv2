@@ -84,9 +84,24 @@ export interface ILearningPattern extends Document {
   
   createdAt: Date;
   updatedAt: Date;
+  
+  // Instance methods
+  recordOccurrence(result: 'WIN' | 'LOSS', profit: number): Promise<ILearningPattern>;
+  recordMatch(avoided?: boolean): Promise<ILearningPattern>;
+  recordAvoidanceSuccess(): Promise<ILearningPattern>;
+  matchesConditions(marketConditions: any): boolean;
 }
 
-const LearningPatternSchema = new Schema<ILearningPattern>(
+// Interface for LearningPattern Model (static methods)
+export interface ILearningPatternModel extends Model<ILearningPattern> {
+  getByUser(userId: mongoose.Types.ObjectId, options?: any): Promise<ILearningPattern[]>;
+  getForDecision(userId: mongoose.Types.ObjectId, marketConditions: any): Promise<ILearningPattern[]>;
+  getTopLossPatterns(userId: mongoose.Types.ObjectId, limit?: number): Promise<ILearningPattern[]>;
+  getTopWinPatterns(userId: mongoose.Types.ObjectId, limit?: number): Promise<ILearningPattern[]>;
+  getStats(userId?: mongoose.Types.ObjectId): Promise<any>;
+}
+
+const LearningPatternSchema = new Schema<ILearningPattern, ILearningPatternModel>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -520,7 +535,7 @@ LearningPatternSchema.statics.getStats = async function(
   };
 };
 
-// Export model
-const LearningPattern: Model<ILearningPattern> = mongoose.models.LearningPattern || mongoose.model<ILearningPattern>('LearningPattern', LearningPatternSchema);
+// Export model with correct typing
+const LearningPattern: ILearningPatternModel = (mongoose.models.LearningPattern as ILearningPatternModel) || mongoose.model<ILearningPattern, ILearningPatternModel>('LearningPattern', LearningPatternSchema);
 
 export default LearningPattern;

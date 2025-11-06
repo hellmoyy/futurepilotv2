@@ -11,6 +11,14 @@ export interface IUserBot extends Document {
   userId: mongoose.Types.ObjectId;
   status: 'active' | 'paused' | 'stopped';
   
+  // Instance methods
+  updateBalance(binanceBalance: number, gasFeeBalance: number, availableMargin: number, usedMargin: number): Promise<IUserBot>;
+  recordSignalReceived(): Promise<IUserBot>;
+  recordSignalExecuted(): Promise<IUserBot>;
+  recordSignalRejected(): Promise<IUserBot>;
+  recordTradeResult(result: 'WIN' | 'LOSS', profit: number): Promise<IUserBot>;
+  canTrade(): { allowed: boolean; reason?: string };
+  
   // Balance tracking (updated periodically)
   lastBalanceCheck: {
     timestamp: Date;
@@ -78,7 +86,14 @@ export interface IUserBot extends Document {
   updatedAt: Date;
 }
 
-const UserBotSchema = new Schema<IUserBot>(
+// Interface for UserBot Model (static methods)
+export interface IUserBotModel extends Model<IUserBot> {
+  getActiveBots(): Promise<IUserBot[]>;
+  getBotsWithLowBalance(threshold?: number): Promise<IUserBot[]>;
+  getTopPerformers(limit?: number): Promise<IUserBot[]>;
+}
+
+const UserBotSchema = new Schema<IUserBot, IUserBotModel>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -292,7 +307,7 @@ UserBotSchema.statics.getTopPerformers = async function(limit: number = 10) {
     .populate('userId', 'email username');
 };
 
-// Export model
-const UserBot: Model<IUserBot> = mongoose.models.UserBot || mongoose.model<IUserBot>('UserBot', UserBotSchema);
+// Export model with correct typing
+const UserBot: IUserBotModel = (mongoose.models.UserBot as IUserBotModel) || mongoose.model<IUserBot, IUserBotModel>('UserBot', UserBotSchema);
 
 export default UserBot;

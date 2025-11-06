@@ -100,9 +100,20 @@ export interface IAIDecision extends Document {
   timestamp: Date;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Instance methods
+  recordExecution(positionId: string, entryPrice: number, size: number, leverage: number, marginUsed: number): Promise<IAIDecision>;
+  recordResult(result: 'WIN' | 'LOSS', exitPrice: number, profit: number, exitType: string): Promise<IAIDecision>;
 }
 
-const AIDecisionSchema = new Schema<IAIDecision>(
+// Interface for AIDecision Model (static methods)
+export interface IAIDecisionModel extends Model<IAIDecision> {
+  getByUser(userId: mongoose.Types.ObjectId, options?: any): Promise<IAIDecision[]>;
+  getTodayDecisions(): Promise<IAIDecision[]>;
+  getStats(userId?: mongoose.Types.ObjectId, period?: { start: Date; end: Date }): Promise<any>;
+}
+
+const AIDecisionSchema = new Schema<IAIDecision, IAIDecisionModel>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -364,7 +375,7 @@ AIDecisionSchema.statics.getStats = async function(
   };
 };
 
-// Export model
-const AIDecision: Model<IAIDecision> = mongoose.models.AIDecision || mongoose.model<IAIDecision>('AIDecision', AIDecisionSchema);
+// Export model with correct typing
+const AIDecision: IAIDecisionModel = (mongoose.models.AIDecision as IAIDecisionModel) || mongoose.model<IAIDecision, IAIDecisionModel>('AIDecision', AIDecisionSchema);
 
 export default AIDecision;

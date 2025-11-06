@@ -49,9 +49,21 @@ export interface INewsEvent extends Document {
   
   createdAt: Date;
   updatedAt: Date;
+  
+  // Instance methods
+  incrementImpact(): Promise<INewsEvent>;
 }
 
-const NewsEventSchema = new Schema<INewsEvent>(
+// Interface for NewsEvent Model (static methods)
+export interface INewsEventModel extends Model<INewsEvent> {
+  calculateSentimentLabel(sentiment: number): string;
+  getRecentNews(options?: any): Promise<INewsEvent[]>;
+  getForDecision(symbol: string, hoursBack?: number): Promise<INewsEvent[]>;
+  getAggregateSentiment(symbol?: string, hoursBack?: number): Promise<any>;
+  getStats(period?: { start: Date; end: Date }): Promise<any>;
+}
+
+const NewsEventSchema = new Schema<INewsEvent, INewsEventModel>(
   {
     title: {
       type: String,
@@ -401,7 +413,7 @@ NewsEventSchema.statics.getStats = async function(period?: { start: Date; end: D
   };
 };
 
-// Export model
-const NewsEvent: Model<INewsEvent> = mongoose.models.NewsEvent || mongoose.model<INewsEvent>('NewsEvent', NewsEventSchema);
+// Export model with correct typing
+const NewsEvent: INewsEventModel = (mongoose.models.NewsEvent as INewsEventModel) || mongoose.model<INewsEvent, INewsEventModel>('NewsEvent', NewsEventSchema);
 
 export default NewsEvent;
