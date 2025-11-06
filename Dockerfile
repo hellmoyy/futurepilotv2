@@ -38,6 +38,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
+# Copy backtest folder for API backtest execution
+COPY --from=builder /app/backtest ./backtest
+
 # Verify .next directory exists before starting
 RUN ls -la .next/prerender-manifest.json
 
