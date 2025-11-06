@@ -222,20 +222,24 @@ function parseBacktestOutput(output: string, period: string) {
       }
       
       // Parse individual trades (more flexible pattern)
-      if (inTradeLog && (line.match(/^[✅❌]\s+Trade\s+#/) || line.match(/Trade\s+#\d+/))) {
-        // Start new trade
-        if (currentTrade) {
-          results.trades.push(currentTrade);
+      // Match: "✅ Trade #1 - LONG" or "❌ Trade #2 - SHORT"
+      if (inTradeLog) {
+        const trimmed = line.trim();
+        if (trimmed.match(/^[✅❌].+Trade\s+#\d+/) || trimmed.match(/Trade\s+#\d+\s*-\s*(LONG|SHORT|BUY|SELL)/i)) {
+          // Start new trade
+          if (currentTrade) {
+            results.trades.push(currentTrade);
+          }
+          
+          const tradeMatch = trimmed.match(/Trade\s+#(\d+)\s*-\s*(\w+)/);
+          currentTrade = {
+            id: tradeMatch ? parseInt(tradeMatch[1]) : results.trades.length + 1,
+            type: tradeMatch && tradeMatch[2] ? tradeMatch[2].toUpperCase() : 'UNKNOWN',
+            icon: trimmed.includes('✅') ? '✅' : '❌',
+          };
+          console.log(`📝 Parsing trade #${currentTrade.id} - ${currentTrade.type}`);
+          continue;
         }
-        
-        const tradeMatch = line.match(/Trade\s+#(\d+)\s*-?\s*(\w+)?/);
-        currentTrade = {
-          id: tradeMatch ? parseInt(tradeMatch[1]) : results.trades.length + 1,
-          type: tradeMatch && tradeMatch[2] ? tradeMatch[2] : 'UNKNOWN',
-          icon: line.includes('✅') || line.startsWith('✅') ? '✅' : '❌',
-        };
-        console.log(`📝 Parsing trade #${currentTrade.id}`);
-        continue;
       }
       
       // Parse trade details
@@ -361,6 +365,14 @@ function parseBacktestOutput(output: string, period: string) {
         }
       }
     }
+    
+    // Push the last trade if exists
+    if (currentTrade && currentTrade.exitType) {
+      results.trades.push(currentTrade);
+      console.log(`✅ Pushed final trade #${currentTrade.id}`);
+    }
+    
+    console.log(`🎯 Total trades collected: ${results.trades.length}`);
     
     // Calculate max drawdown if not provided (estimate from largest loss)
     if (results.maxDrawdown === 0 && results.largestLoss < 0) {
