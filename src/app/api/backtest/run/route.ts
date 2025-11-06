@@ -502,6 +502,33 @@ function extractSampleTrades(trades: any[]) {
     return {};
   }
   
+  /**
+   * Validate and normalize trade data
+   * Ensures all required fields exist with proper fallbacks
+   */
+  const validateTrade = (trade: any) => {
+    // Calculate pnlPercent if missing
+    const pnlPercent = trade.pnlPercent !== undefined 
+      ? trade.pnlPercent 
+      : trade.entry && trade.exit 
+        ? ((trade.exit - trade.entry) / trade.entry) * 100 * (trade.type === 'SHORT' ? -1 : 1)
+        : (trade.pnl / (trade.entry || 1)) * 100;
+    
+    return {
+      id: trade.id || 0,
+      time: trade.time || new Date().toISOString(),
+      type: trade.type || 'LONG',
+      entry: trade.entry || 0,
+      exit: trade.exit || trade.entry || 0,
+      size: trade.size || 0,
+      pnl: trade.pnl || 0,
+      pnlPercent: pnlPercent || 0,
+      exitType: trade.exitType || 'UNKNOWN',
+      duration: trade.duration || '0m',
+      icon: trade.pnl > 0 ? '✅' : '❌'
+    };
+  };
+  
   // Separate wins and losses
   const wins = trades.filter(t => t.pnl > 0).sort((a, b) => b.pnl - a.pnl);
   const losses = trades.filter(t => t.pnl < 0).sort((a, b) => a.pnl - b.pnl);
@@ -511,37 +538,45 @@ function extractSampleTrades(trades: any[]) {
   
   // Best Win (highest profit)
   if (wins.length > 0) {
-    sampleTrades.bestWin = wins[0];
+    sampleTrades.bestWin = validateTrade(wins[0]);
   }
   
   // Average Win (median of winning trades)
   if (wins.length > 0) {
     const medianIndex = Math.floor(wins.length / 2);
-    sampleTrades.avgWin = wins[medianIndex];
+    sampleTrades.avgWin = validateTrade(wins[medianIndex]);
   }
   
   // Worst Loss (largest loss)
   if (losses.length > 0) {
-    sampleTrades.worstLoss = losses[0];
+    sampleTrades.worstLoss = validateTrade(losses[0]);
   }
   
   // Average Loss (median of losing trades)
   if (losses.length > 0) {
     const medianIndex = Math.floor(losses.length / 2);
-    sampleTrades.avgLoss = losses[medianIndex];
+    sampleTrades.avgLoss = validateTrade(losses[medianIndex]);
   }
   
   // First Trade (strategy entry point)
-  sampleTrades.firstTrade = trades[0];
+  sampleTrades.firstTrade = validateTrade(trades[0]);
   
   // Last Trade (strategy exit point)
-  sampleTrades.lastTrade = trades[trades.length - 1];
+  sampleTrades.lastTrade = validateTrade(trades[trades.length - 1]);
   
   console.log(`📚 Extracted sample trades: ${Object.keys(sampleTrades).length} samples`);
-  console.log(`   - Best Win: $${sampleTrades.bestWin?.pnl || 0}`);
-  console.log(`   - Avg Win: $${sampleTrades.avgWin?.pnl || 0}`);
-  console.log(`   - Worst Loss: $${sampleTrades.worstLoss?.pnl || 0}`);
-  console.log(`   - Avg Loss: $${sampleTrades.avgLoss?.pnl || 0}`);
+  console.log(`   - Best Win: $${sampleTrades.bestWin?.pnl.toFixed(2) || 0}`);
+  console.log(`   - Avg Win: $${sampleTrades.avgWin?.pnl.toFixed(2) || 0}`);
+  console.log(`   - Worst Loss: $${sampleTrades.worstLoss?.pnl.toFixed(2) || 0}`);
+  console.log(`   - Avg Loss: $${sampleTrades.avgLoss?.pnl.toFixed(2) || 0}`);
+  
+  // Debug: Check all required fields
+  for (const [key, trade] of Object.entries(sampleTrades)) {
+    const t = trade as any;
+    if (!t.entry || !t.exit || t.pnlPercent === undefined) {
+      console.warn(`⚠️ ${key} missing fields: entry=${t.entry}, exit=${t.exit}, pnlPercent=${t.pnlPercent}`);
+    }
+  }
   
   return sampleTrades;
 }
