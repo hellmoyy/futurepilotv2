@@ -64,6 +64,7 @@ export default function SignalCenterPage() {
   // Backtest state
   const [backtestPeriod, setBacktestPeriod] = useState<'1m' | '2m' | '3m'>('1m');
   const [backtestSymbol, setBacktestSymbol] = useState<string>('BTCUSDT');
+  const [backtestTimeframes, setBacktestTimeframes] = useState<string[]>(['1m', '3m', '5m']);
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestResults, setBacktestResults] = useState<any>(null);
   
@@ -1725,6 +1726,58 @@ export default function SignalCenterPage() {
                         </div>
                       </button>
                     ))}
+                  </div>
+                </div>
+                
+                {/* Timeframe Selector */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Select Timeframes (Multi-TF Strategy)</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Select multiple timeframes for triple confirmation strategy. Minimum 1 timeframe required.
+                  </p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d'].map((tf) => {
+                      const isSelected = backtestTimeframes.includes(tf);
+                      return (
+                        <label
+                          key={tf}
+                          className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition ${
+                            isSelected
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setBacktestTimeframes([...backtestTimeframes, tf]);
+                              } else {
+                                // Ensure at least 1 timeframe
+                                if (backtestTimeframes.length > 1) {
+                                  setBacktestTimeframes(backtestTimeframes.filter(t => t !== tf));
+                                }
+                              }
+                            }}
+                            className="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                          />
+                          <div className={`font-medium text-sm ${
+                            isSelected
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {tf}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      💡 <strong>Selected Timeframes:</strong> {backtestTimeframes.join(' + ')} 
+                      {backtestTimeframes.length > 1 && ` (${backtestTimeframes.length}-way confirmation)`}
+                    </p>
                   </div>
                 </div>
                 
