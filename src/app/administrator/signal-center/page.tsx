@@ -58,7 +58,7 @@ export default function SignalCenterPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'active' | 'history' | 'config' | 'backtest'>('active');
+  const [selectedTab, setSelectedTab] = useState<'active' | 'history' | 'config' | 'backtest' | 'analytics'>('active');
   const [sseConnected, setSseConnected] = useState(false);
   
   // Backtest state
@@ -79,6 +79,12 @@ export default function SignalCenterPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historySummary, setHistorySummary] = useState<any>(null);
   const [selectedHistoryResult, setSelectedHistoryResult] = useState<any>(null);
+  
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<number>(30);
+  const [analyticsSymbol, setAnalyticsSymbol] = useState<string>('all');
   
   // Pagination for trade list
   const [tradePage, setTradePage] = useState(1);
@@ -593,6 +599,31 @@ export default function SignalCenterPage() {
     }
   }, [backtestView, selectedTab]);
   
+  // Fetch analytics data
+  const fetchAnalytics = async (period?: number, symbol?: string) => {
+    setAnalyticsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('days', (period || analyticsPeriod).toString());
+      if (symbol && symbol !== 'all') params.append('symbol', symbol);
+      
+      const res = await fetch(`/api/backtest/analytics?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setAnalyticsData(data.analytics);
+        console.log(`📊 Loaded analytics for ${data.analytics.summary.totalBacktests} backtests`);
+      } else {
+        setError(data.error || 'Failed to fetch analytics');
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to fetch analytics:', err);
+      setError(err.message || 'Failed to fetch analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+  
   // Format uptime
   const formatUptime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -774,6 +805,19 @@ export default function SignalCenterPage() {
                 }`}
               >
                 Backtest
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTab('analytics');
+                  if (!analyticsData) fetchAnalytics();
+                }}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  selectedTab === 'analytics'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                📊 Analytics
               </button>
             </nav>
           </div>
@@ -2642,6 +2686,284 @@ export default function SignalCenterPage() {
             )}
           </div>
         </div>
+        
+        {/* Analytics Tab */}
+        {selectedTab === 'analytics' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <span>📊</span> Performance Analytics & Insights
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Analyze backtest performance trends, compare strategies, and discover patterns to optimize your trading strategy.
+              </p>
+            </div>
+            
+            {/* Filters */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <div className="flex gap-4 items-center">
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">Time Period</label>
+                  <select
+                    value={analyticsPeriod}
+                    onChange={(e) => {
+                      const period = parseInt(e.target.value);
+                      setAnalyticsPeriod(period);
+                      fetchAnalytics(period, analyticsSymbol);
+                    }}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value={7}>Last 7 Days</option>
+                    <option value={14}>Last 14 Days</option>
+                    <option value={30}>Last 30 Days</option>
+                    <option value={60}>Last 60 Days</option>
+                    <option value={90}>Last 90 Days</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">Symbol Filter</label>
+                  <select
+                    value={analyticsSymbol}
+                    onChange={(e) => {
+                      setAnalyticsSymbol(e.target.value);
+                      fetchAnalytics(analyticsPeriod, e.target.value);
+                    }}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="all">All Symbols</option>
+                    <option value="BTCUSDT">BTC</option>
+                    <option value="ETHUSDT">ETH</option>
+                    <option value="BNBUSDT">BNB</option>
+                    <option value="SOLUSDT">SOL</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={() => fetchAnalytics()}
+                  disabled={analyticsLoading}
+                  className="mt-6 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+                >
+                  {analyticsLoading ? '🔄 Loading...' : '🔄 Refresh'}
+                </button>
+              </div>
+            </div>
+            
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              </div>
+            ) : !analyticsData ? (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-12 text-center">
+                <div className="text-6xl mb-4">📊</div>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                  No Analytics Data
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Run some backtests first to generate analytics
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg shadow p-4 border border-green-200 dark:border-green-800">
+                    <div className="text-xs text-green-700 dark:text-green-400 mb-1">Average ROI</div>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      +{analyticsData.summary.avgROI.toFixed(0)}%
+                    </div>
+                    <div className="text-xs text-green-600 dark:text-green-500 mt-1">
+                      Best: +{analyticsData.summary.bestROI.toFixed(0)}%
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg shadow p-4 border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs text-blue-700 dark:text-blue-400 mb-1">Avg Win Rate</div>
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {analyticsData.summary.avgWinRate.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-blue-600 dark:text-blue-500 mt-1">
+                      {analyticsData.summary.totalBacktests} tests
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg shadow p-4 border border-purple-200 dark:border-purple-800">
+                    <div className="text-xs text-purple-700 dark:text-purple-400 mb-1">Profit Factor</div>
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {analyticsData.summary.avgProfitFactor.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-purple-600 dark:text-purple-500 mt-1">
+                      {analyticsData.summary.totalTrades} trades
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg shadow p-4 border border-orange-200 dark:border-orange-800">
+                    <div className="text-xs text-orange-700 dark:text-orange-400 mb-1">Risk/Reward</div>
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                      {analyticsData.summary.avgRiskReward.toFixed(2)}:1
+                    </div>
+                    <div className="text-xs text-orange-600 dark:text-orange-500 mt-1">
+                      Consistency: {analyticsData.summary.roiConsistency.toFixed(0)}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* AI Insights */}
+                {analyticsData.insights && analyticsData.insights.length > 0 && (
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+                    <h4 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-4 flex items-center gap-2">
+                      <span>🤖</span> AI-Powered Insights
+                    </h4>
+                    <div className="space-y-2">
+                      {analyticsData.insights.map((insight: string, index: number) => (
+                        <div key={index} className="text-sm text-yellow-800 dark:text-yellow-300 flex items-start gap-2">
+                          <span className="mt-0.5">•</span>
+                          <span>{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Symbol Comparison */}
+                {analyticsData.symbolComparison && analyticsData.symbolComparison.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        📈 Symbol Performance Comparison
+                      </h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Symbol</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Avg ROI</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Best</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Worst</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Win Rate</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tests</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Trades</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                          {analyticsData.symbolComparison.map((symbol: any, index: number) => (
+                            <tr key={symbol._id} className={index === 0 ? 'bg-green-50 dark:bg-green-900/10' : ''}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  {index === 0 && <span>🏆</span>}
+                                  <span className="font-semibold text-gray-900 dark:text-white">
+                                    {symbol._id.replace('USDT', '')}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  +{symbol.avgROI.toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-green-600 dark:text-green-400">
+                                +{symbol.bestROI.toFixed(0)}%
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-red-600 dark:text-red-400">
+                                +{symbol.worstROI.toFixed(0)}%
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+                                {symbol.avgWinRate.toFixed(1)}%
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600 dark:text-gray-400">
+                                {symbol.totalRuns}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600 dark:text-gray-400">
+                                {symbol.totalTrades}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Top Performers */}
+                {analyticsData.topPerformers && analyticsData.topPerformers.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+                      🌟 Top 5 Best Backtests
+                    </h4>
+                    <div className="space-y-3">
+                      {analyticsData.topPerformers.map((result: any, index: number) => (
+                        <div key={result._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐'}</span>
+                            <div>
+                              <div className="font-semibold text-gray-900 dark:text-white">
+                                {result.symbol.replace('USDT', '')} - {result.period.toUpperCase()}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(result.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-green-600 dark:text-green-400">
+                              +{result.roi.toFixed(0)}%
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {result.totalTrades} trades
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Exit Pattern Analysis */}
+                {analyticsData.patterns && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+                      🎯 Exit Pattern Analysis
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          {analyticsData.patterns.exitPatterns.takeProfit}
+                        </div>
+                        <div className="text-xs text-green-700 dark:text-green-300 mt-1">Take Profit</div>
+                      </div>
+                      <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                          {analyticsData.patterns.exitPatterns.stopLoss}
+                        </div>
+                        <div className="text-xs text-red-700 dark:text-red-300 mt-1">Stop Loss</div>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {analyticsData.patterns.exitPatterns.trailingProfit}
+                        </div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">Trail Profit</div>
+                      </div>
+                      <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                          {analyticsData.patterns.exitPatterns.trailingLoss}
+                        </div>
+                        <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">Trail Loss</div>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {analyticsData.patterns.exitPatterns.emergencyExit}
+                        </div>
+                        <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">Emergency</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
         
         {/* History Detail Modal */}
         {selectedHistoryResult && (
