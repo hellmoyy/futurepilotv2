@@ -1242,16 +1242,269 @@ function AIConfigTab() {
 }
 
 function NewsTab() {
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [news, setNews] = useState<any[]>([]);
+  const [aggregate, setAggregate] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/bot-decision/news');
+      const data = await res.json();
+      if (data.success) {
+        setNews(data.news || []);
+        setAggregate(data.aggregate || null);
+      } else {
+        setError(data.error || 'Failed to load news');
+      }
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const syncNews = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/bot-decision/news/fetch', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Synced ${data.added + data.updated} articles!\n\nAdded: ${data.added}\nUpdated: ${data.updated}\nSkipped: ${data.skipped}`);
+        // Refresh news list
+        await fetchNews();
+      } else {
+        setError(data.error || 'Failed to sync news');
+      }
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const getSentimentColor = (label: string) => {
+    switch (label) {
+      case 'very_bullish':
+        return 'bg-green-500 text-white';
+      case 'bullish':
+        return 'bg-green-400 text-white';
+      case 'neutral':
+        return 'bg-gray-400 text-white';
+      case 'bearish':
+        return 'bg-red-400 text-white';
+      case 'very_bearish':
+        return 'bg-red-500 text-white';
+      default:
+        return 'bg-gray-300 text-gray-700';
+    }
+  };
+
+  const getSentimentEmoji = (label: string) => {
+    switch (label) {
+      case 'very_bullish': return '🚀';
+      case 'bullish': return '📈';
+      case 'neutral': return '➖';
+      case 'bearish': return '📉';
+      case 'very_bearish': return '💥';
+      default: return '⚪';
+    }
+  };
+
+  const getImpactColor = (impact: string) => {
+    switch (impact) {
+      case 'high': return 'text-red-600 font-bold';
+      case 'medium': return 'text-yellow-600 font-medium';
+      case 'low': return 'text-gray-500';
+      default: return 'text-gray-500';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <span>📰</span> News Monitor
-      </h2>
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-300">
-          🚧 <strong>Coming Soon:</strong> Real-time crypto news feed with AI sentiment analysis (bullish/bearish/neutral), 
-          impact tracking on decisions, and source filtering.
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span>📰</span> News Monitor
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={syncNews}
+            disabled={syncing}
+            className="px-4 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {syncing ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Syncing...
+              </>
+            ) : (
+              <>
+                <span>🔄</span>
+                Fetch from CryptoNews
+              </>
+            )}
+          </button>
+          <button
+            onClick={fetchNews}
+            disabled={loading}
+            className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+          >
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+
+      {loading && <div className="text-sm text-gray-500 dark:text-gray-400">Loading news...</div>}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-sm text-red-600 dark:text-red-400">❌ Error: {error}</p>
+        </div>
+      )}
+
+      {aggregate && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Avg Sentiment</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {(aggregate.avgSentiment || 0).toFixed(2)}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">{aggregate.label}</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">📈 Bullish</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {aggregate.bullish || 0}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">articles</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">📉 Bearish</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+              {aggregate.bearish || 0}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">articles</div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">🔴 High Impact</div>
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              {aggregate.highImpact || 0}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">articles</div>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {news.length === 0 && !loading && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-3">
+              📭 No news in database. Click "Fetch from CryptoNews" to sync latest articles.
+            </p>
+            <button
+              onClick={syncNews}
+              disabled={syncing}
+              className="px-6 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50"
+            >
+              {syncing ? '⏳ Syncing...' : '🔄 Fetch News Now'}
+            </button>
+          </div>
+        )}
+
+        {news.map((n: any) => (
+          <div key={n._id || n.url} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                {/* Header: Time, Source, Sentiment */}
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(n.publishedAt).toLocaleString()}
+                  </span>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {n.source}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${getSentimentColor(n.sentimentLabel)}`}>
+                    {getSentimentEmoji(n.sentimentLabel)} {n.sentimentLabel.replace('_', ' ').toUpperCase()}
+                  </span>
+                  <span className={`text-xs ${getImpactColor(n.impact)}`}>
+                    {n.impact.toUpperCase()} IMPACT
+                  </span>
+                </div>
+
+                {/* Title */}
+                <a 
+                  href={n.url} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="block font-bold text-lg text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 mb-2"
+                >
+                  {n.title}
+                </a>
+
+                {/* Description */}
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                  {n.description || (n.content && n.content.slice(0, 200) + '...')}
+                </p>
+
+                {/* Metadata */}
+                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <span>🎯 Confidence:</span>
+                    <span className="font-medium">{(n.confidence * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>💯 Impact Score:</span>
+                    <span className="font-medium">{n.impactScore || 0}/100</span>
+                  </div>
+                  {n.impactedDecisions > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span>🤖 Used in:</span>
+                      <span className="font-medium">{n.impactedDecisions} decisions</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Keywords/Tags */}
+                {n.keywords && n.keywords.length > 0 && (
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    {n.keywords.slice(0, 5).map((keyword: string, idx: number) => (
+                      <span 
+                        key={idx}
+                        className="px-2 py-0.5 rounded text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                      >
+                        #{keyword}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Image */}
+              {n.imageUrl && (
+                <div className="flex-shrink-0 w-40 h-28 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <img 
+                    src={n.imageUrl} 
+                    alt={n.title} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
