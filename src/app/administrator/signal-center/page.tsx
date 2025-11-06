@@ -58,7 +58,7 @@ export default function SignalCenterPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'active' | 'history' | 'config' | 'backtest' | 'analytics'>('active');
+  const [selectedTab, setSelectedTab] = useState<'active' | 'history' | 'config' | 'backtest' | 'analytics' | 'learning'>('active');
   const [sseConnected, setSseConnected] = useState(false);
   
   // Backtest state
@@ -85,6 +85,12 @@ export default function SignalCenterPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<number>(30);
   const [analyticsSymbol, setAnalyticsSymbol] = useState<string>('all');
+  
+  // Learning Center states
+  const [learningData, setLearningData] = useState<any>(null);
+  const [learningLoading, setLearningLoading] = useState(false);
+  const [learningError, setLearningError] = useState('');
+  const [selectedPattern, setSelectedPattern] = useState<'all' | 'wins' | 'losses'>('all');
   
   // Pagination for trade list
   const [tradePage, setTradePage] = useState(1);
@@ -624,6 +630,32 @@ export default function SignalCenterPage() {
     }
   };
   
+  // Fetch learning center data
+  const fetchLearningData = async (type?: 'all' | 'wins' | 'losses') => {
+    setLearningLoading(true);
+    setLearningError('');
+    try {
+      const params = new URLSearchParams();
+      params.append('type', type || selectedPattern);
+      params.append('limit', '50');
+      
+      const res = await fetch(`/api/backtest/learning?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setLearningData(data.learning);
+        console.log(`🎓 Loaded learning insights from ${data.learning.summary?.totalBacktests || 0} backtests`);
+      } else {
+        setLearningError(data.error || 'Failed to fetch learning data');
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to fetch learning data:', err);
+      setLearningError(err.message || 'Failed to fetch learning data');
+    } finally {
+      setLearningLoading(false);
+    }
+  };
+  
   // Format uptime
   const formatUptime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -641,6 +673,13 @@ export default function SignalCenterPage() {
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
   };
+  
+  // Auto-load learning data when tab selected
+  useEffect(() => {
+    if (selectedTab === 'learning') {
+      fetchLearningData();
+    }
+  }, [selectedTab, selectedPattern]);
   
   if (loading) {
     return (
@@ -818,6 +857,19 @@ export default function SignalCenterPage() {
                 }`}
               >
                 📊 Analytics
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTab('learning');
+                  if (!learningData) fetchLearningData();
+                }}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  selectedTab === 'learning'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                🎓 Learning Center
               </button>
             </nav>
           </div>
@@ -3187,7 +3239,418 @@ export default function SignalCenterPage() {
             </div>
           </div>
         )}
+        
+        {/* ========== LEARNING CENTER TAB ========== */}
+        {selectedTab === 'learning' && (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  🎓 Learning Center - Pattern Analysis
+                </h2>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Discover winning patterns, analyze failures, and improve your trading strategy through data-driven insights
+                </p>
+              </div>
+              <button
+                onClick={() => fetchLearningData()}
+                disabled={learningLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+              >
+                {learningLoading ? '⏳ Loading...' : '🔄 Refresh'}
+              </button>
+            </div>
+            
+            {/* Error state */}
+            {learningError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="text-red-800 dark:text-red-300">❌ {learningError}</p>
+              </div>
+            )}
+            
+            {/* Loading state */}
+            {learningLoading && !learningData && (
+              <div className="text-center py-12">
+                <div className="animate-spin text-6xl mb-4">⏳</div>
+                <p className="text-gray-600 dark:text-gray-400">Analyzing trade patterns...</p>
+              </div>
+            )}
+            
+            {/* Content */}
+            {learningData && (
+              <div className="space-y-8">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                    <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                      Total Backtests Analyzed
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-blue-900 dark:text-blue-100">
+                      {learningData.summary?.totalBacktests || 0}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg p-6 border border-green-200 dark:border-green-800">
+                    <div className="text-sm font-medium text-green-800 dark:text-green-300">
+                      Winning Trades Analyzed
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-green-900 dark:text-green-100">
+                      {learningData.summary?.winTradesAnalyzed || 0}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 rounded-lg p-6 border border-red-200 dark:border-red-800">
+                    <div className="text-sm font-medium text-red-800 dark:text-red-300">
+                      Losing Trades Analyzed
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-red-900 dark:text-red-100">
+                      {learningData.summary?.lossTradesAnalyzed || 0}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg p-6 border border-purple-200 dark:border-purple-800">
+                    <div className="text-sm font-medium text-purple-800 dark:text-purple-300">
+                      Average ROI
+                    </div>
+                    <div className="mt-2 text-3xl font-bold text-purple-900 dark:text-purple-100">
+                      {learningData.summary?.avgROI?.toFixed(1) || 0}%
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Educational Lessons */}
+                {learningData.lessons && learningData.lessons.length > 0 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <span className="text-2xl mr-2">💡</span>
+                      Key Learnings & Insights
+                    </h3>
+                    <div className="space-y-3">
+                      {learningData.lessons.map((lesson: string, idx: number) => (
+                        <div 
+                          key={idx}
+                          className="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        >
+                          <span className="text-2xl mt-0.5">
+                            {lesson.includes('✅') ? '✅' : 
+                             lesson.includes('⚠️') ? '⚠️' : 
+                             lesson.includes('🚨') ? '🚨' :
+                             lesson.includes('🎯') ? '🎯' :
+                             lesson.includes('📈') ? '📈' :
+                             lesson.includes('📉') ? '📉' :
+                             lesson.includes('💰') ? '💰' :
+                             lesson.includes('💪') ? '💪' :
+                             lesson.includes('🚀') ? '🚀' : '📚'}
+                          </span>
+                          <p className="flex-1 text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {lesson.replace(/[✅⚠️🚨🎯📈📉💰💪🚀]/g, '').trim()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Pattern Analysis Grid */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Winning Patterns */}
+                  {learningData.winPatterns && Object.keys(learningData.winPatterns).length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                      <h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-4 flex items-center">
+                        <span className="text-2xl mr-2">✅</span>
+                        Winning Trade Patterns
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        {/* Exit Type Distribution */}
+                        {learningData.winPatterns.exitTypes && (
+                          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                              📊 Exit Methods (Winners)
+                            </h4>
+                            <div className="space-y-2">
+                              {Object.entries(learningData.winPatterns.exitTypes).map(([type, count]) => (
+                                <div key={type} className="flex items-center justify-between">
+                                  <span className="text-gray-700 dark:text-gray-300">{type}</span>
+                                  <span className="font-bold text-green-600 dark:text-green-400">
+                                    {count} trades
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            {learningData.winPatterns.mostCommonExit && (
+                              <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  <strong>Most Reliable:</strong> {learningData.winPatterns.mostCommonExit}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Direction Preference */}
+                        {learningData.winPatterns.directions && (
+                          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                              🎯 Direction Analysis (Winners)
+                            </h4>
+                            <div className="space-y-2">
+                              {Object.entries(learningData.winPatterns.directions).map(([dir, count]) => (
+                                <div key={dir} className="flex items-center justify-between">
+                                  <span className="text-gray-700 dark:text-gray-300">{dir}</span>
+                                  <span className="font-bold text-green-600 dark:text-green-400">
+                                    {count} trades
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            {learningData.winPatterns.preferredDirection && (
+                              <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  <strong>Best Direction:</strong> {learningData.winPatterns.preferredDirection}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Profit Stats */}
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                            💰 Profit Statistics
+                          </h4>
+                          <div className="space-y-2">
+                            {learningData.winPatterns.avgProfit && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-700 dark:text-gray-300">Average Profit</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  ${learningData.winPatterns.avgProfit.toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                            {learningData.winPatterns.avgProfitPercent && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-700 dark:text-gray-300">Average Gain %</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  {learningData.winPatterns.avgProfitPercent.toFixed(2)}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Position Sizing */}
+                        {(learningData.winPatterns.largePositions > 0 || learningData.winPatterns.smallPositions > 0) && (
+                          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                              📏 Position Sizing (Winners)
+                            </h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-700 dark:text-gray-300">Large Positions</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  {learningData.winPatterns.largePositions}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-700 dark:text-gray-300">Small Positions</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  {learningData.winPatterns.smallPositions}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Losing Patterns */}
+                  {learningData.lossPatterns && Object.keys(learningData.lossPatterns).length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                      <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-4 flex items-center">
+                        <span className="text-2xl mr-2">❌</span>
+                        Losing Trade Patterns
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        {/* Exit Type Distribution */}
+                        {learningData.lossPatterns.exitTypes && (
+                          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                              📊 Exit Methods (Losers)
+                            </h4>
+                            <div className="space-y-2">
+                              {Object.entries(learningData.lossPatterns.exitTypes).map(([type, count]) => (
+                                <div key={type} className="flex items-center justify-between">
+                                  <span className="text-gray-700 dark:text-gray-300">{type}</span>
+                                  <span className="font-bold text-red-600 dark:text-red-400">
+                                    {count} trades
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            {learningData.lossPatterns.mostCommonExit && (
+                              <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  <strong>Most Common Exit:</strong> {learningData.lossPatterns.mostCommonExit}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Direction Issues */}
+                        {learningData.lossPatterns.directions && (
+                          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                              🎯 Direction Analysis (Losers)
+                            </h4>
+                            <div className="space-y-2">
+                              {Object.entries(learningData.lossPatterns.directions).map(([dir, count]) => (
+                                <div key={dir} className="flex items-center justify-between">
+                                  <span className="text-gray-700 dark:text-gray-300">{dir}</span>
+                                  <span className="font-bold text-red-600 dark:text-red-400">
+                                    {count} trades
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            {learningData.lossPatterns.problematicDirection && (
+                              <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  <strong>Problem Direction:</strong> {learningData.lossPatterns.problematicDirection}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Loss Stats */}
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                            💸 Loss Statistics
+                          </h4>
+                          <div className="space-y-2">
+                            {learningData.lossPatterns.avgLoss && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-700 dark:text-gray-300">Average Loss</span>
+                                <span className="font-bold text-red-600 dark:text-red-400">
+                                  ${learningData.lossPatterns.avgLoss.toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                            {learningData.lossPatterns.avgLossPercent && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-700 dark:text-gray-300">Average Loss %</span>
+                                <span className="font-bold text-red-600 dark:text-red-400">
+                                  {Math.abs(learningData.lossPatterns.avgLossPercent).toFixed(2)}%
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Risk Warnings */}
+                        {learningData.lossPatterns.oversizedTrades > 0 && (
+                          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-600">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                              <span className="mr-2">🚨</span>
+                              Risk Warning
+                            </h4>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              <strong>{learningData.lossPatterns.oversizedTrades}</strong> oversized trades detected in losses.
+                              Maintain consistent position sizing to limit risk exposure.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Risk Management Insights */}
+                {learningData.riskInsights && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 mb-4 flex items-center">
+                      <span className="text-2xl mr-2">🛡️</span>
+                      Risk Management Analysis
+                    </h3>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      {learningData.riskInsights.avgRiskReward && (
+                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                          <div className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                            Average Risk/Reward Ratio
+                          </div>
+                          <div className="mt-2 text-3xl font-bold text-orange-900 dark:text-orange-100">
+                            {learningData.riskInsights.avgRiskReward.toFixed(2)}:1
+                          </div>
+                          <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                            {learningData.riskInsights.avgRiskReward >= 2 ? '✅ Excellent' : 
+                             learningData.riskInsights.avgRiskReward >= 1.5 ? '✅ Good' : 
+                             '⚠️ Needs Improvement'}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {learningData.riskInsights.avgWinSize && (
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <div className="text-sm font-medium text-green-800 dark:text-green-300">
+                            Average Win Size
+                          </div>
+                          <div className="mt-2 text-3xl font-bold text-green-900 dark:text-green-100">
+                            ${learningData.riskInsights.avgWinSize.toFixed(2)}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {learningData.riskInsights.avgLossSize && (
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <div className="text-sm font-medium text-red-800 dark:text-red-300">
+                            Average Loss Size
+                          </div>
+                          <div className="mt-2 text-3xl font-bold text-red-900 dark:text-red-100">
+                            ${Math.abs(learningData.riskInsights.avgLossSize).toFixed(2)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {learningData.riskInsights.goodRiskRewardPercent !== undefined && (
+                      <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <p className="text-gray-700 dark:text-gray-300">
+                          <strong>{learningData.riskInsights.goodRiskRewardPercent.toFixed(1)}%</strong> of your backtests
+                          ({learningData.riskInsights.goodRiskRewardCount} out of {learningData.summary?.totalBacktests || 0})
+                          have good risk/reward ratios (≥2:1)
+                        </p>
+                        {learningData.riskInsights.riskConsistency && (
+                          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            <strong>Risk Consistency:</strong> {learningData.riskInsights.riskConsistency}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Empty state */}
+            {!learningLoading && !learningData && !learningError && (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🎓</div>
+                <p className="text-gray-600 dark:text-gray-400">No learning data available yet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                  Run backtests to generate pattern analysis and educational insights
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
