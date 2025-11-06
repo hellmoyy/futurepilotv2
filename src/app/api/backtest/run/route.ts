@@ -14,6 +14,7 @@ import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import { SignalCenterConfig } from '@/models/SignalCenterConfig';
+import BacktestResult from '@/models/BacktestResult';
 import connectDB from '@/lib/mongodb';
 
 const execAsync = promisify(exec);
@@ -150,6 +151,46 @@ export async function POST(req: NextRequest) {
       console.log('...');
       console.log('Last 500 chars:');
       console.log(output.substring(output.length - 500));
+    }
+    
+    // Extract sample trades for learning (2 wins + 2 losses + first + last)
+    const sampleTrades = extractSampleTrades(results.trades || []);
+    
+    // Save backtest result to database for history tracking
+    try {
+      if (config && results.totalTrades > 0) {
+        const startTime = Date.now();
+        
+        await BacktestResult.create({
+          configId: config._id,
+          configName: config.name,
+          symbol,
+          period,
+          initialBalance: results.initialBalance || balance,
+          finalBalance: results.finalBalance || balance,
+          totalProfit: results.totalProfit || 0,
+          roi: results.roi || 0,
+          totalTrades: results.totalTrades || 0,
+          winningTrades: results.winningTrades || 0,
+          losingTrades: results.losingTrades || 0,
+          winRate: results.winRate || 0,
+          profitFactor: results.profitFactor || 0,
+          largestWin: results.largestWin || 0,
+          largestLoss: results.largestLoss || 0,
+          avgWin: results.avgWin || 0,
+          avgLoss: results.avgLoss || 0,
+          avgWinPercent: results.avgWinPercent || 0,
+          avgLossPercent: results.avgLossPercent || 0,
+          sampleTrades,
+          executionTime: Date.now() - startTime,
+          status: 'completed',
+        });
+        
+        console.log('💾 Backtest result saved to database with sample trades');
+      }
+    } catch (saveError) {
+      console.error('⚠️ Failed to save backtest result:', saveError);
+      // Don't fail the request if save fails, just log it
     }
     
     return NextResponse.json({
@@ -450,6 +491,59 @@ function parseBacktestOutput(output: string, period: string) {
     console.error('Failed to parse backtest output:', error);
     return null;
   }
+}
+
+/**
+ * Extract sample trades for educational purposes
+ * Returns 6 trades: best win, avg win, worst loss, avg loss, first trade, last trade
+ */
+function extractSampleTrades(trades: any[]) {
+  if (!trades || trades.length === 0) {
+    return {};
+  }
+  
+  // Separate wins and losses
+  const wins = trades.filter(t => t.pnl > 0).sort((a, b) => b.pnl - a.pnl);
+  const losses = trades.filter(t => t.pnl < 0).sort((a, b) => a.pnl - b.pnl);
+  
+  // Get sample trades
+  const sampleTrades: any = {};
+  
+  // Best Win (highest profit)
+  if (wins.length > 0) {
+    sampleTrades.bestWin = wins[0];
+  }
+  
+  // Average Win (median of winning trades)
+  if (wins.length > 0) {
+    const medianIndex = Math.floor(wins.length / 2);
+    sampleTrades.avgWin = wins[medianIndex];
+  }
+  
+  // Worst Loss (largest loss)
+  if (losses.length > 0) {
+    sampleTrades.worstLoss = losses[0];
+  }
+  
+  // Average Loss (median of losing trades)
+  if (losses.length > 0) {
+    const medianIndex = Math.floor(losses.length / 2);
+    sampleTrades.avgLoss = losses[medianIndex];
+  }
+  
+  // First Trade (strategy entry point)
+  sampleTrades.firstTrade = trades[0];
+  
+  // Last Trade (strategy exit point)
+  sampleTrades.lastTrade = trades[trades.length - 1];
+  
+  console.log(`📚 Extracted sample trades: ${Object.keys(sampleTrades).length} samples`);
+  console.log(`   - Best Win: $${sampleTrades.bestWin?.pnl || 0}`);
+  console.log(`   - Avg Win: $${sampleTrades.avgWin?.pnl || 0}`);
+  console.log(`   - Worst Loss: $${sampleTrades.worstLoss?.pnl || 0}`);
+  console.log(`   - Avg Loss: $${sampleTrades.avgLoss?.pnl || 0}`);
+  
+  return sampleTrades;
 }
 
 export async function GET() {
