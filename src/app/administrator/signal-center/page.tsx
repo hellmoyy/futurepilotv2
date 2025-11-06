@@ -62,7 +62,7 @@ export default function SignalCenterPage() {
   const [sseConnected, setSseConnected] = useState(false);
   
   // Backtest state
-  const [backtestPeriod, setBacktestPeriod] = useState<'1m' | '2m' | '3m'>('3m');
+  const [backtestPeriod, setBacktestPeriod] = useState<'1m' | '2m' | '3m'>('1m');
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestResults, setBacktestResults] = useState<any>(null);
   
