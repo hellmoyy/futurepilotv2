@@ -63,6 +63,7 @@ export default function SignalCenterPage() {
   
   // Backtest state
   const [backtestPeriod, setBacktestPeriod] = useState<'1m' | '2m' | '3m'>('1m');
+  const [backtestSymbol, setBacktestSymbol] = useState<string>('BTCUSDT');
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestResults, setBacktestResults] = useState<any>(null);
   
@@ -457,14 +458,14 @@ export default function SignalCenterPage() {
     setBacktestResults(null);
     
     try {
-      console.log(`🧪 Running backtest for ${backtestPeriod} with active config...`);
+      console.log(`🧪 Running backtest for ${backtestSymbol} ${backtestPeriod} with active config...`);
       const res = await fetch('/api/backtest/run', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: 'BTCUSDT',
+          symbol: backtestSymbol,
           period: backtestPeriod,
           balance: 10000,
           useActiveConfig: true, // ✅ Use configuration from Configuration tab
@@ -1698,6 +1699,35 @@ export default function SignalCenterPage() {
                   </p>
                 </div>
                 
+                {/* Symbol Selector */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Select Trading Pair</h4>
+                  <div className="grid grid-cols-4 gap-3">
+                    {['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT'].map((symbol) => (
+                      <button
+                        key={symbol}
+                        onClick={() => setBacktestSymbol(symbol)}
+                        className={`p-3 border-2 rounded-lg transition text-left ${
+                          backtestSymbol === symbol
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                        }`}
+                      >
+                        <div className={`text-sm font-bold ${
+                          backtestSymbol === symbol
+                            ? 'text-orange-600 dark:text-orange-400'
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {symbol.replace('USDT', '')}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {symbol}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
                 {/* Period Selector */}
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                   <h4 className="font-medium text-gray-900 dark:text-white mb-4">Select Backtest Period</h4>
@@ -1751,11 +1781,11 @@ export default function SignalCenterPage() {
                     {backtestLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Running Backtest...
+                        Running Backtest for {backtestSymbol}...
                       </>
                     ) : (
                       <>
-                        🚀 Run Backtest ({backtestPeriod.toUpperCase()})
+                        🚀 Run Backtest: {backtestSymbol} ({backtestPeriod.toUpperCase()})
                       </>
                     )}
                   </button>
@@ -2081,7 +2111,7 @@ export default function SignalCenterPage() {
                                     {trade.icon} #{trade.id}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-orange-600 dark:text-orange-400">
-                                    BTCUSDT
+                                    {backtestSymbol}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 font-mono">
                                     {formattedTime}
