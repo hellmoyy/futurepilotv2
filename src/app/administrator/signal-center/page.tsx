@@ -73,6 +73,13 @@ export default function SignalCenterPage() {
   const [activeSymbolTab, setActiveSymbolTab] = useState<string>('BTCUSDT');
   const [backtestProgress, setBacktestProgress] = useState<{current: number, total: number}>({current: 0, total: 0});
   
+  // Backtest History state
+  const [backtestView, setBacktestView] = useState<'run' | 'history'>('run');
+  const [historyResults, setHistoryResults] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historySummary, setHistorySummary] = useState<any>(null);
+  const [selectedHistoryResult, setSelectedHistoryResult] = useState<any>(null);
+  
   // Pagination for trade list
   const [tradePage, setTradePage] = useState(1);
   const tradesPerPage = 10;
@@ -526,6 +533,65 @@ export default function SignalCenterPage() {
       setBacktestProgress({ current: 0, total: 0 });
     }
   };
+  
+  // Fetch backtest history
+  const fetchBacktestHistory = async (symbol?: string) => {
+    setHistoryLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append('limit', '30');
+      if (symbol) params.append('symbol', symbol);
+      
+      const res = await fetch(`/api/backtest/history?${params.toString()}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setHistoryResults(data.results);
+        setHistorySummary(data.summary);
+        console.log(`📊 Loaded ${data.results.length} backtest history results`);
+      } else {
+        setError(data.error || 'Failed to fetch history');
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to fetch history:', err);
+      setError(err.message || 'Failed to fetch history');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+  
+  // Delete backtest result
+  const deleteBacktestResult = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this backtest result?')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/backtest/history?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Refresh history
+        fetchBacktestHistory();
+        setSelectedHistoryResult(null);
+      } else {
+        alert(data.error || 'Failed to delete result');
+      }
+    } catch (err: any) {
+      console.error('❌ Failed to delete:', err);
+      alert(err.message || 'Failed to delete result');
+    }
+  };
+  
+  // Load history when switching to history view
+  useEffect(() => {
+    if (backtestView === 'history' && selectedTab === 'backtest') {
+      fetchBacktestHistory();
+    }
+  }, [backtestView, selectedTab]);
   
   // Format uptime
   const formatUptime = (ms: number) => {
@@ -1735,6 +1801,34 @@ export default function SignalCenterPage() {
                   </p>
                 </div>
                 
+                {/* Sub-tabs: Run vs History */}
+                <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setBacktestView('run')}
+                    className={`px-6 py-3 font-medium transition-colors ${
+                      backtestView === 'run'
+                        ? 'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    🚀 Run Backtest
+                  </button>
+                  <button
+                    onClick={() => setBacktestView('history')}
+                    className={`px-6 py-3 font-medium transition-colors ${
+                      backtestView === 'history'
+                        ? 'border-b-2 border-purple-600 text-purple-600 dark:text-purple-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    📚 History ({historyResults.length})
+                  </button>
+                </div>
+                
+                {/* Run Backtest View */}
+                {backtestView === 'run' && (
+                <>
+                
                 {/* Configuration Summary */}
                 {configData && (
                   <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
@@ -2410,10 +2504,367 @@ export default function SignalCenterPage() {
                     </p>
                   </div>
                 )}
+                
+                </>
+                )}
+                
+                {/* History View */}
+                {backtestView === 'history' && (
+                  <div className="space-y-6">
+                    {historyLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                      </div>
+                    ) : historyResults.length === 0 ? (
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-12 text-center">
+                        <div className="text-6xl mb-4">📚</div>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                          No History Yet
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Run your first backtest to start building history
+                        </p>
+                        <button
+                          onClick={() => setBacktestView('run')}
+                          className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                        >
+                          Run First Backtest
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Summary Stats */}
+                        {historySummary && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">Total Runs (7d)</div>
+                              <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                                {historySummary.totalRuns}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">Avg ROI</div>
+                              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+                                +{historySummary.avgROI.toFixed(0)}%
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">Best ROI</div>
+                              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+                                +{historySummary.bestROI.toFixed(0)}%
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">Avg Win Rate</div>
+                              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">
+                                {historySummary.avgWinRate.toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* History List */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                              Backtest History
+                            </h4>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {historyResults.map((result) => (
+                              <div
+                                key={result._id}
+                                className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
+                                onClick={() => setSelectedHistoryResult(result)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span className="text-2xl">{result.symbol === 'BTCUSDT' ? '₿' : result.symbol === 'ETHUSDT' ? 'Ξ' : '🪙'}</span>
+                                      <div>
+                                        <h5 className="font-semibold text-gray-900 dark:text-white">
+                                          {result.symbol.replace('USDT', '')} - {result.period.toUpperCase()}
+                                        </h5>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                          {new Date(result.createdAt).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-4 text-sm">
+                                      <div>
+                                        <span className="text-gray-600 dark:text-gray-400">ROI:</span>
+                                        <span className="ml-1 font-semibold text-green-600 dark:text-green-400">
+                                          +{result.roi.toFixed(0)}%
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-600 dark:text-gray-400">Trades:</span>
+                                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                                          {result.totalTrades}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-600 dark:text-gray-400">Win Rate:</span>
+                                        <span className="ml-1 font-semibold text-purple-600 dark:text-purple-400">
+                                          {result.winRate.toFixed(1)}%
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Config</div>
+                                    <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded-full text-xs font-medium text-blue-800 dark:text-blue-200">
+                                      {result.configName || 'default'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
+        
+        {/* History Detail Modal */}
+        {selectedHistoryResult && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <span className="text-2xl">{selectedHistoryResult.symbol === 'BTCUSDT' ? '₿' : selectedHistoryResult.symbol === 'ETHUSDT' ? 'Ξ' : '🪙'}</span>
+                      {selectedHistoryResult.symbol.replace('USDT', '')} Backtest Details
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {new Date(selectedHistoryResult.createdAt).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedHistoryResult(null)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Performance Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">ROI</div>
+                    <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                      +{selectedHistoryResult.roi.toFixed(0)}%
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Win Rate</div>
+                    <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                      {selectedHistoryResult.winRate.toFixed(1)}%
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Total Trades</div>
+                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                      {selectedHistoryResult.totalTrades}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Profit Factor</div>
+                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                      {selectedHistoryResult.profitFactor.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Sample Trades for Learning */}
+                {selectedHistoryResult.sampleTrades && Object.keys(selectedHistoryResult.sampleTrades).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <span>📚</span> Educational Trade Samples
+                    </h4>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* Best Win */}
+                      {selectedHistoryResult.sampleTrades.bestWin && (
+                        <div className="border-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="font-semibold text-green-900 dark:text-green-200 flex items-center gap-2">
+                              <span>✅</span> Best Win
+                            </div>
+                            <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                              +${selectedHistoryResult.sampleTrades.bestWin.pnl.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-green-700 dark:text-green-300">Entry:</span>
+                              <span className="font-mono text-green-900 dark:text-green-100">${selectedHistoryResult.sampleTrades.bestWin.entry.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-green-700 dark:text-green-300">Exit:</span>
+                              <span className="font-mono text-green-900 dark:text-green-100">${selectedHistoryResult.sampleTrades.bestWin.exit.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-green-700 dark:text-green-300">Type:</span>
+                              <span className="font-semibold text-green-900 dark:text-green-100">{selectedHistoryResult.sampleTrades.bestWin.type}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-green-700 dark:text-green-300">Exit:</span>
+                              <span className="text-xs text-green-900 dark:text-green-100">{selectedHistoryResult.sampleTrades.bestWin.exitType}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Average Win */}
+                      {selectedHistoryResult.sampleTrades.avgWin && (
+                        <div className="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/10 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="font-semibold text-green-800 dark:text-green-300 flex items-center gap-2">
+                              <span>📊</span> Average Win
+                            </div>
+                            <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                              +${selectedHistoryResult.sampleTrades.avgWin.pnl.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="text-sm space-y-1 text-green-700 dark:text-green-300">
+                            <div className="flex justify-between">
+                              <span>Entry:</span>
+                              <span className="font-mono">${selectedHistoryResult.sampleTrades.avgWin.entry.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Exit:</span>
+                              <span className="font-mono">${selectedHistoryResult.sampleTrades.avgWin.exit.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Worst Loss */}
+                      {selectedHistoryResult.sampleTrades.worstLoss && (
+                        <div className="border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="font-semibold text-red-900 dark:text-red-200 flex items-center gap-2">
+                              <span>❌</span> Worst Loss
+                            </div>
+                            <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                              ${selectedHistoryResult.sampleTrades.worstLoss.pnl.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-red-700 dark:text-red-300">Entry:</span>
+                              <span className="font-mono text-red-900 dark:text-red-100">${selectedHistoryResult.sampleTrades.worstLoss.entry.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-red-700 dark:text-red-300">Exit:</span>
+                              <span className="font-mono text-red-900 dark:text-red-100">${selectedHistoryResult.sampleTrades.worstLoss.exit.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-red-700 dark:text-red-300">Type:</span>
+                              <span className="font-semibold text-red-900 dark:text-red-100">{selectedHistoryResult.sampleTrades.worstLoss.type}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-red-700 dark:text-red-300">Exit:</span>
+                              <span className="text-xs text-red-900 dark:text-red-100">{selectedHistoryResult.sampleTrades.worstLoss.exitType}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Average Loss */}
+                      {selectedHistoryResult.sampleTrades.avgLoss && (
+                        <div className="border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
+                              <span>📊</span> Average Loss
+                            </div>
+                            <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                              ${selectedHistoryResult.sampleTrades.avgLoss.pnl.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="text-sm space-y-1 text-red-700 dark:text-red-300">
+                            <div className="flex justify-between">
+                              <span>Entry:</span>
+                              <span className="font-mono">${selectedHistoryResult.sampleTrades.avgLoss.entry.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Exit:</span>
+                              <span className="font-mono">${selectedHistoryResult.sampleTrades.avgLoss.exit.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Learning Insights */}
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <h5 className="font-semibold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-2">
+                        <span>💡</span> Key Insights
+                      </h5>
+                      <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                        <div>• <strong>Risk/Reward Ratio:</strong> {selectedHistoryResult.sampleTrades.bestWin && selectedHistoryResult.sampleTrades.worstLoss ? 
+                          `${(Math.abs(selectedHistoryResult.sampleTrades.bestWin.pnl / selectedHistoryResult.sampleTrades.worstLoss.pnl)).toFixed(2)}:1` : 'N/A'
+                        }</div>
+                        <div>• <strong>Largest Win:</strong> ${selectedHistoryResult.largestWin.toFixed(2)}</div>
+                        <div>• <strong>Largest Loss:</strong> ${selectedHistoryResult.largestLoss.toFixed(2)}</div>
+                        <div>• <strong>Average Win:</strong> ${selectedHistoryResult.avgWin.toFixed(2)} ({selectedHistoryResult.avgWinPercent.toFixed(2)}%)</div>
+                        <div>• <strong>Average Loss:</strong> ${selectedHistoryResult.avgLoss.toFixed(2)} ({selectedHistoryResult.avgLossPercent.toFixed(2)}%)</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setSelectedHistoryResult(null)}
+                    className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => deleteBacktestResult(selectedHistoryResult._id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
