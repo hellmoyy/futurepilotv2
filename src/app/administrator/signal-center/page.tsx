@@ -458,15 +458,20 @@ export default function SignalCenterPage() {
     setError('');
     setBacktestResults(null);
     
+    // Get symbols from configuration
+    const symbols = configData?.symbols || ['BTCUSDT'];
+    const primarySymbol = symbols[0]; // Use first symbol for now
+    
     try {
-      console.log(`🧪 Running backtest for ${backtestSymbol} ${backtestPeriod} with active config...`);
+      console.log(`🧪 Running backtest for ${primarySymbol} ${backtestPeriod} with active config...`);
+      console.log(`📊 Configuration symbols: ${symbols.join(', ')}`);
       const res = await fetch('/api/backtest/run', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          symbol: backtestSymbol,
+          symbol: primarySymbol,
           period: backtestPeriod,
           balance: 10000,
           useActiveConfig: true, // ✅ Use configuration from Configuration tab
@@ -1700,34 +1705,39 @@ export default function SignalCenterPage() {
                   </p>
                 </div>
                 
-                {/* Symbol Selector */}
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Select Trading Pair</h4>
-                  <div className="grid grid-cols-4 gap-3">
-                    {['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'DOTUSDT', 'MATICUSDT', 'LINKUSDT'].map((symbol) => (
-                      <button
-                        key={symbol}
-                        onClick={() => setBacktestSymbol(symbol)}
-                        className={`p-3 border-2 rounded-lg transition text-left ${
-                          backtestSymbol === symbol
-                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'
-                        }`}
-                      >
-                        <div className={`text-sm font-bold ${
-                          backtestSymbol === symbol
-                            ? 'text-orange-600 dark:text-orange-400'
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
-                          {symbol.replace('USDT', '')}
+                {/* Configuration Summary */}
+                {configData && (
+                  <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                    <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
+                      <span>⚙️</span> Active Configuration
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-400 font-medium">Trading Pairs:</span>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {(configData.symbols || ['BTCUSDT']).map((symbol: string) => (
+                            <span key={symbol} className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded text-xs font-semibold">
+                              {symbol}
+                            </span>
+                          ))}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {symbol}
+                      </div>
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-400 font-medium">Timeframes:</span>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {backtestTimeframes.map((tf) => (
+                            <span key={tf} className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-semibold">
+                              {tf}
+                            </span>
+                          ))}
                         </div>
-                      </button>
-                    ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
+                      💡 Backtest will use <strong>{(configData.symbols || ['BTCUSDT'])[0]}</strong> as primary pair with the timeframes selected below.
+                    </p>
                   </div>
-                </div>
+                )}
                 
                 {/* Timeframe Selector */}
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
@@ -1834,11 +1844,11 @@ export default function SignalCenterPage() {
                     {backtestLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Running Backtest for {backtestSymbol}...
+                        Running Backtest ({backtestPeriod.toUpperCase()})...
                       </>
                     ) : (
                       <>
-                        🚀 Run Backtest: {backtestSymbol} ({backtestPeriod.toUpperCase()})
+                        🚀 Run Backtest ({backtestPeriod.toUpperCase()})
                       </>
                     )}
                   </button>
@@ -2164,7 +2174,7 @@ export default function SignalCenterPage() {
                                     {trade.icon} #{trade.id}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-orange-600 dark:text-orange-400">
-                                    {backtestSymbol}
+                                    {(configData?.symbols || ['BTCUSDT'])[0]}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 font-mono">
                                     {formattedTime}
