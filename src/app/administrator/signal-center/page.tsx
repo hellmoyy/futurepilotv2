@@ -3374,7 +3374,7 @@ export default function SignalCenterPage() {
                                 <div key={type} className="flex items-center justify-between">
                                   <span className="text-gray-700 dark:text-gray-300">{type}</span>
                                   <span className="font-bold text-green-600 dark:text-green-400">
-                                    {count} trades
+                                    {String(count)} trades
                                   </span>
                                 </div>
                               ))}
@@ -3400,7 +3400,7 @@ export default function SignalCenterPage() {
                                 <div key={dir} className="flex items-center justify-between">
                                   <span className="text-gray-700 dark:text-gray-300">{dir}</span>
                                   <span className="font-bold text-green-600 dark:text-green-400">
-                                    {count} trades
+                                    {String(count)} trades
                                   </span>
                                 </div>
                               ))}
@@ -3486,7 +3486,7 @@ export default function SignalCenterPage() {
                                 <div key={type} className="flex items-center justify-between">
                                   <span className="text-gray-700 dark:text-gray-300">{type}</span>
                                   <span className="font-bold text-red-600 dark:text-red-400">
-                                    {count} trades
+                                    {String(count)} trades
                                   </span>
                                 </div>
                               ))}
@@ -3512,7 +3512,7 @@ export default function SignalCenterPage() {
                                 <div key={dir} className="flex items-center justify-between">
                                   <span className="text-gray-700 dark:text-gray-300">{dir}</span>
                                   <span className="font-bold text-red-600 dark:text-red-400">
-                                    {count} trades
+                                    {String(count)} trades
                                   </span>
                                 </div>
                               ))}
