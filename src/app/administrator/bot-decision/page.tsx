@@ -510,16 +510,716 @@ function OverviewTab() {
 }
 
 function UserBotsTab() {
+  const [bots, setBots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedBot, setSelectedBot] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  
+  // Filters
+  const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchUserBots();
+  }, [page, statusFilter, searchQuery]);
+
+  const fetchUserBots = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+      });
+      
+      if (statusFilter) params.append('status', statusFilter);
+      if (searchQuery) params.append('search', searchQuery);
+      
+      const response = await fetch(`/api/admin/bot-decision/user-bots?${params}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setBots(data.bots);
+        setTotalPages(data.pagination.totalPages);
+        setTotal(data.pagination.total);
+      } else {
+        setError(data.error || 'Failed to load bots');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBotAction = async (botId: string, userId: string, action: string) => {
+    try {
+      const response = await fetch(`/api/admin/bot-decision/user-bots/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        await fetchUserBots();
+        if (selectedBot && selectedBot._id === botId) {
+          setShowDetailModal(false);
+          setSelectedBot(null);
+        }
+      } else {
+        alert(`Failed: ${data.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
+  const viewBotDetails = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/admin/bot-decision/user-bots/${userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setSelectedBot(data);
+        setShowDetailModal(true);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <span>🤖</span> Active User Bots
-      </h2>
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-300">
-          🚧 <strong>Coming Soon:</strong> List of all user bots with real-time status, balance, win rate, today's performance, 
-          gas fee balance, and individual bot management (pause/resume/restart).
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span>🤖</span> User Bots ({total})
+        </h2>
+        <button
+          onClick={fetchUserBots}
+          className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
+        >
+          🔄 Refresh
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Search User
+            </label>
+            <input
+              type="text"
+              placeholder="Email or username..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+          
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Status Filter
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="stopped">Stopped</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Bots List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading bots...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-sm text-red-800 dark:text-red-300">
+            ❌ <strong>Error:</strong> {error}
+          </p>
+        </div>
+      ) : bots.length === 0 ? (
+        <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-8 text-center">
+          <p className="text-gray-600 dark:text-gray-400">No bots found</p>
+        </div>
+      ) : (
+        <>
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Balance
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Performance
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Today
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      AI Threshold
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {bots.map((bot) => (
+                    <tr key={bot._id} className="hover:bg-gray-50 dark:hover:bg-gray-900/20 transition">
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {bot.userId?.email || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {bot.userId?.username || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          bot.status === 'active'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : bot.status === 'paused'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                        }`}>
+                          {bot.status === 'active' ? '🟢' : bot.status === 'paused' ? '🟡' : '🔴'} {bot.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          ${bot.lastBalanceCheck?.binanceBalance?.toLocaleString() || '0'}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Gas: ${bot.lastBalanceCheck?.gasFeeBalance?.toFixed(2) || '0'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {(bot.stats.winRate * 100).toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {bot.stats.totalTrades} trades
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {bot.dailyTradeCount || 0} / {bot.tradingConfig.maxDailyTrades}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {(bot.aiConfig.confidenceThreshold * 100).toFixed(0)}%
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => viewBotDetails(bot.userId._id)}
+                            className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                          >
+                            View
+                          </button>
+                          {bot.status === 'active' && (
+                            <button
+                              onClick={() => handleBotAction(bot._id, bot.userId._id, 'pause')}
+                              className="px-3 py-1 text-xs bg-yellow-600 hover:bg-yellow-700 text-white rounded transition"
+                            >
+                              Pause
+                            </button>
+                          )}
+                          {bot.status === 'paused' && (
+                            <button
+                              onClick={() => handleBotAction(bot._id, bot.userId._id, 'resume')}
+                              className="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition"
+                            >
+                              Resume
+                            </button>
+                          )}
+                          {bot.status !== 'stopped' && (
+                            <button
+                              onClick={() => {
+                                if (confirm('Stop this bot? This action requires manual restart.')) {
+                                  handleBotAction(bot._id, bot.userId._id, 'stop');
+                                }
+                              }}
+                              className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition"
+                            >
+                              Stop
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page} of {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Bot Detail Modal */}
+      {showDetailModal && selectedBot && (
+        <BotDetailModal
+          bot={selectedBot}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedBot(null);
+          }}
+          onAction={(action: string) => handleBotAction(selectedBot.bot._id, selectedBot.bot.userId._id, action)}
+          onRefresh={() => viewBotDetails(selectedBot.bot.userId._id)}
+        />
+      )}
+    </div>
+  );
+}
+
+// Bot Detail Modal Component
+function BotDetailModal({ bot, onClose, onAction, onRefresh }: {
+  bot: any;
+  onClose: () => void;
+  onAction: (action: string) => void;
+  onRefresh: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'decisions' | 'patterns' | 'config'>('overview');
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">🤖 Bot Details</h2>
+              <p className="text-purple-200">
+                {bot.bot.userId?.email || 'Unknown User'}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Status Bar */}
+        <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                bot.bot.status === 'active'
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                  : bot.bot.status === 'paused'
+                  ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+              }`}>
+                {bot.bot.status === 'active' ? '🟢' : bot.bot.status === 'paused' ? '🟡' : '🔴'} {bot.bot.status.toUpperCase()}
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Last active: {bot.bot.lastActive ? new Date(bot.bot.lastActive).toLocaleString() : 'Never'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onRefresh}
+                className="px-3 py-1 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded transition"
+              >
+                🔄 Refresh
+              </button>
+              {bot.bot.status === 'active' && (
+                <button
+                  onClick={() => onAction('pause')}
+                  className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded transition"
+                >
+                  ⏸️ Pause
+                </button>
+              )}
+              {bot.bot.status === 'paused' && (
+                <button
+                  onClick={() => onAction('resume')}
+                  className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded transition"
+                >
+                  ▶️ Resume
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6">
+          <div className="flex gap-4">
+            {[
+              { id: 'overview', label: 'Overview', icon: '📊' },
+              { id: 'decisions', label: 'Recent Decisions', icon: '📝' },
+              { id: 'patterns', label: 'Learning Patterns', icon: '🎓' },
+              { id: 'config', label: 'Configuration', icon: '⚙️' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition ${
+                  activeTab === tab.id
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Balance Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90 mb-1">Binance Balance</div>
+                  <div className="text-2xl font-bold">
+                    ${bot.bot.lastBalanceCheck?.binanceBalance?.toLocaleString() || '0'}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90 mb-1">Gas Fee Balance</div>
+                  <div className="text-2xl font-bold">
+                    ${bot.bot.lastBalanceCheck?.gasFeeBalance?.toFixed(2) || '0'}
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                  <div className="text-sm opacity-90 mb-1">Available Margin</div>
+                  <div className="text-2xl font-bold">
+                    ${bot.bot.lastBalanceCheck?.availableMargin?.toLocaleString() || '0'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Statistics */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📊 Trading Statistics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Win Rate</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {(bot.bot.stats.winRate * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Total Trades</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {bot.bot.stats.totalTrades}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Net Profit</div>
+                    <div className={`text-2xl font-bold ${
+                      bot.bot.stats.netProfit > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      ${bot.bot.stats.netProfit?.toFixed(2) || '0'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Daily Trades</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {bot.bot.dailyTradeCount} / {bot.bot.tradingConfig.maxDailyTrades}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signal Stats */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📡 Signal Statistics</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Received</div>
+                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                      {bot.bot.stats.totalSignalsReceived}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Executed</div>
+                    <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                      {bot.bot.stats.signalsExecuted}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Rejected</div>
+                    <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                      {bot.bot.stats.signalsRejected}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'decisions' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">📝 Recent 20 Decisions</h3>
+              {bot.recentDecisions && bot.recentDecisions.length > 0 ? (
+                <div className="space-y-3">
+                  {bot.recentDecisions.map((decision: any) => (
+                    <div
+                      key={decision._id}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className={`text-2xl ${decision.decision === 'EXECUTE' ? '✅' : '⏭️'}`}>
+                            {decision.decision === 'EXECUTE' ? '✅' : '⏭️'}
+                          </span>
+                          <div>
+                            <div className="font-bold text-gray-900 dark:text-white">
+                              {decision.signal.symbol} {decision.signal.action}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(decision.timestamp).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-900 dark:text-white">
+                            {(decision.confidenceBreakdown.total * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            confidence
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {decision.reason}
+                      </div>
+                      {decision.execution && decision.execution.result && (
+                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className={`font-medium ${
+                              decision.execution.result === 'WIN' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {decision.execution.result === 'WIN' ? '🎉 WIN' : '❌ LOSS'}
+                            </span>
+                            <span className={`font-bold ${
+                              decision.execution.profit > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              ${decision.execution.profit?.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">No decisions yet</p>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'patterns' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">🎓 Learning Patterns</h3>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {bot.learningPatterns.total}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Total Patterns</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {bot.learningPatterns.lossPatterns}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Loss Patterns</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {bot.learningPatterns.winPatterns}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Win Patterns</div>
+                </div>
+              </div>
+              {bot.learningPatterns.topPatterns && bot.learningPatterns.topPatterns.length > 0 ? (
+                <div className="space-y-3">
+                  {bot.learningPatterns.topPatterns.map((pattern: any, index: number) => (
+                    <div
+                      key={index}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-bold text-gray-900 dark:text-white mb-1">
+                            {pattern.type === 'loss' ? '❌' : '✅'} {pattern.description}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Confidence: {(pattern.confidence * 100).toFixed(0)}% • 
+                            Strength: {pattern.strength}/100 • 
+                            Occurrences: {pattern.occurrences}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-lg font-bold text-gray-900 dark:text-white">
+                            {(pattern.successRate * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            success
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">No patterns learned yet</p>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'config' && (
+            <div className="space-y-6">
+              {/* AI Config */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">🧠 AI Configuration</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">AI Enabled</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {bot.bot.aiConfig.enabled ? '✅ Yes' : '❌ No'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Confidence Threshold</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {(bot.bot.aiConfig.confidenceThreshold * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">News Weight</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      ±{(bot.bot.aiConfig.newsWeight * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Backtest Weight</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      ±{(bot.bot.aiConfig.backtestWeight * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Learning Weight</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      ±{(bot.bot.aiConfig.learningWeight * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Min Gas Fee Balance</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      ${bot.bot.aiConfig.minGasFeeBalance} USDT
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trading Config */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">⚙️ Trading Configuration</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Risk Per Trade</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {(bot.bot.tradingConfig.riskPercent * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Max Leverage</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {bot.bot.tradingConfig.maxLeverage}x
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Max Daily Trades</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {bot.bot.tradingConfig.maxDailyTrades}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Allowed Pairs</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {bot.bot.tradingConfig.allowedPairs.join(', ')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

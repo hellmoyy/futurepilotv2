@@ -141,7 +141,8 @@ export async function GET(request: NextRequest) {
       .limit(10);
     
     // Get today's stats
-    const todayStats = await AIDecision.getStats(userId, {
+    const mongoose = await import('mongoose');
+    const todayStats = await AIDecision.getStats(new mongoose.Types.ObjectId(userId), {
       start: new Date(new Date().setHours(0, 0, 0, 0)),
       end: new Date(),
     });

@@ -83,7 +83,7 @@ export default function AdminLayout({
     { href: '/administrator/analytics', label: 'Analytics', icon: 'chart', section: 'main' },
     // Bot Management Section
     { href: '/administrator/bot-signal', label: 'Bot Signal', icon: 'signal', section: 'bot', badge: 'Raw Signals' },
-    { href: '/administrator/bot-decision', label: 'Bot Decision', icon: 'brain', section: 'bot', badge: 'AI Layer', isNew: true },
+    { href: '/administrator/bot-decision', label: 'Bot Decision', icon: 'brain', section: 'bot', badge: 'AI Layer' },
     // Settings
     { href: '/administrator/settings', label: 'Settings', icon: 'settings', section: 'settings' },
   ];
@@ -181,11 +181,6 @@ export default function AdminLayout({
                 {sidebarOpen && (
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{item.label}</span>
-                    {item.isNew && (
-                      <span className="px-2 py-0.5 text-xs font-bold bg-green-500 text-white rounded-full">
-                        NEW
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
