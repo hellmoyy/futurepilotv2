@@ -226,24 +226,20 @@ function parseBacktestOutput(output: string, period: string) {
       if (inTradeLog) {
         const trimmed = line.trim();
         
-        // Debug: Log every non-empty line in trade log section
-        if (trimmed && !trimmed.startsWith('=')) {
-          console.log(`🔍 Line: "${trimmed.substring(0, 80)}"`);
-        }
-        
-        if (trimmed.match(/^[✅❌].+Trade\s+#\d+/) || trimmed.match(/Trade\s+#\d+\s*-\s*(LONG|SHORT|BUY|SELL)/i)) {
+        // Simpler pattern: just look for "Trade #" followed by number and dash
+        if (trimmed.includes('Trade #') && trimmed.includes(' - ')) {
           // Start new trade
           if (currentTrade) {
             results.trades.push(currentTrade);
           }
           
-          const tradeMatch = trimmed.match(/Trade\s+#(\d+)\s*-\s*(\w+)/);
+          const tradeMatch = trimmed.match(/Trade\s+#(\d+)\s+-\s+(\w+)/);
           currentTrade = {
             id: tradeMatch ? parseInt(tradeMatch[1]) : results.trades.length + 1,
             type: tradeMatch && tradeMatch[2] ? tradeMatch[2].toUpperCase() : 'UNKNOWN',
             icon: trimmed.includes('✅') ? '✅' : '❌',
           };
-          console.log(`📝 Parsing trade #${currentTrade.id} - ${currentTrade.type}`);
+          console.log(`📝 Parsing trade #${currentTrade.id} - ${currentTrade.type} (icon: ${currentTrade.icon})`);
           continue;
         }
       }
