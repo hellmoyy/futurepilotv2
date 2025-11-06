@@ -17,6 +17,10 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
     
+    // Ensure SignalCenterConfig model is registered
+    // This import is required for .populate() to work
+    const _ = SignalCenterConfig;
+    
     // Get query parameters
     const searchParams = req.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '30');
