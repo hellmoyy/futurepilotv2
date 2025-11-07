@@ -96,6 +96,15 @@ export function convertSignalPatternsToDecisionPatterns(
   userBotId: string,
   symbol: string = 'BTCUSDT'
 ): BotDecisionPattern[] {
+  // Validate inputs
+  if (!userId || typeof userId !== 'string' || userId.length !== 24) {
+    throw new Error(`Invalid userId: ${userId}. Must be 24 character hex string.`);
+  }
+  
+  if (!userBotId || typeof userBotId !== 'string' || userBotId.length !== 24) {
+    throw new Error(`Invalid userBotId: ${userBotId}. Must be 24 character hex string.`);
+  }
+  
   const patterns: BotDecisionPattern[] = [];
   const now = new Date();
 

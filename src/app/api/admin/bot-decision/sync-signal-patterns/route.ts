@@ -169,10 +169,28 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      // Validate ObjectIds before conversion
+      if (!user._id) {
+        console.log(`   ⚠️ User has no _id, skipping`);
+        continue;
+      }
+
+      if (!userBot._id) {
+        console.log(`   ⚠️ UserBot has no _id, skipping`);
+        continue;
+      }
+
+      const userIdString = user._id.toString();
+      const userBotIdString = userBot._id.toString();
+
+      console.log(`   📋 Converting patterns for user: ${user.email}`);
+      console.log(`      userId: ${userIdString}`);
+      console.log(`      userBotId: ${userBotIdString}`);
+
       const patterns = convertSignalPatternsToDecisionPatterns(
         signalLearning,
-        user._id.toString(),
-        (userBot._id as any).toString(),
+        userIdString,
+        userBotIdString,
         symbol
       );
 
@@ -214,13 +232,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 6: Generate insights
-    const samplePatterns = convertSignalPatternsToDecisionPatterns(
-      signalLearning,
-      targetUsers[0]._id.toString(),
-      'sample',
-      symbol
-    );
-    const insights = generateSyncInsights(samplePatterns, signalLearning);
+    // Use first created/found userBot for insight generation
+    let samplePatterns: any[] = [];
+    let insights: string[] = [];
+    
+    if (targetUsers.length > 0) {
+      // Find any userBot to use for sample pattern generation
+      const anyUserBot = await UserBot.findOne({ userId: targetUsers[0]._id });
+      
+      if (anyUserBot && anyUserBot._id) {
+        samplePatterns = convertSignalPatternsToDecisionPatterns(
+          signalLearning,
+          targetUsers[0]._id.toString(),
+          anyUserBot._id.toString(),
+          symbol
+        );
+        insights = generateSyncInsights(samplePatterns, signalLearning);
+      } else {
+        // Generate basic insights without sample patterns
+        insights = [
+          `✅ Imported ${signalLearning.summary.totalBacktests} backtests with ${signalLearning.summary.avgROI.toFixed(2)}% average ROI`,
+          `📈 Win rate: ${((signalLearning.summary.winTradesAnalyzed / (signalLearning.summary.winTradesAnalyzed + signalLearning.summary.lossTradesAnalyzed)) * 100).toFixed(2)}%`,
+          `🎯 Created ${totalCreated} new patterns from Bot Signal proven strategies`,
+          totalUpdated > 0 ? `🔄 Updated ${totalUpdated} existing patterns with latest data` : null,
+          `💡 Bot Decision AI will now use Bot Signal insights for better decisions`
+        ].filter(Boolean) as string[];
+      }
+    }
 
     console.log('✅ Pattern sync completed!');
     console.log(`   - Created: ${totalCreated}`);
