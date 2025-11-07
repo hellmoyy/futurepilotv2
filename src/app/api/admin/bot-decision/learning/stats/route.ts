@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     const winPatterns = await LearningPattern.countDocuments({ ...query, 'pattern.type': 'win' });
 
     // 2. Pattern Effectiveness
+    // Note: Patterns are duplicated per user, so we average netProfitLoss instead of sum
     const effectivenessAgg = await LearningPattern.aggregate([
       { $match: query },
       {
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
           totalOccurrences: { $sum: '$occurrences' },
           totalMatched: { $sum: '$timesMatched' },
           totalAvoided: { $sum: '$timesAvoided' },
-          totalNetProfit: { $sum: '$netProfitLoss' },
+          totalNetProfit: { $avg: '$netProfitLoss' }, // Changed from $sum to $avg (patterns are per-user duplicates)
         },
       },
     ]);

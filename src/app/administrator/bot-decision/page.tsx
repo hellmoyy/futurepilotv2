@@ -2614,11 +2614,11 @@ function LearningTab() {
             </div>
 
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Net Profit/Loss</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Avg Net Profit/Loss</div>
               <div className={`text-3xl font-bold ${(stats.totalNetProfit || 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 ${(stats.totalNetProfit || 0).toFixed(2)}
               </div>
-              <div className="text-xs text-gray-400 mt-2">from pattern learning</div>
+              <div className="text-xs text-gray-400 mt-2">average per pattern</div>
             </div>
           </div>
 

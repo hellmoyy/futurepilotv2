@@ -154,8 +154,8 @@ export function convertSignalPatternsToDecisionPatterns(
     }
 
     // Pattern 2: Take Profit exit strategy
-    if (winData.exitTypes['TAKE_PROFIT'] && winData.exitTypes['TAKE_PROFIT'] > 0) {
-      const tpCount = winData.exitTypes['TAKE_PROFIT'];
+    if (winData.exitTypes['TP'] && winData.exitTypes['TP'] > 0) {
+      const tpCount = winData.exitTypes['TP'];
       const tpRate = tpCount / signalLearning.summary.winTradesAnalyzed;
       
       patterns.push({
@@ -193,8 +193,8 @@ export function convertSignalPatternsToDecisionPatterns(
     }
 
     // Pattern 3: Trailing Profit strategy
-    if (winData.exitTypes['TRAILING_PROFIT'] && winData.exitTypes['TRAILING_PROFIT'] > 0) {
-      const trailCount = winData.exitTypes['TRAILING_PROFIT'];
+    if (winData.exitTypes['TRAILING_TP'] && winData.exitTypes['TRAILING_TP'] > 0) {
+      const trailCount = winData.exitTypes['TRAILING_TP'];
       
       patterns.push({
         userId: new mongoose.Types.ObjectId(userId),
@@ -257,7 +257,7 @@ export function convertSignalPatternsToDecisionPatterns(
         failureCount: count,
         successRate: 0,
         totalProfit: 0,
-        totalLoss: Math.abs(lossData.avgLoss) * count, // Positive value for display
+        totalLoss: lossData.avgLoss * count, // Negative value (avgLoss is already negative)
         netProfitLoss: lossData.avgLoss * count, // Negative value (avgLoss is already negative)
         avgProfit: 0,
         avgLoss: lossData.avgLoss, // Keep original negative value
@@ -296,7 +296,7 @@ export function convertSignalPatternsToDecisionPatterns(
         failureCount: slCount,
         successRate: 0,
         totalProfit: 0,
-        totalLoss: Math.abs(lossData.avgLoss) * slCount, // Positive for display
+        totalLoss: lossData.avgLoss * slCount, // Negative (avgLoss is already negative)
         netProfitLoss: lossData.avgLoss * slCount, // Negative (avgLoss is already negative)
         avgProfit: 0,
         avgLoss: lossData.avgLoss, // Keep original negative value
@@ -335,7 +335,7 @@ export function convertSignalPatternsToDecisionPatterns(
         failureCount: emergCount,
         successRate: 0,
         totalProfit: 0,
-        totalLoss: Math.abs(lossData.avgLoss) * emergCount, // Positive for display
+        totalLoss: lossData.avgLoss * emergCount, // Negative (avgLoss is already negative)
         netProfitLoss: lossData.avgLoss * emergCount, // Negative (avgLoss is already negative)
         avgProfit: 0,
         avgLoss: lossData.avgLoss, // Keep original negative value
