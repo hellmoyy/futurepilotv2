@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 import UserBot from '@/models/UserBot';
 import { User } from '@/models/User';
+import mongoose from 'mongoose';
 
 /**
  * GET /api/admin/bot-decision/user-bots/[userId]
@@ -23,6 +24,13 @@ export async function GET(
     }
     
     await dbConnect();
+    
+    // Register User model alias for populate compatibility
+    if (!mongoose.models.User && mongoose.models.futurepilotcols) {
+      const UserModel = mongoose.model('futurepilotcols');
+      mongoose.model('User', UserModel.schema, 'futurepilotcols');
+      console.log('✅ Registered User model alias for populate queries');
+    }
     
     const { userId } = params;
     
@@ -126,6 +134,12 @@ export async function PATCH(
     }
     
     await dbConnect();
+    
+    // Register User model alias for populate compatibility
+    if (!mongoose.models.User && mongoose.models.futurepilotcols) {
+      const UserModel = mongoose.model('futurepilotcols');
+      mongoose.model('User', UserModel.schema, 'futurepilotcols');
+    }
     
     const { userId } = params;
     const body = await request.json();

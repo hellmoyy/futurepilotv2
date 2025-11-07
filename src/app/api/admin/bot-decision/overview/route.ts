@@ -6,6 +6,7 @@ import { User } from '@/models/User';
 import AIDecision from '@/models/AIDecision';
 import NewsEvent from '@/models/NewsEvent';
 import LearningPattern from '@/models/LearningPattern';
+import mongoose from 'mongoose';
 
 /**
  * GET /api/admin/bot-decision/overview
@@ -26,6 +27,14 @@ export async function GET(request: NextRequest) {
     }
     
     await dbConnect();
+    
+    // Register User model with alias for populate compatibility
+    // UserBot references 'User' but model is registered as 'futurepilotcols'
+    if (!mongoose.models.User) {
+      const UserModel = mongoose.model('futurepilotcols');
+      mongoose.model('User', UserModel.schema, 'futurepilotcols');
+      console.log('✅ Registered User model alias for populate queries');
+    }
     
     console.log('📊 Fetching Bot Decision overview statistics...');
     

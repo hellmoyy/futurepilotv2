@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 import UserBot from '@/models/UserBot';
 import { User } from '@/models/User';
+import mongoose from 'mongoose';
 
 /**
  * GET /api/admin/bot-decision/user-bots
@@ -29,6 +30,14 @@ export async function GET(request: NextRequest) {
     }
     
     await dbConnect();
+    
+    // Register User model alias for populate compatibility
+    // UserBot now uses ref 'futurepilotcols' but ensure backward compatibility
+    if (!mongoose.models.User && mongoose.models.futurepilotcols) {
+      const UserModel = mongoose.model('futurepilotcols');
+      mongoose.model('User', UserModel.schema, 'futurepilotcols');
+      console.log('✅ Registered User model alias for populate queries');
+    }
     
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
