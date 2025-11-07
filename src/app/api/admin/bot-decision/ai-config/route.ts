@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     // Verify admin authentication
     const adminAuth = await verifyAdminAuth(req);
-    if (!adminAuth.isValid) {
+    if (!adminAuth.authenticated) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     // Verify admin authentication
     const adminAuth = await verifyAdminAuth(req);
-    if (!adminAuth.isValid) {
+    if (!adminAuth.authenticated) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
