@@ -69,12 +69,21 @@ export async function GET(request: NextRequest) {
     // Get total count
     const total = await UserBot.countDocuments(query);
     
-    // Get paginated bots
+    console.log(`📊 Fetching ${total} bots with query:`, JSON.stringify(query));
+    console.log('🔍 Available models:', Object.keys(mongoose.models));
+    
+    // Get paginated bots with populate
     const bots = await UserBot.find(query)
       .populate('userId', 'email username')
       .sort({ lastActive: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
+    
+    console.log(`✅ Fetched ${bots.length} bots`);
+    if (bots.length > 0) {
+      console.log('🔍 First bot userId type:', typeof bots[0].userId);
+      console.log('🔍 First bot userId value:', bots[0].userId);
+    }
     
     const botsData = bots.map(bot => ({
       _id: bot._id,

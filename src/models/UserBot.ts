@@ -114,7 +114,7 @@ const UserBotSchema = new Schema<IUserBot, IUserBotModel>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'futurepilotcols', // Updated to match actual User model name
+      ref: 'User', // User model is registered in User.ts
       required: true,
       unique: true,
       index: true,

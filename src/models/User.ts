@@ -324,3 +324,10 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
 
 export const User: Model<IUser> =
   mongoose.models.futurepilotcols || mongoose.model<IUser>('futurepilotcols', UserSchema, 'futurepilotcols');
+
+// Also register with 'User' name for populate compatibility
+if (!mongoose.models.User) {
+  mongoose.model<IUser>('User', UserSchema, 'futurepilotcols');
+}
+
+export default User;
