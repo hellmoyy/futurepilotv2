@@ -101,23 +101,62 @@ export async function POST(request: NextRequest) {
           // Create default UserBot
           userBot = await UserBot.create({
             userId: user._id,
-            name: 'AI Trading Bot',
-            status: 'idle',
+            status: 'paused', // Valid enum: 'active' | 'paused' | 'stopped'
+            lastBalanceCheck: {
+              timestamp: new Date(),
+              binanceBalance: 0,
+              gasFeeBalance: user.walletData?.balance || 0,
+              availableMargin: 0,
+              usedMargin: 0
+            },
             aiConfig: {
-              confidenceThreshold: 0.65,
-              newsWeight: 0.15,
-              backtestWeight: 0.10,
-              learningWeight: 0.10
+              enabled: true,
+              confidenceThreshold: 0.82,
+              newsWeight: 0.10,
+              backtestWeight: 0.05,
+              learningWeight: 0.03,
+              minGasFeeBalance: 10
+            },
+            tradingConfig: {
+              riskPercent: 0.02,
+              maxLeverage: 10,
+              maxDailyTrades: 50,
+              allowedPairs: ['BTCUSDT'],
+              blacklistPairs: []
+            },
+            riskManagement: {
+              maxDailyTradesHighWinRate: 4,
+              maxDailyTradesLowWinRate: 2,
+              winRateThreshold: 0.85,
+              maxConsecutiveLosses: 2,
+              cooldownPeriodHours: 24,
+              cooldownStartTime: null,
+              isInCooldown: false,
+              cooldownReason: ''
             },
             stats: {
-              totalSignals: 0,
+              totalSignalsReceived: 0,
               signalsExecuted: 0,
               signalsRejected: 0,
               totalTrades: 0,
-              wins: 0,
-              losses: 0,
+              winningTrades: 0,
+              losingTrades: 0,
               winRate: 0,
-              netProfit: 0
+              totalProfit: 0,
+              totalLoss: 0,
+              netProfit: 0,
+              consecutiveLosses: 0,
+              dailyTradesCount: 0,
+              lastTradeDate: null,
+              bestTrade: 0,
+              worstTrade: 0,
+              avgWin: 0,
+              avgLoss: 0
+            },
+            performance: {
+              last7Days: { trades: 0, wins: 0, profit: 0, winRate: 0 },
+              last30Days: { trades: 0, wins: 0, profit: 0, winRate: 0 },
+              allTime: { trades: 0, wins: 0, profit: 0, winRate: 0 }
             }
           });
           console.log(`   ✅ Created UserBot for user ${user.email}`);
