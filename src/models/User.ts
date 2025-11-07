@@ -43,6 +43,8 @@ export interface IUser extends Document {
     riskPerTrade: number; // 1-5% (default 2%)
     maxPositions: number; // 1-5 concurrent positions (default 3)
     leverage: number; // 1-20x (default 10x)
+    aiDecisionEnabled?: boolean; // Enable AI evaluation (default: true)
+    aiDecisionFallbackEnabled?: boolean; // Execute on AI error (default: true)
     createdAt?: Date;
     updatedAt?: Date;
   };
@@ -230,6 +232,14 @@ const UserSchema = new Schema<IUser>(
         default: 10,
         min: 1,
         max: 20,
+      },
+      aiDecisionEnabled: {
+        type: Boolean,
+        default: true, // AI evaluation enabled by default
+      },
+      aiDecisionFallbackEnabled: {
+        type: Boolean,
+        default: true, // Execute on AI error by default
       },
       createdAt: Date,
       updatedAt: Date,

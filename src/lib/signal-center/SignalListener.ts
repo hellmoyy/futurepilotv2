@@ -2,8 +2,10 @@ import { EventEmitter } from 'events';
 import { signalBroadcaster } from './SignalBroadcaster';
 import { BotExecutor } from './BotExecutor';
 import { User } from '@/models/User';
-import type { TradingSignal } from './types';
+import type { TradingSignal, SignalStrength } from './types';
 import mongoose from 'mongoose';
+import { AIDecisionEngine } from '@/lib/ai-bot/AIDecisionEngine';
+import type { Signal as AISignal } from '@/lib/ai-bot/AIDecisionEngine';
 
 /**
  * Signal Listener
@@ -20,6 +22,7 @@ export interface ListenerStats {
   signalsFiltered: number;
   signalsExecuted: number;
   signalsFailed: number;
+  signalsSkippedByAI: number;
   lastSignalTime: number;
   status: 'RUNNING' | 'STOPPED' | 'ERROR';
 }
@@ -40,6 +43,7 @@ export class SignalListener extends EventEmitter {
       signalsFiltered: 0,
       signalsExecuted: 0,
       signalsFailed: 0,
+      signalsSkippedByAI: 0,
       lastSignalTime: 0,
       status: 'STOPPED',
     };
@@ -143,6 +147,54 @@ export class SignalListener extends EventEmitter {
         return;
       }
       
+      // 🧠 AI DECISION LAYER INTEGRATION
+      // Check if AI evaluation is enabled for this user
+      if (userSettings.aiDecisionEnabled !== false) { // Default: enabled
+        console.log(`🧠 Evaluating signal with AI Decision Engine...`);
+        
+        try {
+          // Convert TradingSignal to AISignal format
+          const aiSignal = this.convertSignalToAI(signal);
+          
+          // Evaluate with AI Decision Engine
+          const aiEngine = new AIDecisionEngine();
+          const aiResult = await aiEngine.evaluate(this.userId.toString(), aiSignal);
+          
+          console.log(`🧠 AI Decision: ${aiResult.decision} (confidence: ${(aiResult.confidenceBreakdown.total * 100).toFixed(1)}%)`);
+          console.log(`   Reason: ${aiResult.reason}`);
+          console.log(`   AI Cost: $${aiResult.aiCost.toFixed(4)}`);
+          
+          // If AI says SKIP, don't execute
+          if (aiResult.decision === 'SKIP') {
+            this.stats.signalsSkippedByAI++;
+            console.log(`⏭️  Signal skipped by AI: ${signal.symbol}`);
+            this.emit('signalSkippedByAI', { signal, aiResult });
+            return;
+          }
+          
+          // AI approved, continue to execution
+          console.log(`✅ Signal approved by AI, proceeding to execution...`);
+          
+        } catch (aiError: any) {
+          console.error('❌ AI evaluation error:', aiError);
+          
+          // Fallback behavior: execute signal without AI (configurable)
+          if (userSettings.aiDecisionFallbackEnabled === false) {
+            // If fallback disabled, skip signal on AI error
+            this.stats.signalsFailed++;
+            console.log(`⏭️  Signal skipped due to AI error (no fallback)`);
+            this.emit('aiError', { signal, error: aiError.message });
+            return;
+          } else {
+            // Default: continue to execution even if AI fails
+            console.log(`⚠️  AI evaluation failed, using fallback (direct execution)`);
+            this.emit('aiError', { signal, error: aiError.message });
+          }
+        }
+      } else {
+        console.log(`⚠️  AI evaluation disabled, executing signal directly`);
+      }
+      
       // Execute signal
       if (!this.botExecutor) {
         console.error('❌ Bot executor not initialized');
@@ -196,6 +248,52 @@ export class SignalListener extends EventEmitter {
     }
     
     return true;
+  }
+  
+  /**
+   * Convert SignalAction to AI action format
+   */
+  private convertActionToAI(action: string): 'LONG' | 'SHORT' {
+    // Map BUY/SELL to LONG/SHORT
+    if (action === 'BUY' || action === 'CLOSE_SHORT') {
+      return 'LONG';
+    }
+    return 'SHORT';
+  }
+  
+  /**
+   * Normalize signal strength to confidence (0-1)
+   */
+  private normalizeStrengthToConfidence(strength: SignalStrength): number {
+    const strengthMap: Record<SignalStrength, number> = {
+      'WEAK': 0.65,
+      'MODERATE': 0.75,
+      'STRONG': 0.85,
+      'VERY_STRONG': 0.95,
+    };
+    return strengthMap[strength] || 0.75;
+  }
+  
+  /**
+   * Convert TradingSignal to AISignal format
+   */
+  private convertSignalToAI(signal: TradingSignal): AISignal {
+    return {
+      id: signal.id,
+      symbol: signal.symbol,
+      action: this.convertActionToAI(signal.action),
+      confidence: this.normalizeStrengthToConfidence(signal.strength),
+      entryPrice: signal.entryPrice,
+      stopLoss: signal.stopLoss,
+      takeProfit: signal.takeProfit,
+      indicators: {
+        rsi: signal.indicators.rsi,
+        macd: signal.indicators.macd.histogram,
+        adx: signal.indicators.adx,
+        volume: signal.indicators.volume.ratio,
+      },
+      timestamp: new Date(signal.timestamp),
+    };
   }
   
   /**
