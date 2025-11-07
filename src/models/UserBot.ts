@@ -47,6 +47,23 @@ export interface IUserBot extends Document {
     blacklistPairs: string[];      // Pairs to never trade
   };
   
+  // Risk Management (Advanced Protection)
+  riskManagement: {
+    // Adaptive Daily Trade Limits
+    maxDailyTradesHighWinRate: number;    // Default 4 (when win rate >= 85%)
+    maxDailyTradesLowWinRate: number;     // Default 2 (when win rate < 85%)
+    winRateThreshold: number;             // Default 0.85 (85%)
+    
+    // Consecutive Loss Protection
+    maxConsecutiveLosses: number;         // Default 2
+    cooldownPeriodHours: number;          // Default 24 hours
+    cooldownStartTime: Date | null;       // When cooldown started (null = not in cooldown)
+    
+    // Protection Status
+    isInCooldown: boolean;                // Currently in cooldown?
+    cooldownReason: string;               // Why in cooldown?
+  };
+  
   // Statistics (accumulated over time)
   stats: {
     totalSignalsReceived: number;
@@ -133,6 +150,22 @@ const UserBotSchema = new Schema<IUserBot, IUserBotModel>(
       maxDailyTrades: { type: Number, default: 50, min: 1, max: 200 },
       allowedPairs: { type: [String], default: ['BTCUSDT'] },
       blacklistPairs: { type: [String], default: [] },
+    },
+    
+    riskManagement: {
+      // Adaptive Daily Trade Limits
+      maxDailyTradesHighWinRate: { type: Number, default: 4, min: 1, max: 20 },
+      maxDailyTradesLowWinRate: { type: Number, default: 2, min: 1, max: 10 },
+      winRateThreshold: { type: Number, default: 0.85, min: 0.5, max: 0.99 },
+      
+      // Consecutive Loss Protection
+      maxConsecutiveLosses: { type: Number, default: 2, min: 1, max: 10 },
+      cooldownPeriodHours: { type: Number, default: 24, min: 1, max: 168 }, // Max 1 week
+      cooldownStartTime: { type: Date, default: null },
+      
+      // Protection Status
+      isInCooldown: { type: Boolean, default: false },
+      cooldownReason: { type: String, default: '' },
     },
     
     stats: {
@@ -240,7 +273,7 @@ UserBotSchema.methods.recordTradeResult = async function(
     this.stats.winningTrades += 1;
     this.stats.totalProfit += profit;
     this.consecutiveWins += 1;
-    this.consecutiveLosses = 0;
+    this.consecutiveLosses = 0; // Reset consecutive losses on win
     if (profit > this.stats.bestTrade) {
       this.stats.bestTrade = profit;
     }
@@ -251,6 +284,16 @@ UserBotSchema.methods.recordTradeResult = async function(
     this.consecutiveWins = 0;
     if (profit < this.stats.worstTrade) {
       this.stats.worstTrade = profit;
+    }
+    
+    // ✨ NEW: Trigger cooldown if consecutive losses reached
+    if (this.consecutiveLosses >= this.riskManagement.maxConsecutiveLosses) {
+      this.riskManagement.isInCooldown = true;
+      this.riskManagement.cooldownStartTime = new Date();
+      this.riskManagement.cooldownReason = `${this.consecutiveLosses}x consecutive losses detected`;
+      
+      console.log(`🛑 COOLDOWN TRIGGERED for user ${this.userId}: ${this.riskManagement.cooldownReason}`);
+      console.log(`   Cooldown period: ${this.riskManagement.cooldownPeriodHours} hours`);
     }
   }
   
@@ -277,6 +320,42 @@ UserBotSchema.methods.canTrade = function(): { allowed: boolean; reason?: string
     return { allowed: false, reason: `Gas fee balance below minimum ($${this.aiConfig.minGasFeeBalance})` };
   }
   
+  // ✨ NEW: Check cooldown status
+  if (this.riskManagement.isInCooldown) {
+    const cooldownEnd = new Date(this.riskManagement.cooldownStartTime!.getTime() + this.riskManagement.cooldownPeriodHours * 60 * 60 * 1000);
+    const now = new Date();
+    
+    if (now < cooldownEnd) {
+      const remainingHours = Math.ceil((cooldownEnd.getTime() - now.getTime()) / (1000 * 60 * 60));
+      return { 
+        allowed: false, 
+        reason: `🛑 COOLDOWN MODE: ${this.riskManagement.cooldownReason} | Remaining: ${remainingHours}h` 
+      };
+    } else {
+      // Cooldown expired, reset
+      this.riskManagement.isInCooldown = false;
+      this.riskManagement.cooldownStartTime = null;
+      this.riskManagement.cooldownReason = '';
+      this.consecutiveLosses = 0;
+      this.save(); // Auto-save to persist cooldown reset
+    }
+  }
+  
+  // ✨ NEW: Adaptive daily trade limit based on win rate
+  const currentWinRate = this.stats.winRate || 0;
+  const adaptiveLimit = currentWinRate >= this.riskManagement.winRateThreshold
+    ? this.riskManagement.maxDailyTradesHighWinRate
+    : this.riskManagement.maxDailyTradesLowWinRate;
+  
+  if (this.dailyTradeCount >= adaptiveLimit) {
+    const limitType = currentWinRate >= this.riskManagement.winRateThreshold ? 'High Win Rate' : 'Low Win Rate';
+    return { 
+      allowed: false, 
+      reason: `Daily trade limit reached (${adaptiveLimit} trades) | ${limitType} Mode (${(currentWinRate * 100).toFixed(1)}% win rate)` 
+    };
+  }
+  
+  // Legacy check (fallback)
   if (this.dailyTradeCount >= this.tradingConfig.maxDailyTrades) {
     return { allowed: false, reason: 'Daily trade limit reached' };
   }

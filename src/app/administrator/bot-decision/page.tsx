@@ -1239,6 +1239,13 @@ function AIConfigTab() {
   const [backtestWeight, setBacktestWeight] = useState(5);
   const [learningEnabled, setLearningEnabled] = useState(true);
 
+  // ✨ NEW: Risk Management state
+  const [maxDailyTradesHighWinRate, setMaxDailyTradesHighWinRate] = useState(4);
+  const [maxDailyTradesLowWinRate, setMaxDailyTradesLowWinRate] = useState(2);
+  const [winRateThreshold, setWinRateThreshold] = useState(85);
+  const [maxConsecutiveLosses, setMaxConsecutiveLosses] = useState(2);
+  const [cooldownPeriodHours, setCooldownPeriodHours] = useState(24);
+
   const fetchConfigs = async () => {
     setLoading(true);
     setError(null);
@@ -1270,6 +1277,12 @@ function AIConfigTab() {
           newsWeight: newsWeight / 100,
           backtestWeight: backtestWeight / 100,
           learningEnabled,
+          // ✨ NEW: Risk Management
+          maxDailyTradesHighWinRate,
+          maxDailyTradesLowWinRate,
+          winRateThreshold: winRateThreshold / 100,
+          maxConsecutiveLosses,
+          cooldownPeriodHours,
         }),
       });
       const data = await res.json();
@@ -1424,11 +1437,208 @@ function AIConfigTab() {
               setNewsWeight(10);
               setBacktestWeight(5);
               setLearningEnabled(true);
+              setMaxDailyTradesHighWinRate(4);
+              setMaxDailyTradesLowWinRate(2);
+              setWinRateThreshold(85);
+              setMaxConsecutiveLosses(2);
+              setCooldownPeriodHours(24);
             }}
             className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
           >
             🔄 Reset to Default
           </button>
+        </div>
+      </div>
+
+      {/* ✨ NEW: Risk Management Settings */}
+      <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg shadow p-6 border-2 border-red-200 dark:border-red-800">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <span>🛡️</span> Risk Management & Protection
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          Adaptive trading limits and automatic cooldown protection
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Adaptive Daily Trade Limits */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span>📊</span> Adaptive Daily Trade Limits
+            </h4>
+            
+            {/* Win Rate Threshold */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Win Rate Threshold
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="99"
+                value={winRateThreshold}
+                onChange={(e) => setWinRateThreshold(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>50%</span>
+                <span className="font-bold text-green-600 dark:text-green-400">{winRateThreshold}%</span>
+                <span>99%</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Threshold to determine if win rate is &quot;high&quot; or &quot;low&quot;
+              </p>
+            </div>
+
+            {/* High Win Rate Limit */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Max Trades (High Win Rate ≥{winRateThreshold}%)
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                value={maxDailyTradesHighWinRate}
+                onChange={(e) => setMaxDailyTradesHighWinRate(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>1</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">{maxDailyTradesHighWinRate} trades/day</span>
+                <span>20</span>
+              </div>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                ✅ Bot performing well → More trading allowed
+              </p>
+            </div>
+
+            {/* Low Win Rate Limit */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Max Trades (Low Win Rate &lt;{winRateThreshold}%)
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={maxDailyTradesLowWinRate}
+                onChange={(e) => setMaxDailyTradesLowWinRate(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>1</span>
+                <span className="font-bold text-orange-600 dark:text-orange-400">{maxDailyTradesLowWinRate} trades/day</span>
+                <span>10</span>
+              </div>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                ⚠️ Bot underperforming → Trading restricted
+              </p>
+            </div>
+          </div>
+
+          {/* Consecutive Loss Protection */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <span>🛑</span> Consecutive Loss Protection
+            </h4>
+            
+            {/* Max Consecutive Losses */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Max Consecutive Losses
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={maxConsecutiveLosses}
+                onChange={(e) => setMaxConsecutiveLosses(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>1</span>
+                <span className="font-bold text-red-600 dark:text-red-400">{maxConsecutiveLosses} losses</span>
+                <span>10</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                After {maxConsecutiveLosses} consecutive losses, bot enters cooldown
+              </p>
+            </div>
+
+            {/* Cooldown Period */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Cooldown Period
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="168"
+                step="1"
+                value={cooldownPeriodHours}
+                onChange={(e) => setCooldownPeriodHours(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>1h</span>
+                <span className="font-bold text-purple-600 dark:text-purple-400">
+                  {cooldownPeriodHours}h ({(cooldownPeriodHours / 24).toFixed(1)} days)
+                </span>
+                <span>168h (7d)</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Bot will be paused for this duration after hitting consecutive loss limit
+              </p>
+            </div>
+
+            {/* Example Scenario */}
+            <div className="bg-red-50 dark:bg-red-900/30 rounded p-3 border border-red-200 dark:border-red-800">
+              <p className="text-xs font-medium text-red-900 dark:text-red-300 mb-2">
+                📋 Example Scenario:
+              </p>
+              <p className="text-xs text-red-700 dark:text-red-400">
+                After <strong>{maxConsecutiveLosses}</strong> consecutive losses, bot will automatically enter 
+                <strong> {cooldownPeriodHours}h cooldown mode</strong> (no new positions allowed).
+                This protects capital during losing streaks.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary Card */}
+        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+          <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
+            📝 Current Risk Management Summary
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <p className="text-blue-700 dark:text-blue-400 font-medium">Daily Limits:</p>
+              <p className="text-blue-900 dark:text-blue-300">
+                • High Win Rate (≥{winRateThreshold}%): <strong>{maxDailyTradesHighWinRate} trades</strong>
+              </p>
+              <p className="text-blue-900 dark:text-blue-300">
+                • Low Win Rate (&lt;{winRateThreshold}%): <strong>{maxDailyTradesLowWinRate} trades</strong>
+              </p>
+            </div>
+            <div>
+              <p className="text-blue-700 dark:text-blue-400 font-medium">Loss Protection:</p>
+              <p className="text-blue-900 dark:text-blue-300">
+                • Max consecutive losses: <strong>{maxConsecutiveLosses}</strong>
+              </p>
+              <p className="text-blue-900 dark:text-blue-300">
+                • Cooldown period: <strong>{cooldownPeriodHours}h</strong>
+              </p>
+            </div>
+            <div>
+              <p className="text-blue-700 dark:text-blue-400 font-medium">Auto-Protection:</p>
+              <p className="text-blue-900 dark:text-blue-300">
+                ✅ Adaptive limits enabled
+              </p>
+              <p className="text-blue-900 dark:text-blue-300">
+                ✅ Cooldown auto-trigger
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1461,40 +1671,81 @@ function AIConfigTab() {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Win Rate</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Daily Limit</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Consecutive Loss</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Threshold</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">News</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Backtest</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Learning</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Last Updated</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {configs.map((config) => (
-                  <tr key={config._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                {configs.map((config) => {
+                  const winRate = config.winRate || 0;
+                  const isHighWinRate = winRate >= (config.riskManagement?.winRateThreshold || 0.85);
+                  const currentLimit = isHighWinRate
+                    ? config.riskManagement?.maxDailyTradesHighWinRate || 4
+                    : config.riskManagement?.maxDailyTradesLowWinRate || 2;
+                  const isInCooldown = config.riskManagement?.isInCooldown || false;
+
+                  return (
+                  <tr key={config._id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${isInCooldown ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {config.user?.email || config.userId}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`font-medium ${
+                        winRate >= 0.85 ? 'text-green-600 dark:text-green-400' :
+                        winRate >= 0.70 ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
+                      }`}>
+                        {(winRate * 100).toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        isHighWinRate
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                      }`}>
+                        {currentLimit} trades/day
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`font-medium ${
+                        config.consecutiveLosses >= (config.riskManagement?.maxConsecutiveLosses || 2)
+                          ? 'text-red-600 dark:text-red-400'
+                          : config.consecutiveLosses > 0
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {config.consecutiveLosses || 0} / {config.riskManagement?.maxConsecutiveLosses || 2}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {isInCooldown ? (
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                          🛑 COOLDOWN
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                          ✅ ACTIVE
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {(config.confidenceThreshold * 100).toFixed(0)}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      ±{(config.newsWeight * 100).toFixed(0)}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      ±{(config.backtestWeight * 100).toFixed(0)}%
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {config.learningEnabled ? (
-                        <span className="text-green-600 dark:text-green-400">✅ Yes</span>
+                        <span className="text-green-600 dark:text-green-400">✅</span>
                       ) : (
-                        <span className="text-gray-400">❌ No</span>
+                        <span className="text-gray-400">❌</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(config.updatedAt).toLocaleDateString()}
-                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

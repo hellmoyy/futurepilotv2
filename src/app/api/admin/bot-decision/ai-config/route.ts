@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     // Get all UserBot configs
     const userBots = await UserBot.find()
       .populate('userId', 'email name')
-      .select('userId aiConfig updatedAt')
+      .select('userId aiConfig riskManagement stats consecutiveLosses updatedAt')
       .sort({ updatedAt: -1 })
       .lean();
 
@@ -42,10 +42,28 @@ export async function GET(req: NextRequest) {
         email: bot.userId.email,
         name: bot.userId.name,
       },
+      // AI Config
       confidenceThreshold: bot.aiConfig?.confidenceThreshold || 0.82,
       newsWeight: bot.aiConfig?.newsWeight || 0.10,
       backtestWeight: bot.aiConfig?.backtestWeight || 0.05,
       learningEnabled: bot.aiConfig?.learningEnabled !== false,
+      
+      // ✨ NEW: Risk Management
+      riskManagement: {
+        maxDailyTradesHighWinRate: bot.riskManagement?.maxDailyTradesHighWinRate || 4,
+        maxDailyTradesLowWinRate: bot.riskManagement?.maxDailyTradesLowWinRate || 2,
+        winRateThreshold: bot.riskManagement?.winRateThreshold || 0.85,
+        maxConsecutiveLosses: bot.riskManagement?.maxConsecutiveLosses || 2,
+        cooldownPeriodHours: bot.riskManagement?.cooldownPeriodHours || 24,
+        isInCooldown: bot.riskManagement?.isInCooldown || false,
+        cooldownStartTime: bot.riskManagement?.cooldownStartTime || null,
+        cooldownReason: bot.riskManagement?.cooldownReason || '',
+      },
+      
+      // Stats for context
+      winRate: bot.stats?.winRate || 0,
+      consecutiveLosses: bot.consecutiveLosses || 0,
+      
       updatedAt: bot.updatedAt,
     }));
 
@@ -87,37 +105,88 @@ export async function POST(req: NextRequest) {
       newsWeight,
       backtestWeight,
       learningEnabled,
+      // ✨ NEW: Risk Management Settings
+      maxDailyTradesHighWinRate,
+      maxDailyTradesLowWinRate,
+      winRateThreshold,
+      maxConsecutiveLosses,
+      cooldownPeriodHours,
     } = body;
 
-    // Validate values
-    if (confidenceThreshold < 0.7 || confidenceThreshold > 0.95) {
+    // Validate AI config values
+    if (confidenceThreshold !== undefined && (confidenceThreshold < 0.7 || confidenceThreshold > 0.95)) {
       return NextResponse.json(
         { success: false, error: 'Confidence threshold must be between 70% and 95%' },
         { status: 400 }
       );
     }
 
-    if (newsWeight < 0 || newsWeight > 0.2) {
+    if (newsWeight !== undefined && (newsWeight < 0 || newsWeight > 0.2)) {
       return NextResponse.json(
         { success: false, error: 'News weight must be between 0% and 20%' },
         { status: 400 }
       );
     }
 
-    if (backtestWeight < 0 || backtestWeight > 0.15) {
+    if (backtestWeight !== undefined && (backtestWeight < 0 || backtestWeight > 0.15)) {
       return NextResponse.json(
         { success: false, error: 'Backtest weight must be between 0% and 15%' },
         { status: 400 }
       );
     }
 
-    const updateData = {
-      'aiConfig.confidenceThreshold': confidenceThreshold,
-      'aiConfig.newsWeight': newsWeight,
-      'aiConfig.backtestWeight': backtestWeight,
-      'aiConfig.learningEnabled': learningEnabled,
+    // ✨ NEW: Validate risk management values
+    if (maxDailyTradesHighWinRate !== undefined && (maxDailyTradesHighWinRate < 1 || maxDailyTradesHighWinRate > 20)) {
+      return NextResponse.json(
+        { success: false, error: 'Max daily trades (high win rate) must be between 1 and 20' },
+        { status: 400 }
+      );
+    }
+
+    if (maxDailyTradesLowWinRate !== undefined && (maxDailyTradesLowWinRate < 1 || maxDailyTradesLowWinRate > 10)) {
+      return NextResponse.json(
+        { success: false, error: 'Max daily trades (low win rate) must be between 1 and 10' },
+        { status: 400 }
+      );
+    }
+
+    if (winRateThreshold !== undefined && (winRateThreshold < 0.5 || winRateThreshold > 0.99)) {
+      return NextResponse.json(
+        { success: false, error: 'Win rate threshold must be between 50% and 99%' },
+        { status: 400 }
+      );
+    }
+
+    if (maxConsecutiveLosses !== undefined && (maxConsecutiveLosses < 1 || maxConsecutiveLosses > 10)) {
+      return NextResponse.json(
+        { success: false, error: 'Max consecutive losses must be between 1 and 10' },
+        { status: 400 }
+      );
+    }
+
+    if (cooldownPeriodHours !== undefined && (cooldownPeriodHours < 1 || cooldownPeriodHours > 168)) {
+      return NextResponse.json(
+        { success: false, error: 'Cooldown period must be between 1 and 168 hours (1 week)' },
+        { status: 400 }
+      );
+    }
+
+    const updateData: any = {
       updatedAt: new Date(),
     };
+
+    // Add AI config updates if provided
+    if (confidenceThreshold !== undefined) updateData['aiConfig.confidenceThreshold'] = confidenceThreshold;
+    if (newsWeight !== undefined) updateData['aiConfig.newsWeight'] = newsWeight;
+    if (backtestWeight !== undefined) updateData['aiConfig.backtestWeight'] = backtestWeight;
+    if (learningEnabled !== undefined) updateData['aiConfig.learningEnabled'] = learningEnabled;
+
+    // ✨ NEW: Add risk management updates if provided
+    if (maxDailyTradesHighWinRate !== undefined) updateData['riskManagement.maxDailyTradesHighWinRate'] = maxDailyTradesHighWinRate;
+    if (maxDailyTradesLowWinRate !== undefined) updateData['riskManagement.maxDailyTradesLowWinRate'] = maxDailyTradesLowWinRate;
+    if (winRateThreshold !== undefined) updateData['riskManagement.winRateThreshold'] = winRateThreshold;
+    if (maxConsecutiveLosses !== undefined) updateData['riskManagement.maxConsecutiveLosses'] = maxConsecutiveLosses;
+    if (cooldownPeriodHours !== undefined) updateData['riskManagement.cooldownPeriodHours'] = cooldownPeriodHours;
 
     if (userId) {
       // Update specific user
