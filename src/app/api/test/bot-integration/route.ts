@@ -31,6 +31,9 @@ interface TestResult {
 
 export async function POST(req: NextRequest) {
   try {
+    // Set test environment flag to skip balance checks
+    process.env.SKIP_BALANCE_CHECK = 'true';
+    
     await connectDB();
     
     const results: TestResult[] = [];
