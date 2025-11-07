@@ -257,10 +257,10 @@ export function convertSignalPatternsToDecisionPatterns(
         failureCount: count,
         successRate: 0,
         totalProfit: 0,
-        totalLoss: Math.abs(lossData.avgLoss) * count,
-        netProfitLoss: lossData.avgLoss * count,
+        totalLoss: Math.abs(lossData.avgLoss) * count, // Positive value for display
+        netProfitLoss: lossData.avgLoss * count, // Negative value (avgLoss is already negative)
         avgProfit: 0,
-        avgLoss: Math.abs(lossData.avgLoss),
+        avgLoss: lossData.avgLoss, // Keep original negative value
         confidence: Math.min(count / 20, 1),
         strength: Math.round(lossRate * 100),
         timesMatched: 0,
@@ -296,10 +296,10 @@ export function convertSignalPatternsToDecisionPatterns(
         failureCount: slCount,
         successRate: 0,
         totalProfit: 0,
-        totalLoss: Math.abs(lossData.avgLoss) * slCount,
-        netProfitLoss: lossData.avgLoss * slCount,
+        totalLoss: Math.abs(lossData.avgLoss) * slCount, // Positive for display
+        netProfitLoss: lossData.avgLoss * slCount, // Negative (avgLoss is already negative)
         avgProfit: 0,
-        avgLoss: Math.abs(lossData.avgLoss),
+        avgLoss: lossData.avgLoss, // Keep original negative value
         confidence: Math.min(slCount / 15, 1),
         strength: Math.round(slRate * 100),
         timesMatched: 0,
@@ -335,10 +335,10 @@ export function convertSignalPatternsToDecisionPatterns(
         failureCount: emergCount,
         successRate: 0,
         totalProfit: 0,
-        totalLoss: Math.abs(lossData.avgLoss) * emergCount,
-        netProfitLoss: lossData.avgLoss * emergCount,
+        totalLoss: Math.abs(lossData.avgLoss) * emergCount, // Positive for display
+        netProfitLoss: lossData.avgLoss * emergCount, // Negative (avgLoss is already negative)
         avgProfit: 0,
-        avgLoss: Math.abs(lossData.avgLoss),
+        avgLoss: lossData.avgLoss, // Keep original negative value
         confidence: Math.min(emergCount / 5, 1),
         strength: 95, // Very strong pattern (emergency = critical)
         timesMatched: 0,
