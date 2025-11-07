@@ -460,12 +460,12 @@ NewsEventSchema.statics.getWeightedSentiment = async function(symbol?: string) {
     },
   ]);
   
-  // Tier 2: Recent (Last 24 hours) - Medium Priority
+  // Tier 2: Recent (6h - 24h) - Medium Priority
   // Rationale: Daily context, major news still relevant
+  // EXCLUSIVE: Only articles between 6-24 hours old (NOT including Ultra-Recent)
   const tier2Cutoff = new Date(now - 24 * 60 * 60 * 1000);
   const tier2Query: any = {
-    publishedAt: { $gte: tier2Cutoff, $lt: tier1Cutoff }, // Exclude tier1 (already counted)
-    impact: { $in: ['high', 'medium'] }, // Filter medium+ impact
+    publishedAt: { $gte: tier2Cutoff, $lt: tier1Cutoff }, // EXCLUSIVE: 6h-24h only
   };
   if (symbol) {
     tier2Query.$or = [
@@ -497,13 +497,13 @@ NewsEventSchema.statics.getWeightedSentiment = async function(symbol?: string) {
     },
   ]);
   
-  // Tier 3: Background (Last 72 hours) - Low Priority
+  // Tier 3: Background (24h - 72h) - Low Priority
   // Rationale: Major events (ETF, regulation, hacks) that still impact market
+  // EXCLUSIVE: Only articles between 24-72 hours old (NOT including tier1 or tier2)
   const tier3Cutoff = new Date(now - 72 * 60 * 60 * 1000);
   const tier3Query: any = {
-    publishedAt: { $gte: tier3Cutoff, $lt: tier2Cutoff }, // Exclude tier1 & tier2
-    impact: 'high', // Only high-impact news
-    sentiment: { $not: { $gte: -0.2, $lte: 0.2 } }, // Exclude neutral (extremes only)
+    publishedAt: { $gte: tier3Cutoff, $lt: tier2Cutoff }, // EXCLUSIVE: 24h-72h only
+    impact: 'high', // Only high-impact for background tier
   };
   if (symbol) {
     tier3Query.mentionedSymbols = symbol;
@@ -538,6 +538,7 @@ NewsEventSchema.statics.getWeightedSentiment = async function(symbol?: string) {
   const tier3 = tier3Result[0] || { avgSentiment: 0, count: 0, bullish: 0, bearish: 0, neutral: 0, highImpact: 0 };
   
   // Weighted calculation (80% / 15% / 5%)
+  // Each tier is EXCLUSIVE (no overlap), so we can weight them properly
   const weights = { tier1: 0.8, tier2: 0.15, tier3: 0.05 };
   
   // Calculate total weight (adjust if tiers have no data)
