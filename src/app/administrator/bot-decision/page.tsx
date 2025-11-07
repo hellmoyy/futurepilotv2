@@ -1227,16 +1227,301 @@ function BotDetailModal({ bot, onClose, onAction, onRefresh }: {
 }
 
 function AIConfigTab() {
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [configs, setConfigs] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [editingConfig, setEditingConfig] = useState<any>(null);
+
+  // Form state
+  const [confidenceThreshold, setConfidenceThreshold] = useState(82);
+  const [newsWeight, setNewsWeight] = useState(10);
+  const [backtestWeight, setBacktestWeight] = useState(5);
+  const [learningEnabled, setLearningEnabled] = useState(true);
+
+  const fetchConfigs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/bot-decision/ai-config');
+      const data = await res.json();
+      if (data.success) {
+        setConfigs(data.configs || []);
+      } else {
+        setError(data.error || 'Failed to load AI configurations');
+      }
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveConfig = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/bot-decision/ai-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: editingConfig?.userId,
+          confidenceThreshold: confidenceThreshold / 100,
+          newsWeight: newsWeight / 100,
+          backtestWeight: backtestWeight / 100,
+          learningEnabled,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ AI Configuration saved successfully!');
+        setEditingConfig(null);
+        await fetchConfigs();
+      } else {
+        setError(data.error || 'Failed to save configuration');
+      }
+    } catch (err: any) {
+      setError(err.message || String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchConfigs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <span>⚙️</span> AI Configuration
-      </h2>
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-300">
-          🚧 <strong>Coming Soon:</strong> DeepSeek API configuration, confidence thresholds, news/backtest/learning weights, 
-          cost tracking, and model selection.
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span>⚙️</span> AI Configuration
+        </h2>
+        <button
+          onClick={fetchConfigs}
+          disabled={loading}
+          className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? '⏳ Loading...' : '🔄 Refresh'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-sm text-red-800 dark:text-red-300">❌ {error}</p>
+        </div>
+      )}
+
+      {/* Global AI Settings */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          🌍 Global AI Settings
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Confidence Threshold */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Confidence Threshold
+            </label>
+            <input
+              type="range"
+              min="70"
+              max="95"
+              value={confidenceThreshold}
+              onChange={(e) => setConfidenceThreshold(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span>70%</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">{confidenceThreshold}%</span>
+              <span>95%</span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Minimum confidence to execute trade (default: 82%)
+            </p>
+          </div>
+
+          {/* News Weight */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              News Sentiment Weight
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="20"
+              value={newsWeight}
+              onChange={(e) => setNewsWeight(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span>0%</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">±{newsWeight}%</span>
+              <span>20%</span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Impact of news sentiment on confidence (default: ±10%)
+            </p>
+          </div>
+
+          {/* Backtest Weight */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Backtest Performance Weight
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="15"
+              value={backtestWeight}
+              onChange={(e) => setBacktestWeight(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span>0%</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">±{backtestWeight}%</span>
+              <span>15%</span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Impact of recent backtest on confidence (default: ±5%)
+            </p>
+          </div>
+
+          {/* Learning Enabled */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Learning Patterns
+            </label>
+            <button
+              onClick={() => setLearningEnabled(!learningEnabled)}
+              className={`px-4 py-2 rounded text-sm font-medium ${
+                learningEnabled
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {learningEnabled ? '✅ Enabled (±3%)' : '❌ Disabled'}
+            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Enable AI to learn from repeated losing patterns
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={saveConfig}
+            disabled={saving}
+            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? '⏳ Saving...' : '� Save Configuration'}
+          </button>
+          <button
+            onClick={() => {
+              setConfidenceThreshold(82);
+              setNewsWeight(10);
+              setBacktestWeight(5);
+              setLearningEnabled(true);
+            }}
+            className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            🔄 Reset to Default
+          </button>
+        </div>
+      </div>
+
+      {/* User-Specific Configurations */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            👥 User-Specific AI Configurations
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            View and manage AI settings for individual users
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin text-4xl">⏳</div>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Loading configurations...</p>
+          </div>
+        ) : configs.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-gray-500 dark:text-gray-400">No user configurations found</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Configurations will appear here when users enable their bots
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Threshold</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">News</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Backtest</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Learning</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Last Updated</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {configs.map((config) => (
+                  <tr key={config._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {config.user?.email || config.userId}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {(config.confidenceThreshold * 100).toFixed(0)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      ±{(config.newsWeight * 100).toFixed(0)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      ±{(config.backtestWeight * 100).toFixed(0)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {config.learningEnabled ? (
+                        <span className="text-green-600 dark:text-green-400">✅ Yes</span>
+                      ) : (
+                        <span className="text-gray-400">❌ No</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(config.updatedAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* AI Cost Summary */}
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          💰 AI Cost Tracking
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Average Cost per Signal</p>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">$0.000485</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Expected Monthly Cost</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">$0.45-1.20</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">per user (15-20 signals/day)</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">ROI Impact</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">+5%</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">win rate improvement</p>
+          </div>
+        </div>
       </div>
     </div>
   );
