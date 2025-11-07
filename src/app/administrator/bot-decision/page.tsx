@@ -1246,6 +1246,10 @@ function AIConfigTab() {
   const [maxConsecutiveLosses, setMaxConsecutiveLosses] = useState(2);
   const [cooldownPeriodHours, setCooldownPeriodHours] = useState(24);
 
+  // Pagination for user configs
+  const [configPage, setConfigPage] = useState(1);
+  const configsPerPage = 10;
+
   const fetchConfigs = async () => {
     setLoading(true);
     setError(null);
@@ -1666,21 +1670,22 @@ function AIConfigTab() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Win Rate</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Daily Limit</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Consecutive Loss</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Threshold</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Learning</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {configs.map((config) => {
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Win Rate</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Daily Limit</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Consecutive Loss</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Threshold</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Learning</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {configs.slice((configPage - 1) * configsPerPage, configPage * configsPerPage).map((config) => {
                   const winRate = config.winRate || 0;
                   const isHighWinRate = winRate >= (config.riskManagement?.winRateThreshold || 0.85);
                   const currentLimit = isHighWinRate
@@ -1748,7 +1753,36 @@ function AIConfigTab() {
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+
+            {/* Pagination for User Configs */}
+            {configs.length > configsPerPage && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing {((configPage - 1) * configsPerPage) + 1} - {Math.min(configPage * configsPerPage, configs.length)} of {configs.length} configs
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setConfigPage(p => Math.max(1, p - 1))}
+                    disabled={configPage === 1}
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Page {configPage} of {Math.ceil(configs.length / configsPerPage)}
+                  </span>
+                  <button
+                    onClick={() => setConfigPage(p => Math.min(Math.ceil(configs.length / configsPerPage), p + 1))}
+                    disabled={configPage >= Math.ceil(configs.length / configsPerPage)}
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -2339,6 +2373,10 @@ function LearningTab() {
   const [syncStatus, setSyncStatus] = useState<any>(null);
   const [syncResult, setSyncResult] = useState<any>(null);
 
+  // Pagination for patterns
+  const [patternPage, setPatternPage] = useState(1);
+  const patternsPerPage = 10;
+
   const fetchStats = async () => {
     setLoading(true);
     setError(null);
@@ -2382,6 +2420,7 @@ function LearningTab() {
 
   useEffect(() => {
     fetchPatterns();
+    setPatternPage(1); // Reset to page 1 when filter/sort changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, sortBy]);
 
@@ -2758,7 +2797,7 @@ function LearningTab() {
         )}
 
         <div className="space-y-3">
-          {patterns.map((p: any) => (
+          {patterns.slice((patternPage - 1) * patternsPerPage, patternPage * patternsPerPage).map((p: any) => (
             <div key={p._id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -2820,6 +2859,34 @@ function LearningTab() {
             </div>
           ))}
         </div>
+
+        {/* Pagination for Patterns */}
+        {patterns.length > patternsPerPage && (
+          <div className="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {((patternPage - 1) * patternsPerPage) + 1} - {Math.min(patternPage * patternsPerPage, patterns.length)} of {patterns.length} patterns
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPatternPage(p => Math.max(1, p - 1))}
+                disabled={patternPage === 1}
+                className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Page {patternPage} of {Math.ceil(patterns.length / patternsPerPage)}
+              </span>
+              <button
+                onClick={() => setPatternPage(p => Math.min(Math.ceil(patterns.length / patternsPerPage), p + 1))}
+                disabled={patternPage >= Math.ceil(patterns.length / patternsPerPage)}
+                className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -21,6 +21,12 @@ export default function CustodialWalletPage() {
   const [userAccountsSummary, setUserAccountsSummary] = useState<any>(null);
   const [scanningAccounts, setScanningAccounts] = useState(false);
 
+  // Pagination states for sweep results
+  const [sweepResultsPage, setSweepResultsPage] = useState(1);
+  const sweepResultsPerPage = 10;
+  const [failedTxPage, setFailedTxPage] = useState(1);
+  const failedTxPerPage = 10;
+
   // Auto-fetch balance and network mode on mount
   useEffect(() => {
     // Get network mode from env (via API or client-side check)
@@ -835,7 +841,7 @@ export default function CustodialWalletPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {sweepResults.results.map((result: any, index: number) => (
+                {sweepResults.results.slice((sweepResultsPage - 1) * sweepResultsPerPage, sweepResultsPage * sweepResultsPerPage).map((result: any, index: number) => (
                   <tr key={index} className="hover:bg-gray-700/30 transition">
                     <td className="p-3 text-white text-xs">
                       <div className="font-semibold">{result.userEmail}</div>
@@ -896,6 +902,34 @@ export default function CustodialWalletPage() {
             </table>
           </div>
 
+          {/* Pagination for Sweep Results */}
+          {sweepResults.results.length > sweepResultsPerPage && (
+            <div className="mt-6 flex items-center justify-between border-t border-gray-700 pt-4">
+              <div className="text-sm text-gray-400">
+                Showing {((sweepResultsPage - 1) * sweepResultsPerPage) + 1} - {Math.min(sweepResultsPage * sweepResultsPerPage, sweepResults.results.length)} of {sweepResults.results.length} results
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSweepResultsPage(p => Math.max(1, p - 1))}
+                  disabled={sweepResultsPage === 1}
+                  className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-gray-400">
+                  Page {sweepResultsPage} of {Math.ceil(sweepResults.results.length / sweepResultsPerPage)}
+                </span>
+                <button
+                  onClick={() => setSweepResultsPage(p => Math.min(Math.ceil(sweepResults.results.length / sweepResultsPerPage), p + 1))}
+                  disabled={sweepResultsPage >= Math.ceil(sweepResults.results.length / sweepResultsPerPage)}
+                  className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Error Details */}
           {sweepResults.results.some((r: any) => r.status === 'failed') && (
             <div className="mt-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
@@ -903,12 +937,41 @@ export default function CustodialWalletPage() {
               <ul className="space-y-1 text-sm text-red-300">
                 {sweepResults.results
                   .filter((r: any) => r.status === 'failed')
+                  .slice((failedTxPage - 1) * failedTxPerPage, failedTxPage * failedTxPerPage)
                   .map((result: any, index: number) => (
                     <li key={index} className="font-mono text-xs">
                       • {result.userId.slice(0, 12)}: {result.error || 'Unknown error'}
                     </li>
                   ))}
               </ul>
+
+              {/* Pagination for Failed Transactions */}
+              {sweepResults.results.filter((r: any) => r.status === 'failed').length > failedTxPerPage && (
+                <div className="mt-4 flex items-center justify-between border-t border-red-500/30 pt-3">
+                  <div className="text-xs text-red-400">
+                    Showing {((failedTxPage - 1) * failedTxPerPage) + 1} - {Math.min(failedTxPage * failedTxPerPage, sweepResults.results.filter((r: any) => r.status === 'failed').length)} of {sweepResults.results.filter((r: any) => r.status === 'failed').length} failed transactions
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setFailedTxPage(p => Math.max(1, p - 1))}
+                      disabled={failedTxPage === 1}
+                      className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-red-400">
+                      Page {failedTxPage} of {Math.ceil(sweepResults.results.filter((r: any) => r.status === 'failed').length / failedTxPerPage)}
+                    </span>
+                    <button
+                      onClick={() => setFailedTxPage(p => Math.min(Math.ceil(sweepResults.results.filter((r: any) => r.status === 'failed').length / failedTxPerPage), p + 1))}
+                      disabled={failedTxPage >= Math.ceil(sweepResults.results.filter((r: any) => r.status === 'failed').length / failedTxPerPage)}
+                      className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

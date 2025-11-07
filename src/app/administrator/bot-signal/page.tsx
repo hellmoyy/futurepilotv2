@@ -96,6 +96,22 @@ export default function SignalCenterPage() {
   const [tradePage, setTradePage] = useState(1);
   const tradesPerPage = 10;
   
+  // Pagination for Active Signals
+  const [activeSignalsPage, setActiveSignalsPage] = useState(1);
+  const activeSignalsPerPage = 10;
+  
+  // Pagination for Signal History
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPerPage = 10;
+  
+  // Pagination for Backtest History
+  const [backtestHistoryPage, setBacktestHistoryPage] = useState(1);
+  const backtestHistoryPerPage = 10;
+  
+  // Pagination for Learning Lessons
+  const [lessonsPage, setLessonsPage] = useState(1);
+  const lessonsPerPage = 10;
+  
   // PIN Protection state
   const [configUnlocked, setConfigUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState('');
@@ -888,8 +904,9 @@ export default function SignalCenterPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {activeSignals.map((signal) => (
+                  <>
+                    <div className="space-y-4">
+                      {activeSignals.slice((activeSignalsPage - 1) * activeSignalsPerPage, activeSignalsPage * activeSignalsPerPage).map((signal) => (
                       <div
                         key={signal.id}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition"
@@ -964,7 +981,36 @@ export default function SignalCenterPage() {
                         </div>
                       </div>
                     ))}
-                  </div>
+                    </div>
+
+                    {/* Pagination for Active Signals */}
+                    {activeSignals.length > activeSignalsPerPage && (
+                      <div className="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Showing {((activeSignalsPage - 1) * activeSignalsPerPage) + 1} - {Math.min(activeSignalsPage * activeSignalsPerPage, activeSignals.length)} of {activeSignals.length} signals
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setActiveSignalsPage(p => Math.max(1, p - 1))}
+                            disabled={activeSignalsPage === 1}
+                            className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Previous
+                          </button>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Page {activeSignalsPage} of {Math.ceil(activeSignals.length / activeSignalsPerPage)}
+                          </span>
+                          <button
+                            onClick={() => setActiveSignalsPage(p => Math.min(Math.ceil(activeSignals.length / activeSignalsPerPage), p + 1))}
+                            disabled={activeSignalsPage >= Math.ceil(activeSignals.length / activeSignalsPerPage)}
+                            className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -978,49 +1024,79 @@ export default function SignalCenterPage() {
                     <p className="text-gray-600 dark:text-gray-400">No signal history</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {signalHistory.map((signal) => (
-                      <div
-                        key={signal.id}
-                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="font-mono font-bold text-gray-900 dark:text-white">
-                              {signal.symbol}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                              signal.action === 'BUY'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            }`}>
-                              {signal.action}
-                            </span>
-                            <span className="text-gray-600 dark:text-gray-400">
-                              ${signal.entryPrice.toFixed(2)}
-                            </span>
-                            <span className="text-gray-500 dark:text-gray-500">
-                              {signal.confidence.toFixed(0)}%
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <span className={`px-2 py-0.5 rounded text-xs ${
-                              signal.status === 'EXECUTED' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                              signal.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
-                              signal.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                              'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            }`}>
-                              {signal.status}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-500">
-                              {formatDate(signal.timestamp)}
-                            </span>
+                  <>
+                    <div className="space-y-3">
+                      {signalHistory.slice((historyPage - 1) * historyPerPage, historyPage * historyPerPage).map((signal) => (
+                        <div
+                          key={signal.id}
+                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-bold text-gray-900 dark:text-white">
+                                {signal.symbol}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                signal.action === 'BUY'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                              }`}>
+                                {signal.action}
+                              </span>
+                              <span className="text-gray-600 dark:text-gray-400">
+                                ${signal.entryPrice.toFixed(2)}
+                              </span>
+                              <span className="text-gray-500 dark:text-gray-500">
+                                {signal.confidence.toFixed(0)}%
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                signal.status === 'EXECUTED' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                signal.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
+                                signal.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              }`}>
+                                {signal.status}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-500">
+                                {formatDate(signal.timestamp)}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination for Signal History */}
+                    {signalHistory.length > historyPerPage && (
+                      <div className="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Showing {((historyPage - 1) * historyPerPage) + 1} - {Math.min(historyPage * historyPerPage, signalHistory.length)} of {signalHistory.length} signals
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                            disabled={historyPage === 1}
+                            className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Previous
+                          </button>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Page {historyPage} of {Math.ceil(signalHistory.length / historyPerPage)}
+                          </span>
+                          <button
+                            onClick={() => setHistoryPage(p => Math.min(Math.ceil(signalHistory.length / historyPerPage), p + 1))}
+                            disabled={historyPage >= Math.ceil(signalHistory.length / historyPerPage)}
+                            className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Next
+                          </button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -2731,7 +2807,7 @@ export default function SignalCenterPage() {
                           </div>
                           
                           <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {historyResults.map((result) => (
+                            {historyResults.slice((backtestHistoryPage - 1) * backtestHistoryPerPage, backtestHistoryPage * backtestHistoryPerPage).map((result) => (
                               <div
                                 key={result._id}
                                 className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
@@ -2789,6 +2865,34 @@ export default function SignalCenterPage() {
                               </div>
                             ))}
                           </div>
+
+                          {/* Pagination for Backtest History */}
+                          {historyResults.length > backtestHistoryPerPage && (
+                            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                Showing {((backtestHistoryPage - 1) * backtestHistoryPerPage) + 1} - {Math.min(backtestHistoryPage * backtestHistoryPerPage, historyResults.length)} of {historyResults.length} results
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setBacktestHistoryPage(p => Math.max(1, p - 1))}
+                                  disabled={backtestHistoryPage === 1}
+                                  className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Previous
+                                </button>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  Page {backtestHistoryPage} of {Math.ceil(historyResults.length / backtestHistoryPerPage)}
+                                </span>
+                                <button
+                                  onClick={() => setBacktestHistoryPage(p => Math.min(Math.ceil(historyResults.length / backtestHistoryPerPage), p + 1))}
+                                  disabled={backtestHistoryPage >= Math.ceil(historyResults.length / backtestHistoryPerPage)}
+                                  className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
@@ -3387,7 +3491,7 @@ export default function SignalCenterPage() {
                       Key Learnings & Insights
                     </h3>
                     <div className="space-y-3">
-                      {learningData.lessons.map((lesson: string, idx: number) => (
+                      {learningData.lessons.slice((lessonsPage - 1) * lessonsPerPage, lessonsPage * lessonsPerPage).map((lesson: string, idx: number) => (
                         <div 
                           key={idx}
                           className="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
@@ -3409,6 +3513,34 @@ export default function SignalCenterPage() {
                         </div>
                       ))}
                     </div>
+
+                    {/* Pagination for Learning Lessons */}
+                    {learningData.lessons.length > lessonsPerPage && (
+                      <div className="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Showing {((lessonsPage - 1) * lessonsPerPage) + 1} - {Math.min(lessonsPage * lessonsPerPage, learningData.lessons.length)} of {learningData.lessons.length} lessons
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setLessonsPage(p => Math.max(1, p - 1))}
+                            disabled={lessonsPage === 1}
+                            className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Previous
+                          </button>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Page {lessonsPage} of {Math.ceil(learningData.lessons.length / lessonsPerPage)}
+                          </span>
+                          <button
+                            onClick={() => setLessonsPage(p => Math.min(Math.ceil(learningData.lessons.length / lessonsPerPage), p + 1))}
+                            disabled={lessonsPage >= Math.ceil(learningData.lessons.length / lessonsPerPage)}
+                            className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 
