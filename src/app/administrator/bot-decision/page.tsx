@@ -2335,6 +2335,9 @@ function LearningTab() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'loss' | 'win'>('all');
   const [sortBy, setSortBy] = useState<'strength' | 'confidence' | 'occurrences'>('strength');
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<any>(null);
+  const [syncResult, setSyncResult] = useState<any>(null);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -2373,6 +2376,7 @@ function LearningTab() {
   useEffect(() => {
     fetchStats();
     fetchPatterns();
+    fetchSyncStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2380,6 +2384,72 @@ function LearningTab() {
     fetchPatterns();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, sortBy]);
+
+  const fetchSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/bot-decision/sync-signal-patterns');
+      const data = await res.json();
+      if (data.success) {
+        setSyncStatus(data.status);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch sync status:', err);
+    }
+  };
+
+  const syncPatternsFromSignal = async () => {
+    if (syncing) return;
+    
+    const confirmed = confirm(
+      '🔄 Sync patterns from Bot Signal?\n\n' +
+      'This will import proven win/loss patterns from Bot Signal backtests.\n' +
+      'Bot Decision AI will use these patterns to make smarter trade decisions.\n\n' +
+      'Continue?'
+    );
+    
+    if (!confirmed) return;
+
+    setSyncing(true);
+    setSyncResult(null);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/admin/bot-decision/sync-signal-patterns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'backtest-learning',
+          symbol: 'BTCUSDT',
+          overwrite: false
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setSyncResult(data);
+        alert(
+          `✅ Pattern sync completed!\n\n` +
+          `Created: ${data.created} patterns\n` +
+          `Updated: ${data.updated} patterns\n` +
+          `Skipped: ${data.skipped} patterns\n\n` +
+          `Source: ${data.source.totalBacktests} backtests (${data.source.avgROI.toFixed(2)}% avg ROI)\n\n` +
+          `${data.insights.join('\n')}`
+        );
+        
+        // Refresh stats and patterns
+        await fetchStats();
+        await fetchPatterns();
+        await fetchSyncStatus();
+      } else {
+        setError(data.error || 'Failed to sync patterns');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to sync patterns');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const getPatternTypeColor = (type: string) => {
     return type === 'loss' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
@@ -2395,17 +2465,114 @@ function LearningTab() {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <span>🎓</span> Learning Insights
         </h2>
-        <button
-          onClick={() => {
-            fetchStats();
-            fetchPatterns();
-          }}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-        >
-          🔄 Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={syncPatternsFromSignal}
+            disabled={syncing}
+            className="px-4 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {syncing ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Syncing...
+              </>
+            ) : (
+              <>
+                <span>🔄</span>
+                Sync from Bot Signal
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => {
+              fetchStats();
+              fetchPatterns();
+            }}
+            disabled={loading}
+            className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Sync Status Banner */}
+      {syncStatus && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                📊 Pattern Sources
+              </h3>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Local patterns:</span>
+                  <span className="ml-2 font-bold text-gray-900 dark:text-white">
+                    {syncStatus.manualPatterns || 0}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Bot Signal patterns:</span>
+                  <span className="ml-2 font-bold text-purple-600 dark:text-purple-400">
+                    {syncStatus.aiPatterns || 0} ✨
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Total active:</span>
+                  <span className="ml-2 font-bold text-green-600 dark:text-green-400">
+                    {syncStatus.totalPatterns || 0}
+                  </span>
+                </div>
+              </div>
+              {syncStatus.lastSynced && (
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  ⚡ Last synced: {new Date(syncStatus.lastSynced).toLocaleString()}
+                </p>
+              )}
+              {syncStatus.aiPatterns > 0 && (
+                <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+                  ✅ Bot Decision AI is using Bot Signal insights to improve trade decisions
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sync Result Alert */}
+      {syncResult && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
+            ✅ Pattern Sync Completed
+          </h3>
+          <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Created:</span>
+              <span className="ml-2 font-bold text-green-600">{syncResult.created}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Updated:</span>
+              <span className="ml-2 font-bold text-blue-600">{syncResult.updated}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">Skipped:</span>
+              <span className="ml-2 font-bold text-gray-600">{syncResult.skipped}</span>
+            </div>
+          </div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <p>📊 Source: {syncResult.source.totalBacktests} backtests ({syncResult.source.avgROI.toFixed(2)}% avg ROI)</p>
+            {syncResult.insights.map((insight: string, i: number) => (
+              <p key={i}>• {insight}</p>
+            ))}
+          </div>
+          <button
+            onClick={() => setSyncResult(null)}
+            className="mt-3 text-xs text-green-600 hover:text-green-700 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {loading && !stats && <div className="text-sm text-gray-500 dark:text-gray-400">Loading learning data...</div>}
       {error && (
