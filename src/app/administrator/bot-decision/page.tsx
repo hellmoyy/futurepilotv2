@@ -1783,6 +1783,7 @@ function NewsTab() {
   const [syncing, setSyncing] = useState(false);
   const [news, setNews] = useState<any[]>([]);
   const [aggregate, setAggregate] = useState<any>(null);
+  const [weighted, setWeighted] = useState<any>(null); // NEW: Weighted sentiment
   const [error, setError] = useState<string | null>(null);
 
   const fetchNews = async () => {
@@ -1794,6 +1795,7 @@ function NewsTab() {
       if (data.success) {
         setNews(data.news || []);
         setAggregate(data.aggregate || null);
+        setWeighted(data.weighted || null); // NEW: Store weighted sentiment
       } else {
         setError(data.error || 'Failed to load news');
       }
@@ -1908,35 +1910,220 @@ function NewsTab() {
         </div>
       )}
 
+      {/* NEW: Weighted Multi-Tier Sentiment Analysis */}
+      {weighted && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <span>🎯</span> Multi-Tier Weighted Sentiment
+            </h3>
+            <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
+              Confidence: {(weighted.confidence * 100).toFixed(1)}%
+            </div>
+          </div>
+
+          {/* Overall Sentiment */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Overall Sentiment</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {(weighted.overallSentiment || 0).toFixed(3)}
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={`inline-block px-4 py-2 rounded-lg text-sm font-bold ${getSentimentColor(weighted.label)}`}>
+                  {getSentimentEmoji(weighted.label)} {weighted.label.replace('_', ' ').toUpperCase()}
+                </span>
+                <div className="text-xs text-gray-400 mt-1">{weighted.totalNews} total articles</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tier Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Tier 1: Ultra-Recent (6h) */}
+            <div className="bg-white dark:bg-gray-800 border-2 border-green-300 dark:border-green-700 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚡</span>
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white">Ultra-Recent</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Last 6 hours</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Weight</div>
+                  <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                    {(weighted.breakdown.ultraRecent.weight * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Sentiment:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {weighted.breakdown.ultraRecent.sentiment.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Articles:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {weighted.breakdown.ultraRecent.count}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-600">📈 Bullish:</span>
+                  <span className="font-semibold">{weighted.breakdown.ultraRecent.bullish}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-600">📉 Bearish:</span>
+                  <span className="font-semibold">{weighted.breakdown.ultraRecent.bearish}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">⚪ Neutral:</span>
+                  <span className="font-semibold">{weighted.breakdown.ultraRecent.neutral}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tier 2: Recent (24h) */}
+            <div className="bg-white dark:bg-gray-800 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📅</span>
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white">Recent</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Last 24 hours</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Weight</div>
+                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {(weighted.breakdown.recent.weight * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Sentiment:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {weighted.breakdown.recent.sentiment.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Articles:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {weighted.breakdown.recent.count}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-600">📈 Bullish:</span>
+                  <span className="font-semibold">{weighted.breakdown.recent.bullish}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-600">📉 Bearish:</span>
+                  <span className="font-semibold">{weighted.breakdown.recent.bearish}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">⚪ Neutral:</span>
+                  <span className="font-semibold">{weighted.breakdown.recent.neutral}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tier 3: Background (72h) */}
+            <div className="bg-white dark:bg-gray-800 border-2 border-purple-300 dark:border-purple-700 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📚</span>
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white">Background</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Last 72 hours</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Weight</div>
+                  <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    {(weighted.breakdown.background.weight * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Sentiment:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {weighted.breakdown.background.sentiment.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Articles:</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {weighted.breakdown.background.count}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-600">📈 Bullish:</span>
+                  <span className="font-semibold">{weighted.breakdown.background.bullish}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-600">📉 Bearish:</span>
+                  <span className="font-semibold">{weighted.breakdown.background.bearish}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">⚪ Neutral:</span>
+                  <span className="font-semibold">{weighted.breakdown.background.neutral}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Explanation */}
+          <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-start gap-2 text-xs text-blue-800 dark:text-blue-300">
+              <span className="flex-shrink-0 mt-0.5">💡</span>
+              <div>
+                <strong>Multi-Tier Analysis:</strong> Ultra-Recent news (6h) gets 80% weight for fast market reactions. 
+                Recent news (24h) provides 15% context. Background (72h) captures 5% major events. 
+                Weights auto-adjust if tiers have no data.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legacy 24h Aggregate (kept for backward compatibility) */}
       {aggregate && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Avg Sentiment</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {(aggregate.avgSentiment || 0).toFixed(2)}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <span>📊</span> Legacy 24h Aggregate (Old Method)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Avg Sentiment</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-white">
+                {(aggregate.avgSentiment || 0).toFixed(2)}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">{aggregate.label}</div>
             </div>
-            <div className="text-xs text-gray-400 mt-1">{aggregate.label}</div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">📈 Bullish</div>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {aggregate.bullish || 0}
+            <div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">📈 Bullish</div>
+              <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                {aggregate.bullish || 0}
+              </div>
             </div>
-            <div className="text-xs text-gray-400 mt-1">articles</div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">📉 Bearish</div>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {aggregate.bearish || 0}
+            <div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">📉 Bearish</div>
+              <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                {aggregate.bearish || 0}
+              </div>
             </div>
-            <div className="text-xs text-gray-400 mt-1">articles</div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">🔴 High Impact</div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {aggregate.highImpact || 0}
+            <div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">🔴 High Impact</div>
+              <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                {aggregate.highImpact || 0}
+              </div>
             </div>
-            <div className="text-xs text-gray-400 mt-1">articles</div>
           </div>
         </div>
       )}

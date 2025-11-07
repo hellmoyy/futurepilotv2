@@ -284,27 +284,63 @@ export class AIDecisionEngine {
   
   /**
    * Get news context for decision
+   * Now uses weighted multi-tier sentiment (6h/24h/72h) for better accuracy
    */
   private async getNewsContext(symbol: string): Promise<any> {
     try {
-      // Get aggregate sentiment from last 24 hours
-      const sentiment = await NewsEvent.getAggregateSentiment(symbol, 24);
+      // Get weighted sentiment (3-tier: 6h/24h/72h)
+      const weighted = await NewsEvent.getWeightedSentiment(symbol);
       
-      if (sentiment.count === 0) {
+      if (weighted.totalNews === 0) {
         return null;
       }
       
-      // Get top 3 most impactful news
+      // Get top 5 most recent high-impact news (prioritize ultra-recent)
       const topNews = await NewsEvent.getRecentNews({
-        limit: 3,
+        limit: 5,
         symbol,
+        impact: 'high', // Only high-impact news for AI context
       });
       
       return {
-        sentiment: sentiment.avgSentiment,
+        // Use weighted sentiment (more accurate than simple 24h average)
+        sentiment: weighted.overallSentiment,
+        confidence: weighted.confidence,
+        label: weighted.label,
+        
+        // Tier breakdown for AI context
+        tiers: {
+          ultraRecent: {
+            period: '6h',
+            sentiment: weighted.breakdown.ultraRecent.sentiment,
+            count: weighted.breakdown.ultraRecent.count,
+            weight: weighted.breakdown.ultraRecent.weight,
+          },
+          recent: {
+            period: '24h',
+            sentiment: weighted.breakdown.recent.sentiment,
+            count: weighted.breakdown.recent.count,
+            weight: weighted.breakdown.recent.weight,
+          },
+          background: {
+            period: '72h',
+            sentiment: weighted.breakdown.background.sentiment,
+            count: weighted.breakdown.background.count,
+            weight: weighted.breakdown.background.weight,
+          },
+        },
+        
+        // Top headlines for AI analysis
         headlines: topNews.map((n: any) => n.title),
         sources: topNews.map((n: any) => n.source),
-        impactScore: sentiment.highImpact / Math.max(sentiment.count, 1),
+        
+        // Impact metrics
+        totalNews: weighted.totalNews,
+        highImpactRatio: (
+          weighted.breakdown.ultraRecent.highImpact +
+          weighted.breakdown.recent.highImpact +
+          weighted.breakdown.background.highImpact
+        ) / Math.max(weighted.totalNews, 1),
       };
     } catch (error) {
       console.error('❌ Error getting news context:', error);

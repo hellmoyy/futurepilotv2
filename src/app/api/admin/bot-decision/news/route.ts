@@ -20,9 +20,19 @@ export async function GET(request: NextRequest) {
     const symbol = params.get('symbol') || undefined;
 
     const news = await NewsEvent.getRecentNews({ limit, sentiment, impact, symbol });
+    
+    // Use weighted sentiment analysis (3-tier: 6h/24h/72h)
+    const weighted = await NewsEvent.getWeightedSentiment(symbol);
+    
+    // Keep backward compatibility: also return old 24h aggregate
     const agg = await NewsEvent.getAggregateSentiment(symbol, 24);
 
-    return NextResponse.json({ success: true, news, aggregate: agg });
+    return NextResponse.json({ 
+      success: true, 
+      news, 
+      aggregate: agg,           // Legacy 24h aggregate
+      weighted,                 // NEW: Multi-tier weighted sentiment
+    });
   } catch (error: any) {
     console.error('GET /api/admin/bot-decision/news error', error);
     return NextResponse.json({ success: false, error: error.message || String(error) }, { status: 500 });

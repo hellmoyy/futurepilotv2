@@ -60,6 +60,44 @@ export interface INewsEventModel extends Model<INewsEvent> {
   getRecentNews(options?: any): Promise<INewsEvent[]>;
   getForDecision(symbol: string, hoursBack?: number): Promise<INewsEvent[]>;
   getAggregateSentiment(symbol?: string, hoursBack?: number): Promise<any>;
+  getWeightedSentiment(symbol?: string): Promise<{
+    overallSentiment: number;
+    label: string;
+    confidence: number;
+    totalNews: number;
+    breakdown: {
+      ultraRecent: {
+        period: string;
+        weight: number;
+        sentiment: number;
+        count: number;
+        bullish: number;
+        bearish: number;
+        neutral: number;
+        highImpact: number;
+      };
+      recent: {
+        period: string;
+        weight: number;
+        sentiment: number;
+        count: number;
+        bullish: number;
+        bearish: number;
+        neutral: number;
+        highImpact: number;
+      };
+      background: {
+        period: string;
+        weight: number;
+        sentiment: number;
+        count: number;
+        bullish: number;
+        bearish: number;
+        neutral: number;
+        highImpact: number;
+      };
+    };
+  }>;
   getStats(period?: { start: Date; end: Date }): Promise<any>;
 }
 
@@ -379,6 +417,200 @@ NewsEventSchema.statics.getAggregateSentiment = async function(
   return {
     ...data,
     label,
+  };
+};
+
+// Static method to get weighted sentiment with multi-tier analysis
+NewsEventSchema.statics.getWeightedSentiment = async function(symbol?: string) {
+  const now = Date.now();
+  
+  // Tier 1: Ultra-Recent (Last 6 hours) - Highest Priority
+  // Rationale: Crypto moves fast, fresh news = highest relevance
+  const tier1Cutoff = new Date(now - 6 * 60 * 60 * 1000);
+  const tier1Query: any = {
+    publishedAt: { $gte: tier1Cutoff },
+  };
+  if (symbol) {
+    tier1Query.$or = [
+      { mentionedSymbols: symbol },
+      { impact: 'high' },
+    ];
+  }
+  
+  const tier1Result = await this.aggregate([
+    { $match: tier1Query },
+    {
+      $group: {
+        _id: null,
+        avgSentiment: { $avg: '$sentiment' },
+        count: { $sum: 1 },
+        bullish: { $sum: { $cond: [{ $gt: ['$sentiment', 0.2] }, 1, 0] } },
+        bearish: { $sum: { $cond: [{ $lt: ['$sentiment', -0.2] }, 1, 0] } },
+        neutral: {
+          $sum: {
+            $cond: [
+              { $and: [{ $gte: ['$sentiment', -0.2] }, { $lte: ['$sentiment', 0.2] }] },
+              1,
+              0,
+            ],
+          },
+        },
+        highImpact: { $sum: { $cond: [{ $eq: ['$impact', 'high'] }, 1, 0] } },
+      },
+    },
+  ]);
+  
+  // Tier 2: Recent (Last 24 hours) - Medium Priority
+  // Rationale: Daily context, major news still relevant
+  const tier2Cutoff = new Date(now - 24 * 60 * 60 * 1000);
+  const tier2Query: any = {
+    publishedAt: { $gte: tier2Cutoff, $lt: tier1Cutoff }, // Exclude tier1 (already counted)
+    impact: { $in: ['high', 'medium'] }, // Filter medium+ impact
+  };
+  if (symbol) {
+    tier2Query.$or = [
+      { mentionedSymbols: symbol },
+      { impact: 'high' },
+    ];
+  }
+  
+  const tier2Result = await this.aggregate([
+    { $match: tier2Query },
+    {
+      $group: {
+        _id: null,
+        avgSentiment: { $avg: '$sentiment' },
+        count: { $sum: 1 },
+        bullish: { $sum: { $cond: [{ $gt: ['$sentiment', 0.2] }, 1, 0] } },
+        bearish: { $sum: { $cond: [{ $lt: ['$sentiment', -0.2] }, 1, 0] } },
+        neutral: {
+          $sum: {
+            $cond: [
+              { $and: [{ $gte: ['$sentiment', -0.2] }, { $lte: ['$sentiment', 0.2] }] },
+              1,
+              0,
+            ],
+          },
+        },
+        highImpact: { $sum: { $cond: [{ $eq: ['$impact', 'high'] }, 1, 0] } },
+      },
+    },
+  ]);
+  
+  // Tier 3: Background (Last 72 hours) - Low Priority
+  // Rationale: Major events (ETF, regulation, hacks) that still impact market
+  const tier3Cutoff = new Date(now - 72 * 60 * 60 * 1000);
+  const tier3Query: any = {
+    publishedAt: { $gte: tier3Cutoff, $lt: tier2Cutoff }, // Exclude tier1 & tier2
+    impact: 'high', // Only high-impact news
+    sentiment: { $not: { $gte: -0.2, $lte: 0.2 } }, // Exclude neutral (extremes only)
+  };
+  if (symbol) {
+    tier3Query.mentionedSymbols = symbol;
+  }
+  
+  const tier3Result = await this.aggregate([
+    { $match: tier3Query },
+    {
+      $group: {
+        _id: null,
+        avgSentiment: { $avg: '$sentiment' },
+        count: { $sum: 1 },
+        bullish: { $sum: { $cond: [{ $gt: ['$sentiment', 0.2] }, 1, 0] } },
+        bearish: { $sum: { $cond: [{ $lt: ['$sentiment', -0.2] }, 1, 0] } },
+        neutral: {
+          $sum: {
+            $cond: [
+              { $and: [{ $gte: ['$sentiment', -0.2] }, { $lte: ['$sentiment', 0.2] }] },
+              1,
+              0,
+            ],
+          },
+        },
+        highImpact: { $sum: { $cond: [{ $eq: ['$impact', 'high'] }, 1, 0] } },
+      },
+    },
+  ]);
+  
+  // Extract results with defaults
+  const tier1 = tier1Result[0] || { avgSentiment: 0, count: 0, bullish: 0, bearish: 0, neutral: 0, highImpact: 0 };
+  const tier2 = tier2Result[0] || { avgSentiment: 0, count: 0, bullish: 0, bearish: 0, neutral: 0, highImpact: 0 };
+  const tier3 = tier3Result[0] || { avgSentiment: 0, count: 0, bullish: 0, bearish: 0, neutral: 0, highImpact: 0 };
+  
+  // Weighted calculation (80% / 15% / 5%)
+  const weights = { tier1: 0.8, tier2: 0.15, tier3: 0.05 };
+  
+  // Calculate total weight (adjust if tiers have no data)
+  let totalWeight = 0;
+  if (tier1.count > 0) totalWeight += weights.tier1;
+  if (tier2.count > 0) totalWeight += weights.tier2;
+  if (tier3.count > 0) totalWeight += weights.tier3;
+  
+  // Normalize weights if some tiers are empty
+  const normalizedWeights = {
+    tier1: totalWeight > 0 && tier1.count > 0 ? weights.tier1 / totalWeight : 0,
+    tier2: totalWeight > 0 && tier2.count > 0 ? weights.tier2 / totalWeight : 0,
+    tier3: totalWeight > 0 && tier3.count > 0 ? weights.tier3 / totalWeight : 0,
+  };
+  
+  // Calculate weighted average sentiment
+  const overallSentiment =
+    tier1.avgSentiment * normalizedWeights.tier1 +
+    tier2.avgSentiment * normalizedWeights.tier2 +
+    tier3.avgSentiment * normalizedWeights.tier3;
+  
+  // Calculate confidence based on data availability and recency
+  // More recent news + more data points = higher confidence
+  const totalNews = tier1.count + tier2.count + tier3.count;
+  const recencyScore = (tier1.count * 1.0 + tier2.count * 0.5 + tier3.count * 0.2) / (totalNews || 1);
+  const volumeScore = Math.min(totalNews / 20, 1); // Confidence increases with more news (cap at 20)
+  const confidence = (recencyScore * 0.7 + volumeScore * 0.3);
+  
+  // Determine overall label
+  let label = 'neutral';
+  if (overallSentiment <= -0.6) label = 'very_bearish';
+  else if (overallSentiment <= -0.2) label = 'bearish';
+  else if (overallSentiment <= 0.2) label = 'neutral';
+  else if (overallSentiment <= 0.6) label = 'bullish';
+  else label = 'very_bullish';
+  
+  return {
+    overallSentiment,
+    label,
+    confidence,
+    totalNews,
+    breakdown: {
+      ultraRecent: {
+        period: '6h',
+        weight: normalizedWeights.tier1,
+        sentiment: tier1.avgSentiment,
+        count: tier1.count,
+        bullish: tier1.bullish,
+        bearish: tier1.bearish,
+        neutral: tier1.neutral,
+        highImpact: tier1.highImpact,
+      },
+      recent: {
+        period: '24h',
+        weight: normalizedWeights.tier2,
+        sentiment: tier2.avgSentiment,
+        count: tier2.count,
+        bullish: tier2.bullish,
+        bearish: tier2.bearish,
+        neutral: tier2.neutral,
+        highImpact: tier2.highImpact,
+      },
+      background: {
+        period: '72h',
+        weight: normalizedWeights.tier3,
+        sentiment: tier3.avgSentiment,
+        count: tier3.count,
+        bullish: tier3.bullish,
+        bearish: tier3.bearish,
+        neutral: tier3.neutral,
+        highImpact: tier3.highImpact,
+      },
+    },
   };
 };
 
