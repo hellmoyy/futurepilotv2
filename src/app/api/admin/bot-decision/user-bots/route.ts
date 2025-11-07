@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 import UserBot from '@/models/UserBot';
+import { User } from '@/models/User';
 
 /**
  * GET /api/admin/bot-decision/user-bots
