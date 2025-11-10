@@ -315,15 +315,6 @@ export default function SettingsPage() {
                     </button>
                   </div>
 
-                  {/* Testnet Badge */}
-                  {connection.testnet && (
-                    <div className="mb-4">
-                      <span className="inline-block px-4 py-2 bg-yellow-500/30 dark:bg-yellow-500/30 light:bg-yellow-100 text-yellow-300 dark:text-yellow-300 light:text-yellow-700 rounded-xl text-sm font-bold border border-yellow-400/40 dark:border-yellow-400/40 light:border-yellow-300">
-                        🧪 Testnet Mode
-                      </span>
-                    </div>
-                  )}
-
                   {/* Permissions */}
                   <div className="mb-4 sm:mb-5 bg-black/30 dark:bg-black/30 light:bg-blue-50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-white/10 dark:border-white/10 light:border-blue-200">
                     <p className="text-xs text-gray-300 dark:text-gray-300 light:text-gray-700 mb-2 sm:mb-3 font-semibold uppercase tracking-wide">Permissions:</p>
@@ -488,7 +479,7 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <p className="text-gray-400 mb-6">Select an exchange to connect:</p>
                     {Object.entries(exchangeInfo).map(([key, info]) => {
-                      const hasConnection = connections.some(c => c.exchange === key && !c.testnet);
+                      const hasConnection = connections.some(c => c.exchange === key);
                       const isDisabled = key !== 'binance'; // Disable all except Binance
                       return (
                         <button
