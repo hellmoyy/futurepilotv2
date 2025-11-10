@@ -144,6 +144,13 @@ export default function DashboardPage() {
 
         const data = await response.json();
         
+        // Ensure data is an array
+        if (!Array.isArray(data)) {
+          console.warn('Price API returned non-array data:', data);
+          setLoading(false);
+          return;
+        }
+        
         // Filter top coins
         const topCoins = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT', 'MATICUSDT'];
         const coinNames: { [key: string]: string } = {

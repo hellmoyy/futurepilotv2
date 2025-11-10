@@ -10,6 +10,18 @@
 export async function register() {
   // Only run on Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // ========================================
+    // 🔇 Disable console logs in production
+    // ========================================
+    if (process.env.NODE_ENV === 'production') {
+      const noop = () => {};
+      console.log = noop;
+      console.info = noop;
+      console.debug = noop;
+      // Keep console.warn and console.error for debugging
+      console.warn('[PRODUCTION] Console logs disabled. Only errors and warnings will be shown.');
+    }
+    
     // Fix SSL certificate issue in development
     // This allows fetch() to work with Binance API on macOS
     if (process.env.NODE_ENV === 'development') {

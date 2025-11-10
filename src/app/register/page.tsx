@@ -67,13 +67,6 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
 
-    console.log('🔍 Registration attempt:', {
-      honeypotTriggered,
-      timeElapsed: (Date.now() - formStartTime) / 1000,
-      captchaEnabled: CAPTCHA_ENABLED,
-      hasCaptchaSolution: !!captchaSolution,
-    });
-
     // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -91,7 +84,9 @@ export default function RegisterPage() {
     // Note: Only trigger if honeypot is strongly triggered (multiple fields filled)
     // This prevents false positives from browser autofill
     if (honeypotTriggered) {
-      console.warn('⚠️ Honeypot triggered - possible bot detected');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ Honeypot triggered - possible bot detected');
+      }
       setError('Security check failed. Please try again.');
       setIsLoading(false);
       return;

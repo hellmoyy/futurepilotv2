@@ -31,10 +31,14 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
     const newCount = interactionCount + 1;
     setInteractionCount(newCount);
 
-    // Only trigger if multiple fields are filled (real bot behavior)
-    // Single field might be autofill accident
-    if (newCount >= 2) {
-      console.warn(`🤖 Honeypot triggered: Field "${fieldName}" was filled (${newCount} fields total)`);
+    // DISABLED: Honeypot too sensitive, browser autofill triggers false positives
+    // Only trigger if ALL fields are filled (real bot behavior)
+    // Browser autofill might fill 1-2 fields
+    if (newCount >= 5) { // Increased threshold from 2 to 5
+      // Silent detection in production, log in development only
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`🤖 Honeypot triggered: Field "${fieldName}" was filled (${newCount} fields total)`);
+      }
       setTriggered(true);
       
       if (onTrigger) {
@@ -119,7 +123,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           id="address_field"
           name="address"
           tabIndex={-1}
-          autoComplete="off"
+          autoComplete="new-password"
           onChange={(e) => handleChange('address', e)}
         />
       </label>
@@ -132,7 +136,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           id="zip_field"
           name="zip"
           tabIndex={-1}
-          autoComplete="off"
+          autoComplete="new-password"
           onChange={(e) => handleChange('zip', e)}
         />
       </label>

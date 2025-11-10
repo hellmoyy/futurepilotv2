@@ -118,8 +118,22 @@ export default function PositionPage() {
       
       const result = await response.json();
       
+      // Handle error responses
+      if (result.error) {
+        console.warn('API returned error:', result.error);
+        setPositions([]);
+        return;
+      }
+      
       // API returns { bots: [...] } not just [...]
       const data = Array.isArray(result) ? result : (result.bots || []);
+      
+      // Ensure data is array before filtering
+      if (!Array.isArray(data)) {
+        console.warn('API returned non-array data:', data);
+        setPositions([]);
+        return;
+      }
       
       const activePositions = data.filter((bot: Position) => 
         bot.status === 'ACTIVE' && bot.currentPosition
@@ -152,8 +166,22 @@ export default function PositionPage() {
       
       const result = await response.json();
       
+      // Handle error responses
+      if (result.error) {
+        console.warn('API returned error:', result.error);
+        setTrades([]);
+        return;
+      }
+      
       // Ensure we have an array
       const data = Array.isArray(result) ? result : (result.trades || []);
+      
+      // Ensure data is array before filtering
+      if (!Array.isArray(data)) {
+        console.warn('API returned non-array data:', data);
+        setTrades([]);
+        return;
+      }
       
       setTrades(data.filter((trade: Trade) => trade.status === 'closed'));
     } catch (error) {

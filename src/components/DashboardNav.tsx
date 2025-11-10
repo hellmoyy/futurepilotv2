@@ -14,7 +14,14 @@ export default function DashboardNav({ onMenuClick }: DashboardNavProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
+    try {
+      setShowUserMenu(false);
+      await signOut({ callbackUrl: '/', redirect: true });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Force redirect even if signOut fails
+      window.location.href = '/';
+    }
   };
 
   return (

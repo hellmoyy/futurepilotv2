@@ -22,8 +22,6 @@ export async function GET(request: NextRequest) {
       createdAt: -1,
     }).lean();
 
-    console.log(`📊 Fetching bots for user ${session.user.id}: Found ${bots.length} bot(s)`);
-
     return NextResponse.json({ bots }); // Return as { bots: [...] } not just [...]
   } catch (error: any) {
     console.error('Error fetching bots:', error);
