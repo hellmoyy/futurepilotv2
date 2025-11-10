@@ -16,7 +16,7 @@ const TOKEN_ABI = [
   "function decimals() view returns (uint8)"
 ];
 
-// Network configuration
+// ✅ MAINNET ONLY - Network configuration
 const networkConfig = {
   BSC_MAINNET: {
     rpc: process.env.BSC_RPC_URL,
@@ -27,18 +27,6 @@ const networkConfig = {
   ETHEREUM_MAINNET: {
     rpc: process.env.ETHEREUM_RPC_URL,
     usdtContract: process.env.USDT_ERC20_CONTRACT,
-    nativeName: 'Ethereum',
-    nativeSymbol: 'ETH',
-  },
-  BSC_TESTNET: {
-    rpc: process.env.TESTNET_BSC_RPC_URL,
-    usdtContract: process.env.TESTNET_USDT_BEP20_CONTRACT,
-    nativeName: 'Binance Coin',
-    nativeSymbol: 'BNB',
-  },
-  ETHEREUM_TESTNET: {
-    rpc: process.env.TESTNET_ETHEREUM_RPC_URL,
-    usdtContract: process.env.TESTNET_USDT_ERC20_CONTRACT,
     nativeName: 'Ethereum',
     nativeSymbol: 'ETH',
   },
@@ -93,17 +81,10 @@ export async function GET(request: NextRequest) {
     if (tokenType === 'USDT') {
       tokenAddress = config.usdtContract!;
       
-      // Get decimals from env based on network
-      let decimals = 6; // Default
-      if (network === 'BSC_TESTNET') {
-        decimals = parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18');
-      } else if (network === 'ETHEREUM_TESTNET') {
-        decimals = parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18');
-      } else if (network === 'BSC_MAINNET') {
-        decimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
-      } else if (network === 'ETHEREUM_MAINNET') {
-        decimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
-      }
+      // ✅ MAINNET ONLY - Get decimals from env based on network
+      const decimals = network === 'BSC_MAINNET'
+        ? parseInt(process.env.USDT_BEP20_DECIMAL || '18')
+        : parseInt(process.env.USDT_ERC20_DECIMAL || '6'); // ETHEREUM_MAINNET
       
       return NextResponse.json({
         network,

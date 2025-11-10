@@ -127,17 +127,18 @@ interface MoralisWebhookPayload {
   erc20Transfers: MoralisERC20Transfer[];
 }
 
-// USDT Contract Addresses (support both mainnet and testnet)
+// ✅ USDT Contract Addresses (Mainnet + Testnet for webhook testing)
+// Note: Keep testnet support for Moralis webhook testing/development
 const USDT_CONTRACTS = {
-  // Mainnet
+  // Mainnet (Production)
   ETHEREUM_MAINNET: process.env.USDT_ERC20_CONTRACT?.toLowerCase() || '0xdac17f958d2ee523a2206206994597c13d831ec7',
   BSC_MAINNET: process.env.USDT_BEP20_CONTRACT?.toLowerCase() || '0x55d398326f99059ff775485246999027b3197955',
-  // Testnet
+  // Testnet (Development/Testing only)
   ETHEREUM_TESTNET: process.env.TESTNET_USDT_ERC20_CONTRACT?.toLowerCase() || '0x46484aee842a735fbf4c05af7e371792cf52b498',
   BSC_TESTNET: process.env.TESTNET_USDT_BEP20_CONTRACT?.toLowerCase() || '0x46484aee842a735fbf4c05af7e371792cf52b498',
 };
 
-// Chain ID mapping
+// Chain ID mapping (Mainnet + Testnet for webhook compatibility)
 const CHAIN_NETWORKS = {
   '0x1': 'ERC20', // Ethereum Mainnet
   '0x38': 'BEP20', // BSC Mainnet
