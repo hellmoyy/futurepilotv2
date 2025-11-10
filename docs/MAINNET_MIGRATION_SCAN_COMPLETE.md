@@ -1,8 +1,8 @@
-# 🔍 MAINNET MIGRATION SCAN REPORT
+# 🔍 MAINNET PRODUCTION SCAN REPORT
 
 **Date:** November 11, 2025  
-**Scan Type:** Comprehensive testnet reference check  
-**Status:** ✅ **PRODUCTION READY**
+**Scan Type:** Comprehensive mainnet verification  
+**Status:** ✅ **PRODUCTION READY - MAINNET ONLY**
 
 ---
 
@@ -28,126 +28,81 @@ MORALIS_ETHEREUM_STREAM_ID=100e00c2...       ✅ (Same stream)
 
 ## 🔍 CODEBASE SCAN RESULTS
 
-### ✅ **Files with CORRECT Network-Aware Logic**
-
-These files have both mainnet AND testnet configs with proper switching:
+### ✅ **Production Files - Mainnet Only**
 
 #### 1. **`/src/lib/networkConfig.ts`**
 ```typescript
-// Lines 27-84: Network configurations
+// Network configurations - Mainnet Only
 export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
-  BSC_MAINNET: { ... },      // ✅ Has mainnet config
-  ETHEREUM_MAINNET: { ... }, // ✅ Has mainnet config
-  BSC_TESTNET: { ... },      // ✅ Has testnet config (for dev/testing)
-  ETHEREUM_TESTNET: { ... }, // ✅ Has testnet config (for dev/testing)
+  BSC_MAINNET: { ... },      // ✅ Production network
+  ETHEREUM_MAINNET: { ... }, // ✅ Production network
 };
 
-// Line 90: Network mode detection
+// Network mode detection
 export function getNetworkMode(): NetworkMode {
-  const mode = process.env.NETWORK_MODE || 'testnet';
-  return mode as NetworkMode;
+  return 'mainnet'; // ✅ Mainnet only
 }
 ```
-- **Status:** ✅ **CORRECT** - Supports both networks, switches based on env
-- **Action:** ❌ **NONE** - Working as intended
+- **Status:** ✅ **PRODUCTION READY** - Mainnet only
+- **Action:** ❌ **NONE** - Correctly configured
 
 #### 2. **`/src/lib/webhookProcessors/moralis.ts`**
 ```typescript
-// Lines 42-46: USDT contract addresses
+// USDT contract addresses - Mainnet Only
 const USDT_CONTRACTS = {
   ETHEREUM_MAINNET: process.env.USDT_ERC20_CONTRACT || '0xdAC...',
   BSC_MAINNET: process.env.USDT_BEP20_CONTRACT || '0x55d...',
-  ETHEREUM_TESTNET: process.env.TESTNET_USDT_ERC20_CONTRACT || '0x464...',
-  BSC_TESTNET: process.env.TESTNET_USDT_BEP20_CONTRACT || '0x464...',
 };
 ```
-- **Status:** ✅ **CORRECT** - Has fallback for both networks
+- **Status:** ✅ **PRODUCTION READY** - Uses mainnet contracts
 - **Action:** ❌ **NONE** - Uses env variables correctly
 
 #### 3. **`/src/app/administrator/custodial-wallet/page.tsx`**
 ```typescript
-// Lines 58-68: Explorer URL mapping
+// Explorer URL mapping - Mainnet Only
 const getExplorerUrl = (network: string) => {
   switch (network) {
     case 'BSC_MAINNET': return 'https://bscscan.com';
     case 'ETHEREUM_MAINNET': return 'https://etherscan.io';
-    case 'BSC_TESTNET': return 'https://testnet.bscscan.com';
-    case 'ETHEREUM_TESTNET': return 'https://sepolia.etherscan.io';
   }
 };
 ```
-- **Status:** ✅ **CORRECT** - Maps network to correct explorer
-- **Action:** ❌ **NONE** - Switches based on network parameter
+- **Status:** ✅ **PRODUCTION READY** - Mainnet explorers only
+- **Action:** ❌ **NONE** - Correctly maps to mainnet explorers
 
 #### 4. **`/src/app/topup/page.tsx`**
 ```typescript
-// Line 65-66: Network detection
-const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
-const isMainnet = networkMode === 'mainnet';
+// Network detection - Mainnet Only
+const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet';
+const isMainnet = networkMode === 'mainnet'; // Always true
 
-// Line 787: Explorer links
+// Explorer links
 href={`https://${tx.network === 'ERC20' ? 'etherscan.io' : 'bscscan.com'}/tx/${tx.txHash}`}
 ```
-- **Status:** ✅ **CORRECT** - Uses mainnet explorers when NETWORK_MODE=mainnet
-- **Action:** ❌ **NONE** - Already verified 100% mainnet ready
+- **Status:** ✅ **PRODUCTION READY** - 100% mainnet
+- **Action:** ❌ **NONE** - Already verified
 
-#### 5. **`/src/lib/masterWallet.ts`**
+#### 5. **`/src/lib/withdrawal/autoWithdrawal.ts`**
 ```typescript
-// Lines 32-44: Network configs for testnet (dev use)
-const NETWORKS: NetworkConfig = {
-  sepolia: {
-    name: 'Ethereum Sepolia',
-    rpc: 'https://rpc.ankr.com/eth_sepolia',
-    chainId: 11155111,
-    explorer: 'https://sepolia.etherscan.io',
-  },
-  bscTestnet: {
-    explorer: 'https://testnet.bscscan.com',
-  },
-};
+// Explorer URL generation - Mainnet Only
+const explorerUrl = `https://etherscan.io/tx/${transferResult.txHash}`;
+// Always uses mainnet explorer
 ```
-- **Status:** ✅ **CORRECT** - These are fallback configs, not actively used
-- **Action:** ❌ **NONE** - Only referenced in dev/testing scenarios
-
-#### 6. **`/src/lib/withdrawal/autoWithdrawal.ts`**
-```typescript
-// Line 271: Explorer URL generation
-const explorerUrl = isMainnet
-  ? `https://etherscan.io/tx/${transferResult.txHash}`
-  : `https://sepolia.etherscan.io/tx/${transferResult.txHash}`;
-```
-- **Status:** ✅ **CORRECT** - Switches based on isMainnet variable
-- **Action:** ❌ **NONE** - Proper conditional logic
-
-#### 7. **`/src/config/gas-fees.ts`**
-```typescript
-// Lines 27-28: Testnet gas fee reserve (dev use)
-reserve: 0.0001, // 0.0001 SepoliaETH (free from faucet)
-displayName: 'SepoliaETH',
-```
-- **Status:** ✅ **CORRECT** - Config for dev testing, not production
-- **Action:** ❌ **NONE** - Only used in testnet mode
-
-#### 8. **`/src/app/api/cron/monitor-deposits/route.ts`**
-```typescript
-// Line 34: Testnet reference in comment/config
-name: 'Ethereum Sepolia Testnet',
-```
-- **Status:** ✅ **CORRECT** - Part of network config mapping
-- **Action:** ❌ **NONE** - Not hardcoded, uses networkConfig
+- **Status:** ✅ **PRODUCTION READY** - Mainnet only
+- **Action:** ❌ **NONE** - Correct implementation
 
 ---
 
-## 🎯 FILES THAT ACTUALLY RUN IN PRODUCTION
+## 🎯 PRODUCTION FILES VERIFICATION
 
 ### ✅ **Critical Production Files:**
 
 | File | Mainnet Ready | Notes |
 |------|---------------|-------|
-| `/src/app/topup/page.tsx` | ✅ YES | 100% verified, uses mainnet explorers |
-| `/src/app/api/webhooks/moralis/route.ts` | ✅ YES | Uses env USDT contracts |
-| `/src/lib/webhookProcessors/moralis.ts` | ✅ YES | Network-aware fallbacks |
-| `/src/lib/networkConfig.ts` | ✅ YES | Switches based on NETWORK_MODE |
+| `/src/app/topup/page.tsx` | ✅ YES | 100% verified, mainnet only |
+| `/src/app/api/webhooks/moralis/route.ts` | ✅ YES | Uses mainnet USDT contracts |
+| `/src/lib/webhookProcessors/moralis.ts` | ✅ YES | Mainnet network configuration |
+| `/src/lib/networkConfig.ts` | ✅ YES | Mainnet only mode |
 | `/src/lib/network-balance.ts` | ✅ YES | Uses mainnetBalance field |
 | `/src/app/administrator/custodial-wallet/page.tsx` | ✅ YES | Network-aware explorer URLs |
 

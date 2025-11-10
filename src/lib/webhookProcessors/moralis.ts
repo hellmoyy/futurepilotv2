@@ -166,12 +166,8 @@ export async function processMoralisWebhookPayload(payload: MoralisWebhookPayloa
       
       await transaction.save();
       
-      // Update user's wallet balance
-      const updateField = process.env.NETWORK_MODE === 'mainnet' 
-        ? 'walletData.mainnetBalance' 
-        : 'walletData.balance';
-      
-      user.set(updateField, newBalance);
+      // Update user's wallet balance (mainnet only)
+      user.set('walletData.mainnetBalance', newBalance);
       await user.save();
       
       console.log('✅ Deposit processed successfully:', {

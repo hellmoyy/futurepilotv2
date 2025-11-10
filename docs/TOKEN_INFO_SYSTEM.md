@@ -19,7 +19,7 @@ User input minimum amount harus di-convert ke raw value sesuai decimals:
 │  (Next.js)   │
 └──────┬───────┘
        │
-       │ GET /api/admin/token-info?network=BSC_TESTNET&tokenType=USDT
+       │ GET /api/admin/token-info?network=BSC_MAINNET&tokenType=USDT
        │
        ▼
 ┌──────────────────┐
@@ -51,7 +51,7 @@ User input minimum amount harus di-convert ke raw value sesuai decimals:
 ### TokenInfo Collection
 ```typescript
 {
-  network: string;           // 'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET'
+  network: string;           // 'BSC_MAINNET' | 'ETHEREUM_MAINNET'
   tokenAddress: string;      // Lowercase contract address
   tokenType: string;         // 'USDT' | 'NATIVE' | 'CUSTOM'
   symbol: string;            // "USDT", "UNI", "LINK"
@@ -77,7 +77,7 @@ Fetch token information with automatic caching.
 #### Query Parameters
 ```typescript
 {
-  network: 'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET',
+  network: 'BSC_MAINNET' | 'ETHEREUM_MAINNET',
   tokenType: 'USDT' | 'NATIVE' | 'CUSTOM',
   tokenAddress?: string  // Required if tokenType === 'CUSTOM'
 }
@@ -86,12 +86,12 @@ Fetch token information with automatic caching.
 #### Response
 ```json
 {
-  "network": "BSC_TESTNET",
-  "tokenAddress": "0x46484aee842a735fbf4c05af7e371792cf52b498",
+  "network": "BSC_MAINNET",
+  "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
   "tokenType": "USDT",
   "symbol": "USDT",
   "name": "Tether USD",
-  "decimals": 6,
+  "decimals": 18,
   "isVerified": true,
   "isCached": true,
   "lastChecked": "2024-12-01T10:30:00.000Z"
@@ -102,20 +102,20 @@ Fetch token information with automatic caching.
 
 **1. USDT Info (Auto from env)**
 ```bash
-GET /api/admin/token-info?network=BSC_TESTNET&tokenType=USDT
+GET /api/admin/token-info?network=BSC_MAINNET&tokenType=USDT
 
 Response:
 {
   "symbol": "USDT",
   "name": "Tether USD",
-  "decimals": 6,
+  "decimals": 18,
   "isCached": true
 }
 ```
 
 **2. Native Token (BNB/ETH)**
 ```bash
-GET /api/admin/token-info?network=BSC_TESTNET&tokenType=NATIVE
+GET /api/admin/token-info?network=BSC_MAINNET&tokenType=NATIVE
 
 Response:
 {
@@ -128,7 +128,7 @@ Response:
 
 **3. Custom Token (e.g., UNI)**
 ```bash
-GET /api/admin/token-info?network=ETHEREUM_TESTNET&tokenType=CUSTOM&tokenAddress=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
+GET /api/admin/token-info?network=ETHEREUM_MAINNET&tokenType=CUSTOM&tokenAddress=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
 
 Response:
 {
@@ -164,7 +164,7 @@ Clear token info cache.
 
 **1. Clear Specific Token**
 ```bash
-DELETE /api/admin/token-info?network=BSC_TESTNET&tokenAddress=0x46484aee...
+DELETE /api/admin/token-info?network=BSC_MAINNET&tokenAddress=0x55d398326f99059ff775485246999027b3197955
 
 Response:
 {
@@ -412,14 +412,10 @@ try {
 # USDT Contracts (automatically used for tokenType=USDT)
 USDT_BEP20_CONTRACT=0x55d398326f99059fF775485246999027B3197955
 USDT_ERC20_CONTRACT=0xdAC17F958D2ee523a2206206994597C13D831ec7
-TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
-TESTNET_USDT_ERC20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
 
 # RPC URLs (for blockchain queries)
 BSC_RPC_URL=https://bsc-dataseed1.binance.org
 ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
-TESTNET_BSC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
-TESTNET_ETHEREUM_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 ```
 
 ## Files Created/Modified
@@ -434,13 +430,13 @@ TESTNET_ETHEREUM_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 
 ### Test USDT Info
 ```bash
-curl "http://localhost:3000/api/admin/token-info?network=BSC_TESTNET&tokenType=USDT"
+curl "http://localhost:3000/api/admin/token-info?network=BSC_MAINNET&tokenType=USDT"
 
 # Expected:
 {
   "symbol": "USDT",
   "name": "Tether USD",
-  "decimals": 6,
+  "decimals": 18,
   "isCached": false
 }
 
@@ -448,7 +444,7 @@ curl "http://localhost:3000/api/admin/token-info?network=BSC_TESTNET&tokenType=U
 {
   "symbol": "USDT",
   "name": "Tether USD",
-  "decimals": 6,
+  "decimals": 18,
   "isCached": true,
   "lastChecked": "2024-12-01T10:30:00.000Z"
 }
@@ -456,7 +452,7 @@ curl "http://localhost:3000/api/admin/token-info?network=BSC_TESTNET&tokenType=U
 
 ### Test Custom Token
 ```bash
-curl "http://localhost:3000/api/admin/token-info?network=ETHEREUM_TESTNET&tokenType=CUSTOM&tokenAddress=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+curl "http://localhost:3000/api/admin/token-info?network=ETHEREUM_MAINNET&tokenType=CUSTOM&tokenAddress=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
 
 # Expected:
 {

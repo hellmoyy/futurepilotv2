@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
             lastBalanceCheck: {
               timestamp: new Date(),
               binanceBalance: 0,
-              gasFeeBalance: user.walletData?.balance || 0,
+              gasFeeBalance: user.walletData?.mainnetBalance || 0,
               availableMargin: 0,
               usedMargin: 0
             },

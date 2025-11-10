@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         erc20Address: user.walletData.erc20Address,
         bep20Address: user.walletData.bep20Address,
-        balance: user.walletData.balance || 0
+        mainnetBalance: user.walletData.mainnetBalance || 0
       });
     }
 

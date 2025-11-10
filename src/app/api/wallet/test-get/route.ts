@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         email: testUser.email,
         erc20Address: walletData.erc20Address,
         bep20Address: walletData.bep20Address,
-        balance: walletData.balance,
+        mainnetBalance: walletData.mainnetBalance,
         gasFeeBalance: testUser.gasFeeBalance,
         createdAt: walletData.createdAt,
         membershipLevel: testUser.membershipLevel,

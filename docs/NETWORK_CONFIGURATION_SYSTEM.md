@@ -2,13 +2,13 @@
 
 ## 📋 Overview
 
-Sistem network configuration yang terpusat untuk **semua module** yang berinteraksi dengan blockchain. Mendukung 4 networks dengan automatic filtering berdasarkan `NETWORK_MODE`.
+Sistem network configuration yang terpusat untuk **semua module** yang berinteraksi dengan blockchain. **Platform ini HANYA mendukung MAINNET** - tidak ada testnet support.
 
 ---
 
 ## 🎯 Supported Networks
 
-### Mainnet (NETWORK_MODE=mainnet)
+### Mainnet Only
 1. **BSC Mainnet** (BNB Smart Chain)
    - Chain ID: `56`
    - Moralis ID: `0x38`
@@ -21,19 +21,6 @@ Sistem network configuration yang terpusat untuk **semua module** yang berintera
    - Explorer: https://etherscan.io
    - USDT Contract: `0xdAC17F958D2ee523a2206206994597C13D831ec7`
 
-### Testnet (NETWORK_MODE=testnet)
-1. **BSC Testnet**
-   - Chain ID: `97`
-   - Moralis ID: `0x61`
-   - Explorer: https://testnet.bscscan.com
-   - USDT Contract: `0x46484Aee842A735Fbf4C05Af7e371792cf52b498`
-
-2. **Ethereum Sepolia Testnet**
-   - Chain ID: `11155111`
-   - Moralis ID: `0xaa36a7`
-   - Explorer: https://sepolia.etherscan.io
-   - USDT Contract: `0x46484Aee842A735Fbf4C05Af7e371792cf52b498`
-
 ---
 
 ## ⚙️ Configuration
@@ -41,9 +28,9 @@ Sistem network configuration yang terpusat untuk **semua module** yang berintera
 ### Environment Variables (.env)
 
 ```bash
-# Network Mode (CRITICAL: Controls which networks are active)
-NETWORK_MODE=testnet  # or mainnet
-NEXT_PUBLIC_NETWORK_MODE=testnet  # For client-side
+# Network Mode (MAINNET ONLY)
+NETWORK_MODE=mainnet
+NEXT_PUBLIC_NETWORK_MODE=mainnet
 
 ########## MAINNET RPC URLs ##########
 ETHEREUM_RPC_URL=https://ethereum.publicnode.com
@@ -52,15 +39,6 @@ BSC_RPC_URL=https://1rpc.io/bnb
 # USDT Contract Addresses Mainnet
 USDT_ERC20_CONTRACT=0xdAC17F958D2ee523a2206206994597C13D831ec7
 USDT_BEP20_CONTRACT=0x55d398326f99059fF775485246999027B3197955
-########################################
-
-########## TESTNET RPC URLs ##########
-TESTNET_ETHEREUM_RPC_URL=https://rpc.ankr.com/eth_sepolia
-TESTNET_BSC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
-
-# USDT Contract Addresses Testnet
-TESTNET_USDT_ERC20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
-TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
 ########################################
 ```
 
@@ -83,7 +61,7 @@ import {
 ### 2. Get Current Network Mode
 
 ```typescript
-const mode = getNetworkMode(); // 'mainnet' or 'testnet'
+const mode = getNetworkMode(); // Always returns 'mainnet'
 console.log('Current mode:', mode);
 ```
 
@@ -91,29 +69,24 @@ console.log('Current mode:', mode);
 
 ```typescript
 const networks = getAvailableNetworks();
-// If NETWORK_MODE=testnet:
-// Returns: [BSC_TESTNET, ETHEREUM_TESTNET]
-
-// If NETWORK_MODE=mainnet:
-// Returns: [BSC_MAINNET, ETHEREUM_MAINNET]
+// Always returns: [BSC_MAINNET, ETHEREUM_MAINNET]
 ```
 
 ### 4. Validate Network
 
 ```typescript
-const isValid = isNetworkAvailable('BSC_MAINNET');
-// If NETWORK_MODE=testnet: false
-// If NETWORK_MODE=mainnet: true
+const isValid = isNetworkAvailable('BSC_MAINNET'); // Always true
+const isValidTestnet = isNetworkAvailable('BSC_TESTNET'); // Always false - no testnet support
 ```
 
 ### 5. Get Network Details
 
 ```typescript
-const config = getNetworkConfig('BSC_TESTNET');
-console.log(config.name); // "BNB Smart Chain Testnet"
-console.log(config.chainId); // 97
-console.log(config.explorerUrl); // "https://testnet.bscscan.com"
-console.log(config.usdtContract); // "0x464..."
+const config = getNetworkConfig('BSC_MAINNET');
+console.log(config.name); // "BNB Smart Chain Mainnet"
+console.log(config.chainId); // 56
+console.log(config.explorerUrl); // "https://bscscan.com"
+console.log(config.usdtContract); // "0x55d398326f99059fF775485246999027B3197955"
 ```
 
 ### 6. React Component Usage
@@ -124,8 +97,8 @@ console.log(config.usdtContract); // "0x464..."
 import { useNetworkMode, getAvailableNetworks } from '@/lib/networkConfig';
 
 export default function MyComponent() {
-  const networkMode = useNetworkMode(); // 'mainnet' or 'testnet'
-  const networks = getAvailableNetworks();
+  const networkMode = useNetworkMode(); // Always 'mainnet'
+  const networks = getAvailableNetworks(); // [BSC_MAINNET, ETHEREUM_MAINNET]
 
   return (
     <select>
@@ -147,12 +120,12 @@ import { getAvailableNetworkKeys, getNetworkConfig } from '@/lib/networkConfig';
 export async function POST(request: NextRequest) {
   const { network } = await request.json();
   
-  // Validate network
-  const availableNetworks = getAvailableNetworkKeys();
+  // Validate network (mainnet only)
+  const availableNetworks = getAvailableNetworkKeys(); // ['BSC_MAINNET', 'ETHEREUM_MAINNET']
   if (!availableNetworks.includes(network)) {
     return NextResponse.json(
       { 
-        error: 'Invalid network for current mode',
+        error: 'Invalid network - only mainnet supported',
         availableNetworks 
       },
       { status: 400 }
@@ -215,18 +188,18 @@ All modules that interact with blockchain now use centralized network config:
 
 ## 🔧 How It Works
 
-### Mode Detection:
+### Mainnet-Only Mode:
 
 ```
-NETWORK_MODE=testnet
+NETWORK_MODE=mainnet (hardcoded)
   ↓
-getNetworkMode() returns 'testnet'
+getNetworkMode() returns 'mainnet'
   ↓
-getAvailableNetworks() returns [BSC_TESTNET, ETHEREUM_TESTNET]
+getAvailableNetworks() returns [BSC_MAINNET, ETHEREUM_MAINNET]
   ↓
-Only testnet networks shown in UI
+Only mainnet networks shown in UI
   ↓
-API validates: Only testnet networks accepted
+API validates: Only mainnet networks accepted
 ```
 
 ### Network Validation Flow:
@@ -240,15 +213,14 @@ POST /api/admin/sweep-wallets
 body: { network: 'BSC_MAINNET' }
 
 // 3. API validates network
-const availableNetworks = getAvailableNetworkKeys(); // ['BSC_TESTNET', 'ETHEREUM_TESTNET']
-if (!availableNetworks.includes('BSC_MAINNET')) {
-  return { error: 'Invalid network for testnet mode' }; // ❌ REJECTED
-}
-
-// 4. If NETWORK_MODE=mainnet
 const availableNetworks = getAvailableNetworkKeys(); // ['BSC_MAINNET', 'ETHEREUM_MAINNET']
 if (availableNetworks.includes('BSC_MAINNET')) {
   // ✅ ALLOWED - proceed with sweep
+}
+
+// 4. Testnet requests are rejected
+if (!availableNetworks.includes('BSC_TESTNET')) {
+  return { error: 'Testnet not supported' }; // ❌ REJECTED
 }
 ```
 
@@ -256,29 +228,20 @@ if (availableNetworks.includes('BSC_MAINNET')) {
 
 ## 🎨 UI Implementation
 
-### Network Selector (Auto-filtered):
+### Network Selector (Mainnet Only):
 
 ```typescript
 <select value={selectedNetwork} onChange={handleChange}>
-  {networkMode === 'testnet' ? (
-    <>
-      <option value="BSC_TESTNET">🧪 BSC Testnet</option>
-      <option value="ETHEREUM_TESTNET">🧪 Ethereum Sepolia</option>
-    </>
-  ) : (
-    <>
-      <option value="BSC_MAINNET">🟢 BSC Mainnet</option>
-      <option value="ETHEREUM_MAINNET">🔷 Ethereum Mainnet</option>
-    </>
-  )}
+  <option value="BSC_MAINNET">🟢 BSC Mainnet</option>
+  <option value="ETHEREUM_MAINNET">🔷 Ethereum Mainnet</option>
 </select>
 ```
 
 ### Network Badge:
 
 ```typescript
-<div className={isMainnet ? 'badge-green' : 'badge-yellow'}>
-  {isMainnet ? '🟢 Mainnet' : '🧪 Testnet'}
+<div className="badge-green">
+  🟢 Mainnet
 </div>
 ```
 
@@ -286,30 +249,14 @@ if (availableNetworks.includes('BSC_MAINNET')) {
 
 ## 🧪 Testing
 
-### Switch to Testnet:
-
-```bash
-# .env
-NETWORK_MODE=testnet
-NEXT_PUBLIC_NETWORK_MODE=testnet
-
-# Restart server
-npm run dev
-
-# Access admin panel
-http://localhost:3000/administrator/custodial-wallet
-
-# Only BSC Testnet and Ethereum Sepolia will show
-```
-
-### Switch to Mainnet:
+### Production Environment:
 
 ```bash
 # .env
 NETWORK_MODE=mainnet
 NEXT_PUBLIC_NETWORK_MODE=mainnet
 
-# Restart server
+# Start server
 npm run dev
 
 # Access admin panel
@@ -320,63 +267,51 @@ http://localhost:3000/administrator/custodial-wallet
 
 ---
 
-## 📊 Network Comparison
+## 📊 Network Information
 
-| Feature | Testnet | Mainnet |
-|---------|---------|---------|
-| **Networks** | BSC Testnet, Ethereum Sepolia | BSC Mainnet, Ethereum Mainnet |
-| **Real Money** | ❌ No | ✅ Yes |
-| **Gas Fees** | Free (faucet) | Paid (real BNB/ETH) |
-| **USDT** | Test tokens | Real USDT |
-| **Purpose** | Testing & development | Production |
-| **Security** | Lower | Higher |
-| **Reversible** | ✅ Can reset | ❌ Cannot undo |
+| Network | Chain ID | Explorer | USDT Contract |
+|---------|----------|----------|---------------|
+| **BSC Mainnet** | 56 | https://bscscan.com | 0x55d398326f99059fF775485246999027B3197955 |
+| **Ethereum Mainnet** | 1 | https://etherscan.io | 0xdAC17F958D2ee523a2206206994597C13D831ec7 |
 
 ---
 
 ## 🔐 Security Considerations
 
-### Testnet Mode:
-- ✅ Safe for testing
-- ✅ Can experiment freely
-- ✅ Free gas fees (faucet)
-- ⚠️ Test tokens have no value
-
-### Mainnet Mode:
+### Mainnet Mode (Production):
 - ⚠️ Real money involved
-- ⚠️ Gas fees required
-- ⚠️ Transactions permanent
-- ✅ Production ready
+- ⚠️ Gas fees required (real BNB/ETH)
+- ⚠️ Transactions are permanent and irreversible
+- ✅ Production ready for real users
+- ✅ Higher security standards
 
 ### Best Practices:
-1. **Always test on testnet first**
-2. **Double-check NETWORK_MODE before deploy**
-3. **Use separate .env files for testnet/mainnet**
+1. **Always verify transaction details before submitting**
+2. **Monitor all mainnet transactions closely**
+3. **Keep private keys secure (encrypted in database)**
 4. **Never commit .env to git**
-5. **Monitor all mainnet transactions**
+5. **Use environment variables for sensitive data**
+6. **Implement proper error handling for blockchain operations**
 
 ---
 
 ## 🚨 Troubleshooting
 
-### Issue 1: "Invalid network for testnet mode"
-**Cause:** Selected mainnet network while NETWORK_MODE=testnet
+### Issue 1: "Invalid network"
+**Cause:** Selected unsupported network or testnet reference
 
 **Solution:**
 ```bash
-# Check .env
-echo $NETWORK_MODE  # Should match UI selection
-
-# If mismatch, update .env
-NETWORK_MODE=mainnet  # or testnet
-NEXT_PUBLIC_NETWORK_MODE=mainnet  # or testnet
+# Check .env - must be mainnet
+NETWORK_MODE=mainnet
+NEXT_PUBLIC_NETWORK_MODE=mainnet
 
 # Restart server
 npm run dev
 ```
 
-### Issue 2: Network selector shows wrong networks
-**Cause:** Frontend cached old NETWORK_MODE
+### Issue 2: Network selector shows no options
+**Cause:** Frontend cached old configuration
 
 **Solution:**
 ```bash
@@ -388,15 +323,14 @@ npm run build
 npm run dev
 ```
 
-### Issue 3: API accepts wrong network
-**Cause:** Server-side NETWORK_MODE not updated
+### Issue 3: Transaction fails
+**Cause:** Insufficient gas fees or wrong network
 
 **Solution:**
 ```bash
-# Update .env on server
-NETWORK_MODE=testnet  # or mainnet
-
-# Restart server (Vercel/Railway auto-redeploys on env change)
+# Verify wallet has sufficient native tokens (BNB/ETH) for gas
+# Check network is correct (BSC_MAINNET or ETHEREUM_MAINNET)
+# Verify RPC endpoint is accessible
 ```
 
 ---
@@ -418,22 +352,22 @@ Returns array of available network keys (['BSC_TESTNET', 'ETHEREUM_TESTNET'])
 Get detailed config for specific network
 
 #### `getNetworkByChainId(chainId: number): NetworkConfig | undefined`
-Find network by chain ID (56, 97, 1, 11155111)
+Find network by chain ID (56 for BSC, 1 for Ethereum)
 
 #### `getNetworkByMoralisChainId(id: string): NetworkConfig | undefined`
-Find network by Moralis chain ID ('0x38', '0x61', etc)
+Find network by Moralis chain ID ('0x38' for BSC, '0x1' for Ethereum)
 
 #### `isNetworkAvailable(key: NetworkKey): boolean`
-Check if network is available in current mode
+Check if network is available (mainnet networks only)
 
 #### `getDefaultNetwork(): NetworkConfig`
-Get default network for current mode
+Get default network (BSC_MAINNET)
 
 #### `getAvailableMoralisChainIds(): string[]`
-Get all Moralis chain IDs for current mode
+Get all Moralis chain IDs for mainnet (['0x38', '0x1'])
 
 #### `formatNetworkName(key: NetworkKey): string`
-Format network name with icon (🟢 BSC Mainnet / 🧪 BSC Testnet)
+Format network name with icon (🟢 BSC Mainnet / 🔷 Ethereum Mainnet)
 
 ---
 
@@ -443,10 +377,10 @@ When updating existing modules:
 
 - [ ] Import network helper functions
 - [ ] Replace hardcoded network configs
-- [ ] Add network validation in APIs
-- [ ] Filter network selector in UI
+- [ ] Add network validation in APIs (mainnet only)
+- [ ] Update network selector in UI (mainnet only)
 - [ ] Update explorer URL generation
-- [ ] Test with both testnet and mainnet modes
+- [ ] Test with mainnet configuration
 - [ ] Update documentation
 
 ---
@@ -460,8 +394,8 @@ When updating existing modules:
 
 ---
 
-**🎉 Ready to use!** Network configuration is now centralized and automatic!
+**🎉 Ready for Production!** Network configuration is mainnet-only and fully secure.
 
-**Switch modes:** Just update `NETWORK_MODE` in `.env` and restart server.
+**⚠️ Important:** This platform ONLY supports mainnet - no testnet functionality exists.
 
 **Need help?** Check `/src/lib/networkConfig.ts` for all available functions.

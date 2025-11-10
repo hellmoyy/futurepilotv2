@@ -31,10 +31,10 @@ export async function GET(req: NextRequest) {
       success: true,
       erc20Address: testUser.walletData.erc20Address,
       bep20Address: testUser.walletData.bep20Address,
-      balance: testUser.walletData.balance || 0
+      mainnetBalance: testUser.walletData.mainnetBalance || 0
     });
 
-  } catch (error) {
+    } catch (error) {
     console.error('❌ Test wallet get error:', error);
     return NextResponse.json(
       {

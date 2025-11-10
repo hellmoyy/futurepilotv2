@@ -13,11 +13,9 @@ Advanced custodial wallet system dengan support untuk 3 jenis token yang bisa di
 - **Native**: BNB untuk BSC networks, ETH untuk Ethereum networks
 - **Custom**: User input contract address untuk token apapun
 
-### ✅ Network-Aware Configuration
+### ✅ Network-Aware Configuration (Mainnet Only)
 - BSC Mainnet → USDT_BEP20_CONTRACT
 - Ethereum Mainnet → USDT_ERC20_CONTRACT
-- BSC Testnet → TESTNET_USDT_BEP20_CONTRACT
-- Ethereum Sepolia → TESTNET_USDT_ERC20_CONTRACT
 
 ### ✅ Smart Gas Management
 - Native sweep: Reserves 0.001 BNB/ETH untuk gas
@@ -38,7 +36,7 @@ Advanced custodial wallet system dengan support untuk 3 jenis token yang bisa di
 #### Request Body
 ```typescript
 {
-  network: 'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET',
+  network: 'BSC_MAINNET' | 'ETHEREUM_MAINNET',
   minAmount: number,           // Minimum balance to sweep
   tokenType: 'USDT' | 'NATIVE' | 'CUSTOM',
   customTokenAddress?: string  // Required if tokenType === 'CUSTOM'
@@ -84,7 +82,7 @@ Advanced custodial wallet system dengan support untuk 3 jenis token yang bisa di
 const [tokenType, setTokenType] = useState<'USDT' | 'NATIVE' | 'CUSTOM'>('USDT');
 const [customTokenAddress, setCustomTokenAddress] = useState('');
 const [minAmount, setMinAmount] = useState(10);
-const [selectedNetwork, setSelectedNetwork] = useState('BSC_TESTNET');
+const [selectedNetwork, setSelectedNetwork] = useState('BSC_MAINNET');
 ```
 
 #### UI Components

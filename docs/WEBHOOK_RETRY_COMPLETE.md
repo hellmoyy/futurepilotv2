@@ -53,7 +53,7 @@ The **Webhook Retry System** has been **fully implemented** for FuturePilot. Thi
 - ✅ Validates confirmed USDT transfers
 - ✅ Finds user by wallet address
 - ✅ Checks duplicate txHash
-- ✅ Updates network-aware balance (testnet/mainnet)
+- ✅ Updates network-aware balance (mainnet only)
 - ✅ Returns detailed results (processed, skipped, errors)
 
 **Status:** ✅ No compile errors, ready for use

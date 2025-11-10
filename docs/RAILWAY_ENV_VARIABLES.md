@@ -162,25 +162,14 @@ POST https://futurepilot.pro/api/webhook/moralis
 
 ## 🐛 TROUBLESHOOTING
 
-### Issue: Topup Page Still Shows "Testnet"
-**Cause:** `NEXT_PUBLIC_NETWORK_MODE` not set or deployment not refreshed
+### Issue: Environment Variables Not Loading
+**Cause:** Railway deployment cache
 
 **Solution:**
-1. Verify variable exists: Railway Dashboard → Variables
-2. Value must be exactly: `mainnet` (lowercase, no spaces)
-3. Redeploy: Railway Dashboard → Deployments → Redeploy
-4. Hard refresh browser: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows)
-5. Clear browser cache if needed
-
-### Issue: Wallet Generation Creates Testnet Address
-**Cause:** `NETWORK_MODE` (backend) not set
-
-**Solution:**
-1. Check both variables exist:
-   - `NETWORK_MODE=mainnet` (backend)
-   - `NEXT_PUBLIC_NETWORK_MODE=mainnet` (frontend)
-2. Redeploy application
-3. Test wallet generation again
+1. Delete deployment cache: Railway Dashboard → Settings → "Clear Cache"
+2. Redeploy from scratch
+3. Wait 3-5 minutes for full deployment
+4. Check logs for environment variable loading
 
 ### Issue: Deposit Not Detected
 **Cause:** Moralis stream not active or webhook not configured
@@ -191,15 +180,6 @@ POST https://futurepilot.pro/api/webhook/moralis
 3. Webhook URL: `https://futurepilot.pro/api/webhook/moralis`
 4. Status should be: "Active"
 5. Test webhook manually from Moralis dashboard
-
-### Issue: Environment Variables Not Loading
-**Cause:** Railway deployment cache
-
-**Solution:**
-1. Delete deployment cache: Railway Dashboard → Settings → "Clear Cache"
-2. Redeploy from scratch
-3. Wait 3-5 minutes for full deployment
-4. Check logs for environment variable loading
 
 ---
 
@@ -223,18 +203,6 @@ POST https://futurepilot.pro/api/webhook/moralis
 - Network indicator: Mainnet
 - Balance shows real deposits
 - Trading bot uses Binance mainnet
-
-### ❌ Incorrect Testnet Behavior (MUST FIX):
-
-**Topup Page:**
-- Badge shows: `🟡 Testnet` (yellow)
-- Networks listed: Sepolia + BSC Testnet
-- Wrong contract addresses
-
-**Wallet Generation:**
-- Creates testnet addresses
-- Uses testnet RPC endpoints
-- No real money involved
 
 ---
 

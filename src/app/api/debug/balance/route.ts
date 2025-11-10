@@ -12,11 +12,9 @@ export async function GET() {
     const allUsers = await User.find({}).lean();
     
     const usersWithBalance = allUsers.filter((u: any) => 
-      (u.walletData?.balance && u.walletData.balance > 0) ||
       (u.walletData?.mainnetBalance && u.walletData.mainnetBalance > 0)
     ).map((u: any) => ({
       email: u.email,
-      walletBalance: u.walletData?.balance || 0,
       mainnetBalance: u.walletData?.mainnetBalance || 0
     }));
     

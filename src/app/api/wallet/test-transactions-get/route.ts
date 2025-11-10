@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       data: {
         user: {
           email: testUser.email,
-          balance: testUser.walletData?.balance || 0
+          mainnetBalance: testUser.walletData?.mainnetBalance || 0
         },
         transactions: formattedTransactions,
         summary: {

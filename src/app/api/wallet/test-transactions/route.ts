@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       .reduce((sum, tx) => sum + tx.amount, 0);
 
     await User.findByIdAndUpdate(testUser._id, {
-      'walletData.balance': confirmedAmount
+      'walletData.mainnetBalance': confirmedAmount
     });
 
     return NextResponse.json({

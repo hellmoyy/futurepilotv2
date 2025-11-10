@@ -144,12 +144,12 @@ else tier = 'bronze';
    - ✅ Emergency exit protection (-2% hard cap)
 
 2. **Gas Fee Balance System**
-   - ✅ Custodial wallet (ERC20 + BEP20)
+   - ✅ Custodial wallet (ERC20 + BEP20) - **MAINNET ONLY**
    - ✅ Automatic deposit detection (webhook + cron)
-   - ✅ Network-isolated balance (testnet vs mainnet)
    - ✅ Balance display di sidebar
    - ✅ Top-up page dengan QR code generation
    - ✅ Transaction history
+   - ✅ **100% Mainnet - All testnet functionality removed**
 
 3. **Referral System (UI)**
    - ✅ Referral code generation
@@ -814,18 +814,12 @@ const response = await fetch('/api/admin/verify-config-pin', {
 
 **Other Important Variables:**
 ```bash
-# Network Mode (testnet vs mainnet)
-NETWORK_MODE=testnet                    # or 'mainnet'
-NEXT_PUBLIC_NETWORK_MODE=testnet        # Frontend access
-
-# Binance API (per user, stored in DB)
-BINANCE_TESTNET=true                    # Admin override
-BINANCE_TESTNET_API_KEY=your_key        # For testing only
-BINANCE_TESTNET_API_SECRET=your_secret  # For testing only
-
 # Trading Commission (configurable)
 # Default: 20% of profit deducted from gas fee balance
 # Configurable in: /administrator/settings tab "Trading Commission"
+
+# Binance API (per user, stored in DB)
+# All connections are MAINNET ONLY - No testnet support
 ```
 
 ### 🛠️ Troubleshooting Environment Variables

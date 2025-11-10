@@ -427,7 +427,7 @@ export async function GET(request: NextRequest) {
     }).select('email walletData');
 
     const totalUsers = users.length;
-    const totalBalance = users.reduce((sum, user) => sum + (user.walletData?.balance || 0), 0);
+    const totalBalance = users.reduce((sum, user) => sum + (user.walletData?.mainnetBalance || 0), 0);
 
     return NextResponse.json({
       masterWallet: MASTER_WALLET_ADDRESS,

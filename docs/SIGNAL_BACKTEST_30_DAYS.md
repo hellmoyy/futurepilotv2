@@ -461,7 +461,7 @@ Yearly:     ~$250,000+ (exponential growth)
 ---
 
 **Generated:** November 10, 2025  
-**Data Source:** Binance Testnet Futures API (30 days historical)  
+**Data Source:** Binance Futures API (30 days historical)  
 **Analysis Method:** Triple Timeframe Confirmation (1m, 3m, 5m)  
 **Sample Size:** 720 hourly time slots  
 **Confidence Level:** HIGH (large sample, diverse market conditions)

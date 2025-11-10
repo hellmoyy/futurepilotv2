@@ -59,7 +59,6 @@ export async function POST(req: NextRequest) {
       erc20Address: wallet.address,  // Same address for both networks
       bep20Address: wallet.address,  // Same address for both networks  
       encryptedPrivateKey: encryptedPrivateKey,
-      balance: 0,
       mainnetBalance: 0,
       createdAt: new Date()
     };
@@ -98,7 +97,7 @@ export async function POST(req: NextRequest) {
         walletData: {
           hasErc20Address: !!testUser.walletData?.erc20Address,
           hasBep20Address: !!testUser.walletData?.bep20Address,
-          balance: testUser.walletData?.balance || 0,
+          mainnetBalance: testUser.walletData?.mainnetBalance || 0,
           gasFeeBalance: testUser.gasFeeBalance
         }
       }

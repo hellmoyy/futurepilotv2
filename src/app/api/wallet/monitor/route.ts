@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           if (receipt.status === 1) {
             await User.findByIdAndUpdate(user._id, {
               $inc: {
-                'walletData.balance': amount,
+                'walletData.mainnetBalance': amount,
                 gasFeeBalance: amount // Also update gas fee balance
               }
             });
