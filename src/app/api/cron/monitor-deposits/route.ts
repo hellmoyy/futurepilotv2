@@ -11,10 +11,8 @@ const USDT_ABI = [
   "function decimals() view returns (uint8)"
 ];
 
-// Network configurations
-const NETWORK_MODE = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
-
-const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
+// ✅ MAINNET ONLY - Network configurations
+const NETWORKS = {
   ethereum: {
     rpc: process.env.ETHEREUM_RPC_URL,
     contract: process.env.USDT_ERC20_CONTRACT,
@@ -27,20 +25,9 @@ const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
     name: 'BSC Mainnet',
     chainId: '0x38'
   }
-} : {
-  ethereum: {
-    rpc: process.env.TESTNET_ETHEREUM_RPC_URL,
-    contract: process.env.TESTNET_USDT_ERC20_CONTRACT,
-    name: 'Ethereum Sepolia Testnet',
-    chainId: '0xaa36a7'
-  },
-  bsc: {
-    rpc: process.env.TESTNET_BSC_RPC_URL,
-    contract: process.env.TESTNET_USDT_BEP20_CONTRACT,
-    name: 'BSC Testnet',
-    chainId: '0x61'
-  }
 };
+
+export async function GET(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   // Verify cron secret for security
@@ -82,8 +69,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Monitoring ${users.length} user wallets`);
 
-    // Check each network
-    for (const [networkKey, config] of Object.entries(NETWORK_CONFIG)) {
+    // Check each network (mainnet only)
+    for (const [networkKey, config] of Object.entries(NETWORKS)) {
       if (!config.rpc || !config.contract) {
         results.errors.push(`Missing configuration for ${networkKey}`);
         continue;
@@ -142,16 +129,12 @@ export async function GET(request: NextRequest) {
               const eventLog = transfer as ethers.EventLog;
               const txHash = transfer.transactionHash;
               
-              // Get decimals from env based on network
+              // Get decimals from env (mainnet only)
               let usdtDecimals = 6; // Default
               if (networkKey === 'bsc') {
-                usdtDecimals = NETWORK_MODE === 'testnet' 
-                  ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
-                  : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+                usdtDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
               } else if (networkKey === 'ethereum') {
-                usdtDecimals = NETWORK_MODE === 'testnet'
-                  ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
-                  : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+                usdtDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
               }
               
               const amount = eventLog.args?.[2] ? ethers.formatUnits(eventLog.args[2], usdtDecimals) : '0';
