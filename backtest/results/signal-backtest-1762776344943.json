@@ -1,0 +1,237 @@
+{
+  "config": {
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "daysToAnalyze": 7,
+    "startDate": "2025-11-03T12:03:25.776Z",
+    "endDate": "2025-11-10T12:03:25.776Z"
+  },
+  "results": {
+    "totalSignals": 24,
+    "byDay": {
+      "2025-11-03": 2,
+      "2025-11-04": 4,
+      "2025-11-05": 1,
+      "2025-11-06": 5,
+      "2025-11-07": 6,
+      "2025-11-08": 4,
+      "2025-11-09": 0,
+      "2025-11-10": 2
+    },
+    "bySymbol": {
+      "BTCUSDT": 24
+    },
+    "byStrength": {
+      "WEAK": 1,
+      "MODERATE": 7,
+      "STRONG": 11,
+      "VERY_STRONG": 5
+    },
+    "byAction": {
+      "BUY": 9,
+      "SELL": 15
+    },
+    "signals": [
+      {
+        "timestamp": "2025-11-03T19:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "VERY_STRONG",
+        "price": 106685,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-03T22:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 106358.1,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-04T10:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 103651.7,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-04T16:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 103212.8,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-04T20:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 100393.9,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-04T21:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 100652.1,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-05T09:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 101766.3,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-06T00:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 103601.9,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-06T01:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "WEAK",
+        "price": 103448.3,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-06T07:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 103176.7,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-06T15:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 102132.6,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-06T22:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "VERY_STRONG",
+        "price": 101188.8,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-07T00:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "VERY_STRONG",
+        "price": 101479.6,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-07T02:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 101414.6,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-07T04:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 101849.8,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-07T06:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "MODERATE",
+        "price": 102352.3,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-07T18:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "MODERATE",
+        "price": 102498.7,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-07T22:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "MODERATE",
+        "price": 103747.7,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-08T05:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 102592.5,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-08T10:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 102261.9,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-08T14:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "VERY_STRONG",
+        "price": 101771.1,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-08T17:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 101744.2,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-10T05:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 106240.9,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-10T12:03:25.776Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "VERY_STRONG",
+        "price": 106002.5,
+        "confirmations": 3
+      }
+    ]
+  },
+  "summary": {
+    "totalSignals": 24,
+    "avgPerDay": 3.4285714285714284,
+    "avgPerHour": 0.14285714285714285,
+    "estimated1MinuteDaily": 3.4285714285714284,
+    "estimated1MinuteWeekly": 24
+  }
+}

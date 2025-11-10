@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const User = mongoose.models.futurepilotcol || mongoose.model('futurepilotcol', new mongoose.Schema({}, { strict: false }));
     
-    const user: any = await User.findById(session.user.id).select('name email phone bio image').lean();
+    const user: any = await User.findById(session.user.id).select('name email phone bio image walletData').lean();
 
     if (!user) {
       return NextResponse.json(
@@ -30,6 +30,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      user: {
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        bio: user.bio || '',
+        image: user.image || null,
+        walletData: user.walletData || { balance: 0, mainnetBalance: 0 },
+      },
       profile: {
         name: user.name || '',
         email: user.email || '',

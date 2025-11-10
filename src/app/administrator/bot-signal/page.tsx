@@ -14,18 +14,25 @@
 import { useState, useEffect, Fragment } from 'react';
 
 interface Signal {
-  id: string;
+  id?: string;
+  signalId?: string; // From MongoDB
   symbol: string;
-  action: 'BUY' | 'SELL';
+  action: 'BUY' | 'SELL' | 'LONG' | 'SHORT';
   strength: 'WEAK' | 'MODERATE' | 'STRONG' | 'VERY_STRONG';
   confidence: number;
   entryPrice: number;
   stopLoss: number;
   takeProfit: number;
-  timestamp: number;
-  expiresAt: number;
+  timestamp?: number; // From SSE broadcast
+  createdAt?: string | Date; // From MongoDB
+  expiresAt: number | Date;
   status: 'ACTIVE' | 'EXPIRED' | 'EXECUTED' | 'CANCELLED';
-  reason: string;
+  reason?: string;
+  
+  // Bot execution statistics
+  connectedBotsCount?: number;
+  executedBotsCount?: number;
+  skippedBotsCount?: number;
 }
 
 interface SignalCenterState {
@@ -65,6 +72,7 @@ export default function SignalCenterPage() {
   const [backtestPeriod, setBacktestPeriod] = useState<'1m' | '2m' | '3m'>('1m');
   const [backtestSymbol, setBacktestSymbol] = useState<string>('BTCUSDT');
   const [backtestTimeframes, setBacktestTimeframes] = useState<string[]>(['1m', '3m', '5m']);
+  const [backtestBalance, setBacktestBalance] = useState<number>(1000); // Default $1,000
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestResults, setBacktestResults] = useState<any>(null);
   
@@ -305,14 +313,16 @@ export default function SignalCenterPage() {
   };
   
   // Manual trigger signal generation (Phase 1 + 4)
-  const handleManualTrigger = async () => {
+  const handleManualTrigger = async (forceMode = false) => {
     setTriggerLoading(true);
     setError('');
     
     try {
-      console.log('🎯 Manually triggering signal generation...');
+      console.log('🎯 Manually triggering signal generation...' + (forceMode ? ' (FORCE MODE)' : ''));
       const res = await fetch('/api/cron/generate-signals', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forceGenerate: forceMode }),
       });
       
       const data = await res.json();
@@ -523,7 +533,7 @@ export default function SignalCenterPage() {
           body: JSON.stringify({
             symbol: symbol,
             period: backtestPeriod,
-            balance: 10000,
+            balance: backtestBalance, // ✅ Use balance from input
             useActiveConfig: true, // ✅ Use configuration from Configuration tab
           }),
         });
@@ -685,9 +695,31 @@ export default function SignalCenterPage() {
     return `${seconds}s`;
   };
   
-  // Format date
-  const formatDate = (timestamp: number) => {
+  // Format date (handle both timestamp number and Date object/string)
+  const formatDate = (timestamp: number | string | Date | undefined) => {
+    if (!timestamp) return 'N/A';
     return new Date(timestamp).toLocaleString();
+  };
+  
+  // Get signal ID (handle both id and signalId from different sources)
+  const getSignalId = (signal: Signal) => {
+    return signal.id || signal.signalId || 'unknown';
+  };
+  
+  // Get signal timestamp (handle both timestamp and createdAt)
+  const getSignalTimestamp = (signal: Signal) => {
+    return signal.timestamp || signal.createdAt;
+  };
+  
+  // Format strength label for display
+  const formatStrength = (strength: string) => {
+    const strengthMap: {[key: string]: string} = {
+      'VERY_STRONG': 'Very Strong',
+      'STRONG': 'Strong',
+      'MODERATE': 'Moderate',
+      'WEAK': 'Weak',
+    };
+    return strengthMap[strength] || strength;
   };
   
   // Auto-load analytics data when tab selected
@@ -749,13 +781,23 @@ export default function SignalCenterPage() {
                 {sseConnected ? '🟢 Live Connected' : '⚫ Connecting...'}
               </div>
               
-              {/* Manual Trigger Button */}
+              {/* Manual Trigger Buttons */}
               <button
-                onClick={handleManualTrigger}
+                onClick={() => handleManualTrigger(false)}
                 disabled={triggerLoading}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 flex items-center gap-2"
+                title="Generate signal based on current market conditions"
               >
-                {triggerLoading ? '⏳' : '🎯'} Generate Signal Now
+                {triggerLoading ? '⏳' : '🎯'} Generate Signal
+              </button>
+              
+              <button
+                onClick={() => handleManualTrigger(true)}
+                disabled={triggerLoading}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50 flex items-center gap-2"
+                title="Force generate signal (relaxed thresholds for testing)"
+              >
+                {triggerLoading ? '⏳' : '🧪'} Force Generate
               </button>
               
               <button
@@ -930,10 +972,10 @@ export default function SignalCenterPage() {
                                 signal.strength === 'MODERATE' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
                                 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                               }`}>
-                                {signal.strength}
+                                {formatStrength(signal.strength)}
                               </span>
                               <span className="text-sm text-gray-600 dark:text-gray-400">
-                                {signal.confidence.toFixed(1)}% confidence
+                                {(signal.confidence * 100).toFixed(1)}% confidence
                               </span>
                             </div>
                             
@@ -959,11 +1001,11 @@ export default function SignalCenterPage() {
                             </div>
                             
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {signal.reason}
+                              {signal.reason || 'No reason provided'}
                             </p>
                             
                             <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-500 mt-2">
-                              <span>Created: {formatDate(signal.timestamp)}</span>
+                              <span>Created: {formatDate(getSignalTimestamp(signal))}</span>
                               <span>Expires: {formatDate(signal.expiresAt)}</span>
                             </div>
                           </div>
@@ -1026,18 +1068,19 @@ export default function SignalCenterPage() {
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {signalHistory.slice((historyPage - 1) * historyPerPage, historyPage * historyPerPage).map((signal) => (
+                      {signalHistory.slice((historyPage - 1) * historyPerPage, historyPage * historyPerPage).map((signal, index) => (
                         <div
-                          key={signal.id}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+                          key={getSignalId(signal) + '-' + index}
+                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-sm"
                         >
-                          <div className="flex items-center justify-between">
+                          {/* Header Row */}
+                          <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <span className="font-mono font-bold text-gray-900 dark:text-white">
                                 {signal.symbol}
                               </span>
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                signal.action === 'BUY'
+                                signal.action === 'BUY' || signal.action === 'LONG'
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                   : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                               }`}>
@@ -1047,7 +1090,7 @@ export default function SignalCenterPage() {
                                 ${signal.entryPrice.toFixed(2)}
                               </span>
                               <span className="text-gray-500 dark:text-gray-500">
-                                {signal.confidence.toFixed(0)}%
+                                {(signal.confidence * 100).toFixed(0)}%
                               </span>
                             </div>
                             
@@ -1061,7 +1104,37 @@ export default function SignalCenterPage() {
                                 {signal.status}
                               </span>
                               <span className="text-xs text-gray-500 dark:text-gray-500">
-                                {formatDate(signal.timestamp)}
+                                {formatDate(getSignalTimestamp(signal))}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Bot Execution Stats */}
+                          <div className="flex items-center gap-4 text-xs bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-500 dark:text-gray-400">🤖 Connected:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {signal.connectedBotsCount || 0}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-500 dark:text-gray-400">✅ Executed:</span>
+                              <span className="font-medium text-green-600 dark:text-green-400">
+                                {signal.executedBotsCount || 0}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-500 dark:text-gray-400">⏭️ Skipped:</span>
+                              <span className="font-medium text-orange-600 dark:text-orange-400">
+                                {signal.skippedBotsCount || 0}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-gray-500 dark:text-gray-400">📊 Rate:</span>
+                              <span className="font-medium text-blue-600 dark:text-blue-400">
+                                {(signal.connectedBotsCount || 0) > 0 
+                                  ? (((signal.executedBotsCount || 0) / (signal.connectedBotsCount || 1)) * 100).toFixed(0) 
+                                  : 0}%
                               </span>
                             </div>
                           </div>
@@ -2162,7 +2235,6 @@ export default function SignalCenterPage() {
                     >
                       <div className="text-2xl font-bold text-gray-900 dark:text-white">1 Month</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">~30 days of data</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">Expected: ~79% ROI</div>
                     </button>
                     
                     <button
@@ -2175,7 +2247,6 @@ export default function SignalCenterPage() {
                     >
                       <div className="text-2xl font-bold text-gray-900 dark:text-white">2 Months</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">~60 days of data</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">Expected: ~96% ROI</div>
                     </button>
                     
                     <button
@@ -2188,8 +2259,79 @@ export default function SignalCenterPage() {
                     >
                       <div className="text-2xl font-bold text-gray-900 dark:text-white">3 Months</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">~90 days of data</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">Expected: ~675% ROI</div>
                     </button>
+                  </div>
+                  
+                  {/* Initial Balance Input */}
+                  <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <label className="block font-medium text-gray-900 dark:text-white mb-3">
+                      💰 Initial Balance (USDT)
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          value={backtestBalance}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            if (value >= 100 && value <= 1000000) {
+                              setBacktestBalance(value);
+                            }
+                          }}
+                          min="100"
+                          max="1000000"
+                          step="100"
+                          className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg 
+                                   bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                                   focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800
+                                   text-lg font-semibold"
+                          placeholder="1000"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setBacktestBalance(1000)}
+                          className={`px-4 py-3 rounded-lg font-medium transition ${
+                            backtestBalance === 1000
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-500'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600'
+                          }`}
+                        >
+                          $1K
+                        </button>
+                        <button
+                          onClick={() => setBacktestBalance(10000)}
+                          className={`px-4 py-3 rounded-lg font-medium transition ${
+                            backtestBalance === 10000
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-500'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600'
+                          }`}
+                        >
+                          $10K
+                        </button>
+                        <button
+                          onClick={() => setBacktestBalance(100000)}
+                          className={`px-4 py-3 rounded-lg font-medium transition ${
+                            backtestBalance === 100000
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-2 border-green-500'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600'
+                          }`}
+                        >
+                          $100K
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        💡 <strong>Fixed Dollar TP/SL:</strong> Target profit/loss per trade = {(backtestBalance * 0.02).toFixed(2)} USDT (2% of balance)
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        📊 Estimated margin per trade: ~{((backtestBalance * 0.02) / 0.0134).toFixed(0)} USDT (~15% of balance with 10x leverage)
+                      </p>
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 font-medium">
+                        ⏸️ <strong>Cooldown Protection:</strong> Trading pauses for 24 hours after 3 consecutive losses in same day
+                      </p>
+                    </div>
                   </div>
                   
                   <button
@@ -2389,6 +2531,14 @@ export default function SignalCenterPage() {
                               {backtestResults.winRate?.toFixed(1) || '0'}%
                             </span>
                           </div>
+                          {backtestResults.cooldownsTriggered !== undefined && (
+                            <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <span className="text-gray-600 dark:text-gray-400">Cooldowns:</span>
+                              <span className="font-mono font-bold text-orange-600 dark:text-orange-400">
+                                {backtestResults.cooldownsTriggered || 0}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       

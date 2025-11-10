@@ -140,8 +140,9 @@ export class SignalListener extends EventEmitter {
       
       console.log(`📡 Signal received: ${signal.symbol} ${signal.action} (${signal.strength})`);
       
-      // Filter by user preferences
-      if (!this.shouldExecuteSignal(signal, userSettings)) {
+      // Filter by user preferences (NOW ASYNC - checks per-user execution)
+      const shouldExecute = await this.shouldExecuteSignal(signal, userSettings);
+      if (!shouldExecute) {
         this.stats.signalsFiltered++;
         console.log(`⏭️  Signal filtered: ${signal.symbol}`);
         return;
@@ -221,14 +222,34 @@ export class SignalListener extends EventEmitter {
   /**
    * Check if signal should be executed based on user settings
    */
-  private shouldExecuteSignal(signal: TradingSignal, userSettings: any): boolean {
-    // Check if signal is still active
+  private async shouldExecuteSignal(signal: TradingSignal, userSettings: any): Promise<boolean> {
+    // ✅ NEW: Check if signal is still ACTIVE or EXPIRED only
+    // REMOVED: Don't filter 'EXECUTED' status (allow multi-user execution)
     if (signal.status !== 'ACTIVE') {
+      // Only block if EXPIRED or CANCELLED
+      if (signal.status === 'EXPIRED' || signal.status === 'CANCELLED') {
+        // Increment skipped count for expired/cancelled signals
+        const { default: SignalCenterSignal } = await import('@/models/SignalCenterSignal');
+        await SignalCenterSignal.incrementSkipped(signal.id);
+        return false;
+      }
+      // For 'EXECUTED', continue checking (allow other users to execute)
+    }
+    
+    // ✅ NEW: Check if THIS USER already executed this signal
+    const { default: SignalExecution } = await import('@/models/SignalExecution');
+    const hasExecuted = await SignalExecution.hasUserExecuted(signal.id, this.userId);
+    
+    if (hasExecuted) {
+      console.log(`[SignalListener] User ${this.userId} already executed signal ${signal.id}`);
       return false;
     }
     
     // Check symbol filter
     if (!userSettings.symbols.includes(signal.symbol)) {
+      // Increment skipped count for filtered signals
+      const { default: SignalCenterSignal } = await import('@/models/SignalCenterSignal');
+      await SignalCenterSignal.incrementSkipped(signal.id);
       return false;
     }
     
@@ -238,12 +259,18 @@ export class SignalListener extends EventEmitter {
     const minStrengthIndex = strengthOrder.indexOf(userSettings.minStrength);
     
     if (signalStrengthIndex < minStrengthIndex) {
+      // Increment skipped count for strength filter
+      const { default: SignalCenterSignal } = await import('@/models/SignalCenterSignal');
+      await SignalCenterSignal.incrementSkipped(signal.id);
       return false;
     }
     
     // Check if signal expired (5 minute TTL)
     const now = Date.now();
     if (now > signal.expiresAt) {
+      // Increment skipped count for expired signals
+      const { default: SignalCenterSignal } = await import('@/models/SignalCenterSignal');
+      await SignalCenterSignal.incrementSkipped(signal.id);
       return false;
     }
     

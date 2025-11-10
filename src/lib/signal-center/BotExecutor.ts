@@ -123,7 +123,34 @@ export class BotExecutor {
     const executionStart = Date.now();
     
     try {
-      // Create execution record
+      // Import models at top of function
+      const { default: SignalExecution } = await import('@/models/SignalExecution');
+      const { default: SignalCenterSignal } = await import('@/models/SignalCenterSignal');
+      
+      // ✅ NEW: Record execution attempt in SignalExecution model
+      const user = await User.findById(this.userId).select('email +binanceApiKey +binanceApiSecret');
+      if (!user) throw new Error('User not found');
+      
+      let signalExecution;
+      try {
+        signalExecution = await SignalExecution.recordExecution(
+          signal.id,
+          this.userId,
+          user.email,
+          {
+            aiDecisionApplied: false, // Will be updated if AI was used
+          }
+        );
+      } catch (error: any) {
+        // User already executed this signal
+        console.log(`❌ Duplicate execution blocked: User ${this.userId} already executed signal ${signal.id}`);
+        return {
+          success: false,
+          error: 'You have already executed this signal',
+        };
+      }
+      
+      // Create legacy execution record (for backward compatibility)
       const execution = new BotExecution({
         userId: this.userId,
         signalId: signal.id,
@@ -152,8 +179,17 @@ export class BotExecutor {
         execution.errorDetails = validation.errors.join('; ');
         await execution.save();
         
-        // Mark signal as cancelled
-        await signalStatusTracker.markAsCancelled(signal.id, validation.errors[0]);
+        // ✅ NEW: Mark SignalExecution as failed
+        await SignalExecution.markAsFailed(
+          signal.id,
+          this.userId,
+          'Validation failed',
+          validation.errors.join('; ')
+        );
+        
+        // ❌ REMOVED: Don't mark signal as cancelled globally
+        // await signalStatusTracker.markAsCancelled(signal.id, validation.errors[0]);
+        // Other users can still execute this signal!
         
         return {
           success: false,
@@ -161,10 +197,6 @@ export class BotExecutor {
           error: validation.errors.join('; '),
         };
       }
-      
-      // Get user and balance
-      const user = await User.findById(this.userId).select('+binanceApiKey +binanceApiSecret');
-      if (!user) throw new Error('User not found');
       
       const gasFeeBalance = getUserBalance(user);
       
@@ -233,7 +265,7 @@ export class BotExecutor {
       
       await position.save();
       
-      // Update execution record
+      // Update legacy execution record
       execution.status = 'EXECUTED';
       execution.executionTime = new Date();
       execution.actualEntryPrice = actualEntryPrice;
@@ -243,8 +275,28 @@ export class BotExecutor {
       execution.positionId = position._id as mongoose.Types.ObjectId;
       await execution.save();
       
-      // Mark signal as executed
-      await signalStatusTracker.markAsExecuted(signal.id, actualEntryPrice, latency);
+      // ✅ NEW: Update SignalExecution record
+      await SignalExecution.markAsExecuted(signal.id, this.userId, {
+        actualEntryPrice,
+        quantity: parseFloat(quantity.toFixed(3)),
+        leverage: userSettings.leverage,
+        orderId: entryOrder.orderId,
+        positionId: position._id as mongoose.Types.ObjectId,
+        slippage: Math.abs((actualEntryPrice - signal.entryPrice) / signal.entryPrice) * 100,
+        latency,
+      });
+      
+      // ✅ NEW: Increment executed bots count in SignalCenterSignal
+      await SignalCenterSignal.incrementExecuted(signal.id);
+      
+      // ❌ REMOVED: Don't mark signal as executed globally
+      // await signalStatusTracker.markAsExecuted(signal.id, actualEntryPrice, latency);
+      // Signal stays ACTIVE for other users!
+      
+      // ✅ NEW: Log execution stats
+      console.log(`✅ Signal executed by user ${this.userId}`);
+      const execStats = await SignalExecution.getSignalStats(signal.id);
+      console.log(`   Signal stats: ${JSON.stringify(execStats)}`);
       
       // Track active position
       this.activePositions.set(signal.id, (position._id as mongoose.Types.ObjectId).toString());
@@ -272,6 +324,15 @@ export class BotExecutor {
           execution.errorDetails = error.message;
           await execution.save();
         }
+        
+        // ✅ NEW: Update SignalExecution record
+        const { default: SignalExecution } = await import('@/models/SignalExecution');
+        await SignalExecution.markAsFailed(
+          signal.id,
+          this.userId,
+          'Execution error',
+          error.message
+        );
       } catch (err) {
         console.error('Failed to update execution record:', err);
       }

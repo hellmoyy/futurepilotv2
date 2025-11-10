@@ -27,11 +27,8 @@ const botInstanceSchema = new mongoose.Schema(
       index: true,
     },
     config: {
-      leverage: Number,
-      stopLossPercent: Number,
-      takeProfitPercent: Number,
-      positionSizePercent: Number,
-      maxDailyLoss: Number,
+      type: mongoose.Schema.Types.Mixed, // Accept any config structure
+      default: {},
     },
     exchangeConnectionId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -86,6 +83,16 @@ const botInstanceSchema = new mongoose.Schema(
 // Index for querying active bots
 botInstanceSchema.index({ userId: 1, status: 1 });
 botInstanceSchema.index({ userId: 1, botId: 1 });
+
+// Unique index to prevent multiple ACTIVE bots for same user+botId
+// This prevents race condition when 2 requests come at the same time
+botInstanceSchema.index(
+  { userId: 1, botId: 1, status: 1 }, 
+  { 
+    unique: true, 
+    partialFilterExpression: { status: 'ACTIVE' } // Only enforce uniqueness for ACTIVE status
+  }
+);
 
 export const BotInstance =
   mongoose.models.BotInstance ||

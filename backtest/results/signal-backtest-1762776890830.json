@@ -1,0 +1,173 @@
+{
+  "config": {
+    "symbols": [
+      "BTCUSDT"
+    ],
+    "daysToAnalyze": 7,
+    "startDate": "2025-11-03T12:12:55.968Z",
+    "endDate": "2025-11-10T12:12:55.968Z"
+  },
+  "results": {
+    "totalSignals": 16,
+    "byDay": {
+      "2025-11-03": 0,
+      "2025-11-04": 2,
+      "2025-11-05": 2,
+      "2025-11-06": 5,
+      "2025-11-07": 1,
+      "2025-11-08": 2,
+      "2025-11-09": 3,
+      "2025-11-10": 1
+    },
+    "bySymbol": {
+      "BTCUSDT": 16
+    },
+    "byStrength": {
+      "WEAK": 2,
+      "MODERATE": 4,
+      "STRONG": 8,
+      "VERY_STRONG": 2
+    },
+    "byAction": {
+      "BUY": 9,
+      "SELL": 7
+    },
+    "signals": [
+      {
+        "timestamp": "2025-11-04T02:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "MODERATE",
+        "price": 106936.3,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-04T08:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 104184.1,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-05T18:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 103801.4,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-05T21:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 103612.7,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-06T02:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 103032.5,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-06T04:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "WEAK",
+        "price": 103655.3,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-06T14:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 102900.8,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-06T16:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "MODERATE",
+        "price": 101847.1,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-06T23:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "VERY_STRONG",
+        "price": 101364.5,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-07T19:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "WEAK",
+        "price": 102612.2,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-08T00:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "VERY_STRONG",
+        "price": 103211.2,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-08T16:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 101740.1,
+        "confirmations": 2
+      },
+      {
+        "timestamp": "2025-11-09T00:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "SELL",
+        "strength": "STRONG",
+        "price": 102085,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-09T09:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 102044.1,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-09T13:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 102339.8,
+        "confirmations": 3
+      },
+      {
+        "timestamp": "2025-11-10T04:12:55.968Z",
+        "symbol": "BTCUSDT",
+        "action": "BUY",
+        "strength": "STRONG",
+        "price": 106116.6,
+        "confirmations": 3
+      }
+    ]
+  },
+  "summary": {
+    "totalSignals": 16,
+    "avgPerDay": 2.2857142857142856,
+    "avgPerHour": 0.09523809523809523,
+    "estimated1MinuteDaily": 2.2857142857142856,
+    "estimated1MinuteWeekly": 16
+  }
+}

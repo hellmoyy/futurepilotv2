@@ -20,6 +20,7 @@ import {
   Candle,
   MarketRegime,
   SignalStrength,
+  SignalAction,
   Timeframe,
 } from './types';
 import {
@@ -134,6 +135,134 @@ export class SignalEngine {
     // Fallback to default config
     console.log('📋 SignalEngine using DEFAULT_CONFIG');
     return new SignalEngine();
+  }
+  
+  /**
+   * 🧪 Enable testing mode (relaxed thresholds)
+   * Use for testing signal generation in production
+   */
+  enableTestingMode(): void {
+    console.log('🧪 TESTING MODE ENABLED - Relaxing thresholds');
+    this.config.rsiMin = 30;
+    this.config.rsiMax = 70;
+    this.config.adxMin = 15;
+    this.config.adxMax = 60;
+    this.config.volumeMin = 0.5;
+    this.config.volumeMax = 3.0;
+    this.config.macdMinStrength = 0.00001;
+  }
+  
+  /**
+   * 🧪 Force generate signal (bypass all filters)
+   * Use ONLY for testing - generates signal with ANY market conditions
+   */
+  async forceGenerateSignal(
+    symbol: string,
+    candles1m: Candle[]
+  ): Promise<SignalAnalysisResult> {
+    console.log('🧪 FORCE MODE: Bypassing all filters, generating signal with current data...');
+    
+    const currentPrice = candles1m[candles1m.length - 1].close;
+    const prices = candles1m.map(c => c.close);
+    const closes = candles1m.map(c => c.close);
+    
+    // Calculate indicators (with null checks)
+    const rsi = calculateRSI(candles1m, 14) || 50;
+    const macdData = calculateMACD(candles1m, 12, 26, 9);
+    const ema9Array = calculateEMA(closes, 9);
+    const ema21Array = calculateEMA(closes, 21);
+    const adx = calculateADX(candles1m, 14) || 0;
+    const atr = calculateATR(candles1m, 14) || 0;
+    
+    // Safe access to indicator values
+    const ema9 = Array.isArray(ema9Array) ? ema9Array[ema9Array.length - 1] : currentPrice;
+    const ema21 = Array.isArray(ema21Array) ? ema21Array[ema21Array.length - 1] : currentPrice;
+    const macdHist = macdData ? macdData.histogram : 0;
+    const macdValue = macdData ? macdData.value : 0;
+    const macdSignal = macdData ? macdData.signal : 0;
+    
+    // Determine action based on EMA trend
+    const action: SignalAction = ema9 > ema21 ? 'BUY' : 'SELL';
+    
+    // Determine strength based on RSI
+    let strength: SignalStrength = 'MODERATE';
+    if (rsi > 60 || rsi < 40) strength = 'STRONG';
+    if (rsi > 65 || rsi < 35) strength = 'VERY_STRONG';
+    
+    const signal: TradingSignal = {
+      id: uuidv4(),
+      symbol,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.config.signalExpiryMinutes * 60 * 1000,
+      action,
+      strength,
+      confidence: 50, // 0-100 scale for force mode
+      entryPrice: currentPrice,
+      stopLoss: action === 'BUY' 
+        ? currentPrice * (1 - this.config.stopLossPercent)
+        : currentPrice * (1 + this.config.stopLossPercent),
+      takeProfit: action === 'BUY'
+        ? currentPrice * (1 + this.config.takeProfitPercent)
+        : currentPrice * (1 - this.config.takeProfitPercent),
+      riskRewardRatio: 1.0,
+      maxLossPercent: this.config.stopLossPercent * 100,
+      maxProfitPercent: this.config.takeProfitPercent * 100,
+      marketRegime: 'NEUTRAL',
+      trend: ema9 > ema21 ? 'BULLISH' : 'BEARISH',
+      volatility: atr / currentPrice * 100,
+      indicators: {
+        rsi,
+        macd: {
+          value: macdValue,
+          signal: macdSignal,
+          histogram: macdHist,
+        },
+        ema: {
+          fast: ema9,
+          slow: ema21,
+        },
+        adx,
+        volume: {
+          current: candles1m[candles1m.length - 1].volume,
+          average: candles1m[candles1m.length - 1].volume,
+          ratio: 1.0,
+        },
+      },
+      timeframes: {
+        '1m': {
+          signal: action,
+          confidence: 50,
+          trend: ema9 > ema21 ? 'BULLISH' : 'BEARISH',
+        },
+      },
+      trailingStop: {
+        profitActivate: this.config.trailProfitActivate * 100,
+        profitDistance: this.config.trailProfitDistance * 100,
+        lossActivate: this.config.trailLossActivate * 100,
+        lossDistance: this.config.trailLossDistance * 100,
+      },
+      reason: '🧪 FORCE MODE - Testing signal generation (all filters bypassed)',
+      strategy: 'futures-scalper',
+      status: 'ACTIVE',
+    };
+    
+    return {
+      signal,
+      passed: true,
+      filters: {
+        timeCheck: { passed: true, reason: 'FORCE MODE - Bypassed' },
+        volumeCheck: { passed: true, reason: 'FORCE MODE - Bypassed' },
+        marketRegime: { passed: true, reason: 'FORCE MODE - Bypassed' },
+        multiTimeframe: { passed: true, reason: 'FORCE MODE - Bypassed' },
+        indicators: { passed: true, reason: 'FORCE MODE - Bypassed' },
+      },
+      marketData: {
+        symbol,
+        price: currentPrice,
+        volume: candles1m[candles1m.length - 1].volume,
+        change24h: 0,
+      },
+    };
   }
   
   /**

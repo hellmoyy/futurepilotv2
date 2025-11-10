@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signalBroadcaster } from '@/lib/signal-center';
 import { verifyAdminAuth } from '@/lib/adminAuth';
+import connectDB from '@/lib/mongodb';
+import SignalCenterSignal from '@/models/SignalCenterSignal';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,8 +29,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get('symbol');
     
-    // Get active signals
-    const signals = signalBroadcaster.getActiveSignals(symbol || undefined);
+    // Get active signals from MongoDB (primary source)
+    await connectDB();
+    
+    // Auto-expire old signals first
+    await SignalCenterSignal.expireOldSignals();
+    
+    const query: any = {
+      status: 'ACTIVE',
+      expiresAt: { $gt: new Date() },
+    };
+    if (symbol) {
+      query.symbol = symbol.toUpperCase();
+    }
+    
+    const signals = await SignalCenterSignal.find(query)
+      .sort({ createdAt: -1 })
+      .limit(50);
     
     // Get stats
     const stats = signalBroadcaster.getStats();

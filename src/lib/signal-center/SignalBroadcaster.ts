@@ -194,11 +194,13 @@ export class SignalBroadcaster extends EventEmitter {
     activeCount: number;
     totalBroadcast: number;
     listenerCount: number;
+    connectedBots: number;
   } {
     return {
       activeCount: this.activeSignals.size,
       totalBroadcast: this.signalHistory.length,
       listenerCount: this.listenerCount('signal'),
+      connectedBots: this.listenerCount('signal'), // Connected bots = SSE listeners
     };
   }
 }

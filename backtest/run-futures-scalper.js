@@ -1,33 +1,37 @@
 /**
- * 🚀 FUTURES SCALPER BACKTEST ENGINE
+ * 🚀 FUTURES SCALPER BACKTEST ENGINE - FIXED DOLLAR TP/SL
  * 
  * ⚡ FUTURES TRADING LOGIC (Binance Futures):
  * - Starting Balance: $10,000 USD (USDT Margin)
- * - Risk per Trade: 2% ($200 max loss per trade)
- * - Leverage: 20x (Binance standard for scalping)
- * - Position Sizing: Risk-based with proper margin calculation
+ * - Risk per Trade: 2% of BALANCE = $200 (fixed dollar amount)
+ * - Take Profit: 2% of BALANCE = $200 (fixed dollar amount)
+ * - Stop Loss: 2% of BALANCE = $200 (fixed dollar amount)
+ * - Leverage: 10x (optimal for scalping)
  * 
- * 📊 HOW FUTURES TRADING WORKS:
- * Example Trade:
- * - BTC Price: $68,000
- * - Risk: $200 (2% of $10k)
- * - Stop Loss: 0.8% ($544 price move)
- * - Position Size: $200 / $544 = 0.368 BTC
- * - Notional Value: 0.368 × $68,000 = $25,000
- * - Margin Required: $25,000 / 20 = $1,250 (locked from balance)
- * - PnL Calculation: size × price_change = 0.368 × ($544) = ±$200
+ * 📊 FIXED DOLLAR SYSTEM:
+ * Example Trade (Balance $10,000):
+ * - Target Profit: $200 (always 2% of current balance)
+ * - Max Loss: $200 (always 2% of current balance)
+ * - Position Size: Calculated to achieve exact dollar amount
+ * 
+ * Example Trade (Balance $1,000):
+ * - Target Profit: $20 (2% of $1,000)
+ * - Max Loss: $20 (2% of $1,000)
+ * - Position Size: Auto-scaled for smaller balance
  * 
  * 🛡️ RISK MANAGEMENT:
- * - Stop Loss: 0.8% (max $200 loss)
- * - Take Profit: 0.8% (target $200 profit, 1:1 R:R)
- * - Trailing Profit: Activates at +0.4%, trails at 0.3%
- * - Trailing Loss: Activates at -0.3%, trails at 0.2% (cuts losses early!)
+ * - Stop Loss: 2% of balance (e.g., $200 on $10k) - FIXED DOLLAR
+ * - Take Profit: 2% of balance (e.g., $200 on $10k) - FIXED DOLLAR
+ * - Position Size: Dynamically calculated for exact TP/SL amounts
+ * - Max Price Move: 1-2% to achieve target (varies by entry)
+ * - Trailing Profit: Activates at +1%, trails at 0.5%
+ * - Trailing Loss: Activates at -0.5%, trails at 0.3%
  * 
  * 🎯 STRATEGY FILTERS (Anti-False-Breakout):
- * - MACD Strength: >0.003% of price (percentage-based)
- * - Volume: 0.8x - 2.0x average (proven range)
- * - ADX: 20-50 (avoid weak trends and exhaustion)
- * - RSI: 35-68 (balanced, avoid extremes)
+ * - MACD Strength: >0.003% of price
+ * - Volume: 0.8x - 2.0x average
+ * - ADX: 20-50 (avoid weak trends)
+ * - RSI: 35-68 (balanced)
  * - Triple Timeframe: 1m + 3m + 5m confirmation
  */
 
@@ -38,19 +42,30 @@ const BinanceDataFetcher = require('./BinanceDataFetcher');
 const CONFIG = {
   // Account Settings
   INITIAL_BALANCE: 10000,
-  RISK_PER_TRADE: 0.02, // 2% risk per trade
-  LEVERAGE: 10, // Lower leverage for safer trading
+  RISK_PER_TRADE: 0.02,          // 2% of current balance (FIXED DOLLAR)
+  TARGET_PROFIT_PCT: 0.02,        // 2% of current balance (FIXED DOLLAR)
+  LEVERAGE: 10,                   // 10x leverage for optimal risk
   
-  // Risk Management
-  STOP_LOSS_PCT: 0.008,      // 0.8% stop loss
-  TAKE_PROFIT_PCT: 0.008,    // 0.8% take profit (1:1 R:R)
+  // Fixed Dollar TP/SL System
+  // Position size will be calculated to achieve exact dollar amounts
+  // Example: $10k balance → $200 profit/loss, $1k balance → $20 profit/loss
+  USE_FIXED_DOLLAR: true,
   
-  // Trailing Stops (Balanced for best results)
-  TRAIL_PROFIT_ACTIVATE: 0.004,  // +0.4% activates trailing profit
+  // Max price move percentage (for position sizing calculation)
+  // 1.34% move = 15% margin usage (with 10x leverage) - BALANCED
+  MAX_PRICE_MOVE_PCT: 0.0134,    // 1.34% max price move for SL/TP
+  
+  // Trailing Stops (Optimized for Fixed Dollar system)
+  TRAIL_PROFIT_ACTIVATE: 0.004,  // +0.4% activates trailing profit (early protection)
   TRAIL_PROFIT_DISTANCE: 0.003,  // Trail 0.3% behind peak
   TRAIL_LOSS_ACTIVATE: -0.003,   // -0.3% activates trailing loss
-  TRAIL_LOSS_DISTANCE: 0.002,    // Trail 0.2% to cut losses
-  EMERGENCY_EXIT_PCT: 0.02,      // -2% emergency exit
+  TRAIL_LOSS_DISTANCE: 0.002,    // Trail 0.2% to cut losses early
+  EMERGENCY_EXIT_PCT: 0.04,      // -4% emergency exit (2x risk)
+  
+  // Cooldown System (Risk Management)
+  MAX_CONSECUTIVE_LOSSES: 3,     // Max consecutive losses before cooldown (changed from 2 to 3)
+  COOLDOWN_PERIOD_HOURS: 24,     // 24-hour cooldown after max losses
+  MAX_DAILY_LOSS_PCT: 0.06,      // 6% max daily loss (3x single trade risk)
   
   // Strategy Filters
   MACD_MIN_STRENGTH: 0.00003,    // 0.003% of price (percentage-based)
@@ -437,14 +452,51 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
   let lowestLoss = 0;
   let trailingSL = 0;
   
+  // Cooldown tracking
+  let consecutiveLosses = 0;
+  let cooldownUntil = null;
+  let dailyLoss = 0;
+  let dailyLossResetTime = null;
+  let totalCooldowns = 0;
+  let lastLossDate = null; // Track date of last loss
+  
   // Entry confirmation tracking
   let pendingSignal = null;
   let signalConfirmationCount = 0;
+  
+  // Helper function to get timestamp
+  const getTimestamp = (time) => {
+    if (!time) return Date.now();
+    return typeof time === 'number' ? time : new Date(time).getTime();
+  };
   
   // Start backtest loop
   for (let i = 250; i < data1m.length; i++) {
     const candle = data1m[i];
     const currentPrice = candle.close;
+    const candleTime = getTimestamp(candle.time);
+    
+    // === CHECK COOLDOWN STATUS ===
+    if (cooldownUntil && candleTime < cooldownUntil.getTime()) {
+      // Still in cooldown, skip entry signals
+      continue;
+    } else if (cooldownUntil && candleTime >= cooldownUntil.getTime()) {
+      // Cooldown period ended
+      console.log(`✅ Cooldown ended at ${new Date(candleTime).toISOString()}`);
+      cooldownUntil = null;
+      consecutiveLosses = 0;
+      dailyLoss = 0;
+    }
+    
+    // === RESET DAILY LOSS COUNTER (every 24 hours) ===
+    if (!dailyLossResetTime) {
+      dailyLossResetTime = candleTime;
+    }
+    const hoursSinceReset = (candleTime - dailyLossResetTime) / (1000 * 60 * 60);
+    if (hoursSinceReset >= 24) {
+      dailyLoss = 0;
+      dailyLossResetTime = candleTime;
+    }
     
     // === MANAGE EXISTING POSITION ===
     if (inPosition) {
@@ -484,16 +536,24 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
             (position.entryPrice - trailingSL);
           const realizedPnL = position.size * exitPriceChange;
           
-          account.closePosition(position.marginUsed, realizedPnL);
+          // Fixed Dollar System: Cap profit at targetProfit if exceeded
+          const finalPnL = Math.min(realizedPnL, position.targetProfit);
+          
+          account.closePosition(position.marginUsed, finalPnL);
           
           trades.push({
             ...position,
             exitPrice: trailingSL,
             exitTime: candle.time,
-            pnl: realizedPnL,
-            pnlPct: (realizedPnL / CONFIG.INITIAL_BALANCE) * 100,
+            pnl: finalPnL,
+            pnlPct: (finalPnL / account.balance) * 100,
             exitType: 'TRAILING_TP'
           });
+          
+          // === RESET CONSECUTIVE LOSSES on profitable exit ===
+          if (finalPnL > 0) {
+            consecutiveLosses = 0;
+          }
           
           inPosition = false;
           trailingProfitActive = false;
@@ -520,7 +580,7 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
         }
       }
       
-      // === EMERGENCY EXIT: Force close if loss exceeds -2% (tighter!) ===
+      // === EMERGENCY EXIT: Force close if loss exceeds -4% ===
       if (changePct <= -CONFIG.EMERGENCY_EXIT_PCT) {
         const emergencyExitPrice = position.type === 'BUY' ?
           position.entryPrice * (1 - CONFIG.EMERGENCY_EXIT_PCT) :
@@ -530,9 +590,8 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
           (position.entryPrice - emergencyExitPrice);
         const realizedPnL = position.size * exitPriceChange;
         
-        // Cap at max loss
-        const maxLoss = -CONFIG.INITIAL_BALANCE * CONFIG.RISK_PER_TRADE; // -$200
-        const finalPnL = Math.max(realizedPnL, maxLoss);
+        // Fixed Dollar System: Cap at targetLoss
+        const finalPnL = Math.max(realizedPnL, -position.targetLoss);
         
         account.closePosition(position.marginUsed, finalPnL);
         
@@ -541,9 +600,36 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
           exitPrice: emergencyExitPrice,
           exitTime: candle.time,
           pnl: finalPnL,
-          pnlPct: (finalPnL / CONFIG.INITIAL_BALANCE) * 100,
+          pnlPct: (finalPnL / account.balance) * 100,
           exitType: 'EMERGENCY_EXIT'
         });
+        
+        // === COOLDOWN LOGIC: Track consecutive losses WITHIN same day ===
+        const currentDate = new Date(getTimestamp(candle.time)).toDateString();
+        
+        // Reset consecutive losses if loss happened on different day
+        if (lastLossDate && lastLossDate !== currentDate) {
+          consecutiveLosses = 0;
+        }
+        
+        consecutiveLosses++;
+        lastLossDate = currentDate;
+        dailyLoss += Math.abs(finalPnL);
+        
+        // Trigger cooldown ONLY if 2 consecutive losses WITHIN same day
+        if (consecutiveLosses >= CONFIG.MAX_CONSECUTIVE_LOSSES && lastLossDate === currentDate) {
+          const currentTime = getTimestamp(candle.time);
+          cooldownUntil = new Date(currentTime + CONFIG.COOLDOWN_PERIOD_HOURS * 60 * 60 * 1000);
+          totalCooldowns++;
+          try {
+            console.log(`⏸️  COOLDOWN TRIGGERED at ${new Date(currentTime).toISOString()}`);
+            console.log(`   Reason: ${consecutiveLosses} consecutive losses IN SAME DAY (${currentDate})`);
+            console.log(`   Daily loss: $${dailyLoss.toFixed(2)}`);
+            console.log(`   Cooldown until: ${cooldownUntil.toISOString()}`);
+          } catch (e) {
+            console.log(`⏸️  COOLDOWN TRIGGERED (time parsing error)`);
+          }
+        }
         
         inPosition = false;
         trailingProfitActive = false;
@@ -565,9 +651,8 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
           (position.entryPrice - position.stopLoss);
         const realizedPnL = position.size * exitPriceChange;
         
-        // Hard limit: max loss is exactly risk amount ($200)
-        const maxLoss = -CONFIG.INITIAL_BALANCE * CONFIG.RISK_PER_TRADE;
-        const finalPnL = Math.max(realizedPnL, maxLoss);
+        // Fixed Dollar System: Loss capped at exact targetLoss amount
+        const finalPnL = Math.max(realizedPnL, -position.targetLoss);
         
         account.closePosition(position.marginUsed, finalPnL);
         
@@ -576,9 +661,36 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
           exitPrice: position.stopLoss,
           exitTime: candle.time,
           pnl: finalPnL,
-          pnlPct: (finalPnL / CONFIG.INITIAL_BALANCE) * 100,
+          pnlPct: (finalPnL / account.balance) * 100,
           exitType: 'SL'
         });
+        
+        // === COOLDOWN LOGIC: Track consecutive losses WITHIN same day ===
+        const currentDate = new Date(getTimestamp(candle.time)).toDateString();
+        
+        // Reset consecutive losses if loss happened on different day
+        if (lastLossDate && lastLossDate !== currentDate) {
+          consecutiveLosses = 0;
+        }
+        
+        consecutiveLosses++;
+        lastLossDate = currentDate;
+        dailyLoss += Math.abs(finalPnL);
+        
+        // Trigger cooldown ONLY if 2 consecutive losses WITHIN same day
+        if (consecutiveLosses >= CONFIG.MAX_CONSECUTIVE_LOSSES && lastLossDate === currentDate) {
+          const currentTime = getTimestamp(candle.time);
+          cooldownUntil = new Date(currentTime + CONFIG.COOLDOWN_PERIOD_HOURS * 60 * 60 * 1000);
+          totalCooldowns++;
+          try {
+            console.log(`⏸️  COOLDOWN TRIGGERED at ${new Date(currentTime).toISOString()}`);
+            console.log(`   Reason: ${consecutiveLosses} consecutive losses IN SAME DAY (${currentDate})`);
+            console.log(`   Daily loss: $${dailyLoss.toFixed(2)}`);
+            console.log(`   Cooldown until: ${cooldownUntil.toISOString()}`);
+          } catch (e) {
+            console.log(`⏸️  COOLDOWN TRIGGERED (time parsing error)`);
+          }
+        }
         
         inPosition = false;
         trailingProfitActive = false;
@@ -589,16 +701,22 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
           (position.entryPrice - position.takeProfit);
         const realizedPnL = position.size * exitPriceChange;
         
-        account.closePosition(position.marginUsed, realizedPnL);
+        // Fixed Dollar System: Profit should match targetProfit
+        const finalPnL = Math.min(realizedPnL, position.targetProfit);
+        
+        account.closePosition(position.marginUsed, finalPnL);
         
         trades.push({
           ...position,
           exitPrice: position.takeProfit,
           exitTime: candle.time,
-          pnl: realizedPnL,
-          pnlPct: (realizedPnL / CONFIG.INITIAL_BALANCE) * 100,
+          pnl: finalPnL,
+          pnlPct: (finalPnL / account.balance) * 100,
           exitType: 'TP'
         });
+        
+        // === RESET CONSECUTIVE LOSSES on winning trade ===
+        consecutiveLosses = 0;
         
         inPosition = false;
         trailingProfitActive = false;
@@ -649,15 +767,19 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
         continue;
       }
       
-      // === FUTURES POSITION SIZING ===
-      // Calculate position size based on risk management
-      const riskAmount = account.balance * CONFIG.RISK_PER_TRADE; // $200 on $10k
-      const stopLossDistance = CONFIG.STOP_LOSS_PCT; // 0.8%
-      const stopLossPrice = currentPrice * stopLossDistance; // Dollar amount of SL
+      // === FIXED DOLLAR TP/SL POSITION SIZING ===
+      // Calculate exact dollar amounts for profit/loss
+      const targetProfit = account.balance * CONFIG.TARGET_PROFIT_PCT; // e.g., $200 on $10k
+      const targetLoss = account.balance * CONFIG.RISK_PER_TRADE;       // e.g., $200 on $10k
       
-      // Size calculation: risk_amount / stop_loss_price
-      // Example: $200 / ($68,000 × 0.008) = $200 / $544 = 0.368 BTC
-      const positionSize = riskAmount / stopLossPrice;
+      // Use MAX_PRICE_MOVE_PCT to calculate position size
+      // This ensures position size is appropriate for exact dollar TP/SL
+      const priceMoveDollar = currentPrice * CONFIG.MAX_PRICE_MOVE_PCT; // e.g., 1.5% move
+      
+      // Position size calculation for fixed dollar loss
+      // Size = Target Loss / Price Move
+      // Example: $200 / ($68,000 × 1.5%) = $200 / $1,020 = 0.196 BTC
+      const positionSize = targetLoss / priceMoveDollar;
       
       // Calculate notional value and margin
       const notionalValue = positionSize * currentPrice;
@@ -668,14 +790,19 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
         continue; // Skip this trade
       }
       
-      // Calculate SL and TP prices
+      // Calculate exact SL and TP prices for fixed dollar amounts
+      // SL Distance = Target Loss / Position Size
+      // TP Distance = Target Profit / Position Size
+      const slDistance = targetLoss / positionSize;
+      const tpDistance = targetProfit / positionSize;
+      
       const stopLoss = analysis.signal === 'BUY' ?
-        currentPrice * (1 - CONFIG.STOP_LOSS_PCT) :
-        currentPrice * (1 + CONFIG.STOP_LOSS_PCT);
+        currentPrice - slDistance :
+        currentPrice + slDistance;
       
       const takeProfit = analysis.signal === 'BUY' ?
-        currentPrice * (1 + CONFIG.TAKE_PROFIT_PCT) :
-        currentPrice * (1 - CONFIG.TAKE_PROFIT_PCT);
+        currentPrice + tpDistance :
+        currentPrice - tpDistance;
       
       // Open position
       position = {
@@ -689,7 +816,8 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
         leverage: CONFIG.LEVERAGE,
         stopLoss,
         takeProfit,
-        riskAmount,
+        targetProfit,        // Fixed dollar profit target
+        targetLoss,          // Fixed dollar loss limit
         confidence: analysis.confidence
       };
       
@@ -733,7 +861,7 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
       exitPrice: lastPrice,
       exitTime: data1m[data1m.length - 1].time,
       pnl: realizedPnL,
-      pnlPct: (realizedPnL / CONFIG.INITIAL_BALANCE) * 100,
+      pnlPct: (realizedPnL / initialBalance) * 100,
       exitType: 'END'
     });
   }
@@ -742,8 +870,8 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
   const wins = trades.filter(t => t.pnl > 0);
   const losses = trades.filter(t => t.pnl <= 0);
   const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
-  const totalProfit = account.balance - CONFIG.INITIAL_BALANCE;
-  const roi = (totalProfit / CONFIG.INITIAL_BALANCE) * 100;
+  const totalProfit = account.balance - initialBalance;
+  const roi = (totalProfit / initialBalance) * 100;
   
   const totalWinAmount = wins.reduce((sum, t) => sum + t.pnl, 0);
   const totalLossAmount = losses.reduce((sum, t) => sum + t.pnl, 0);
@@ -757,7 +885,7 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
   console.log(`${'='.repeat(70)}\n`);
   
   console.log(`💰 ACCOUNT SUMMARY:`);
-  console.log(`   Initial Balance: $${CONFIG.INITIAL_BALANCE.toFixed(2)}`);
+  console.log(`   Initial Balance: $${initialBalance.toFixed(2)}`);
   console.log(`   Final Balance: $${account.balance.toFixed(2)}`);
   console.log(`   Total Profit: $${totalProfit.toFixed(2)}`);
   console.log(`   ROI: ${roi.toFixed(2)}%\n`);
@@ -765,7 +893,8 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
   console.log(`📈 TRADE STATISTICS:`);
   console.log(`   Total Trades: ${trades.length}`);
   console.log(`   Wins: ${wins.length} (${winRate.toFixed(2)}%)`);
-  console.log(`   Losses: ${losses.length}\n`);
+  console.log(`   Losses: ${losses.length}`);
+  console.log(`   Cooldowns Triggered: ${totalCooldowns}\n`);
   
   console.log(`💵 PROFIT/LOSS BREAKDOWN:`);
   console.log(`   Total Wins: $${totalWinAmount.toFixed(2)}`);
@@ -844,18 +973,7 @@ async function backtestFuturesPair(symbol, period, initialBalance = CONFIG.INITI
 // ==================== MAIN EXECUTION ====================
 
 async function main() {
-  console.log('\n' + '='.repeat(70));
-  console.log('🚀 FUTURES SCALPER BACKTEST ENGINE');
-  console.log('='.repeat(70));
-  console.log(`\n⚙️  CONFIGURATION:`);
-  console.log(`   Initial Balance: $${CONFIG.INITIAL_BALANCE}`);
-  console.log(`   Risk per Trade: ${CONFIG.RISK_PER_TRADE * 100}%`);
-  console.log(`   Leverage: ${CONFIG.LEVERAGE}x`);
-  console.log(`   Stop Loss: ${CONFIG.STOP_LOSS_PCT * 100}%`);
-  console.log(`   Take Profit: ${CONFIG.TAKE_PROFIT_PCT * 100}%`);
-  console.log(`   Strategy: Triple TF + Dual Trailing System\n`);
-  
-  // Parse arguments
+  // Parse arguments first
   const args = process.argv.slice(2);
   const periodArg = args.find(arg => arg.startsWith('--period='));
   const period = periodArg ? periodArg.split('=')[1] : '1m';
@@ -865,6 +983,19 @@ async function main() {
   
   const balanceArg = args.find(arg => arg.startsWith('--balance='));
   const initialBalance = balanceArg ? parseFloat(balanceArg.split('=')[1]) : CONFIG.INITIAL_BALANCE;
+  
+  // Display configuration with actual balance
+  console.log('\n' + '='.repeat(70));
+  console.log('🚀 FUTURES SCALPER BACKTEST ENGINE');
+  console.log('='.repeat(70));
+  console.log(`\n⚙️  CONFIGURATION:`);
+  console.log(`   Initial Balance: $${initialBalance}`);
+  console.log(`   Risk per Trade: ${CONFIG.RISK_PER_TRADE * 100}%`);
+  console.log(`   Leverage: ${CONFIG.LEVERAGE}x`);
+  console.log(`   Target Profit/Loss: ${CONFIG.TARGET_PROFIT_PCT * 100}% of balance ($${initialBalance * CONFIG.TARGET_PROFIT_PCT})`);
+  console.log(`   Max Price Move: ${(CONFIG.MAX_PRICE_MOVE_PCT * 100).toFixed(2)}%`);
+  console.log(`   Estimated Margin: ~${((CONFIG.TARGET_PROFIT_PCT / CONFIG.MAX_PRICE_MOVE_PCT) / CONFIG.LEVERAGE * 100).toFixed(1)}% per trade`);
+  console.log(`   Strategy: Triple TF + Dual Trailing + Fixed Dollar TP/SL\n`);
   
   // Run backtest
   const result = await backtestFuturesPair(symbol, period, initialBalance);

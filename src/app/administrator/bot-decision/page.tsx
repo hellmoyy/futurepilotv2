@@ -708,7 +708,7 @@ function UserBotsTab() {
                           {bot.userId?.email || 'Unknown'}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {bot.userId?.username || 'N/A'}
+                          {bot.botName || bot.userId?.name || 'N/A'}
                         </div>
                       </td>
                       <td className="px-4 py-4">
@@ -745,7 +745,7 @@ function UserBotsTab() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-gray-900 dark:text-white">
-                          {(bot.aiConfig.confidenceThreshold * 100).toFixed(0)}%
+                          {bot.aiConfig.confidenceThreshold}%
                         </div>
                       </td>
                       <td className="px-4 py-4 text-right">

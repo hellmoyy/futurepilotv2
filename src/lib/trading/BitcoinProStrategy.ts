@@ -2,7 +2,15 @@ import { TradingEngine, TradingConfig, TradeSignal } from './TradingEngine';
 import { openai } from '../openai';
 
 export class BitcoinProStrategy extends TradingEngine {
-  constructor(userId: string, apiKey: string, apiSecret: string, botInstanceId?: string) {
+  constructor(
+    userId: string, 
+    apiKey: string, 
+    apiSecret: string, 
+    botInstanceId?: string,
+    exchangeConnectionId?: string,
+    botId?: number,
+    botName?: string
+  ) {
     const config: TradingConfig = {
       symbol: 'BTCUSDT',
       leverage: 10,
@@ -12,7 +20,7 @@ export class BitcoinProStrategy extends TradingEngine {
       maxDailyLoss: 100, // $100 max daily loss
     };
 
-    super(userId, config, apiKey, apiSecret, botInstanceId);
+    super(userId, config, apiKey, apiSecret, botInstanceId, exchangeConnectionId, botId, botName);
   }
 
   /**

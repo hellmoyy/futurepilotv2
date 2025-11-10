@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signalBroadcaster } from '@/lib/signal-center';
 import { verifyAdminAuth } from '@/lib/adminAuth';
+import connectDB from '@/lib/mongodb';
+import SignalCenterSignal from '@/models/SignalCenterSignal';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,8 +29,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
     
-    // Get signal history from broadcaster (in-memory)
-    const history = signalBroadcaster.getSignalHistory(limit);
+    // Get signal history from MongoDB (persistent)
+    await connectDB();
+    
+    // Auto-expire old signals first
+    await SignalCenterSignal.expireOldSignals();
+    
+    // Get history - ONLY non-active signals (EXECUTED, EXPIRED, CANCELLED)
+    const history = await SignalCenterSignal.find({
+      status: { $ne: 'ACTIVE' }
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit);
     
     return NextResponse.json({
       success: true,

@@ -64,6 +64,7 @@ export default function ExchangeTab() {
     apiSecret: '',
     nickname: '',
     futures: true, // Default enabled for Futures only
+    testnet: false, // Default to mainnet
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -137,7 +138,7 @@ export default function ExchangeTab() {
           apiKey: formData.apiKey,
           apiSecret: formData.apiSecret,
           nickname: formData.nickname || `${exchangeInfo[selectedExchange].name} Account`,
-          testnet: false, // Always mainnet
+          testnet: formData.testnet, // Use selected testnet value
           permissions: {
             spot: false, // Futures only
             futures: formData.futures,
@@ -166,6 +167,7 @@ export default function ExchangeTab() {
         apiSecret: '',
         nickname: '',
         futures: true, // Default enabled
+        testnet: false, // Default to mainnet
       });
       
       // Fetch connections and balance for new connection
@@ -556,6 +558,41 @@ export default function ExchangeTab() {
                     </div>
                   </div>
 
+                  {/* Testnet Option - Only for Binance */}
+                  {selectedExchange === 'binance' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-200 light:text-gray-700 mb-3">
+                        Network Mode
+                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.testnet}
+                            onChange={(e) => setFormData({ ...formData, testnet: e.target.checked })}
+                            className="w-5 h-5 rounded bg-white/5 light:bg-white border-white/20 light:border-gray-300 text-yellow-500 focus:ring-2 focus:ring-yellow-400"
+                          />
+                          <div className="flex-1">
+                            <span className="text-gray-300 light:text-gray-700 font-medium">Use Testnet</span>
+                            <p className="text-xs text-gray-400 light:text-gray-600 mt-0.5">
+                              Enable for testing with fake funds (Binance Futures Testnet)
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                      {formData.testnet && (
+                        <div className="mt-3 bg-yellow-500/10 light:bg-yellow-50 backdrop-blur-xl border border-yellow-400/30 light:border-yellow-200 rounded-xl p-3">
+                          <p className="text-sm text-yellow-300 light:text-yellow-700 font-medium flex items-center">
+                            <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>⚠️ Testnet Mode: Use API keys from <a href="https://testnet.binancefuture.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-200 light:hover:text-yellow-800">testnet.binancefuture.com</a></span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Security Tips */}
                   <div className="bg-blue-500/10 light:bg-blue-50 backdrop-blur-xl border border-blue-400/30 light:border-blue-200 rounded-xl p-4">
                     <h4 className="flex items-center text-sm font-semibold text-blue-300 light:text-blue-700 mb-2">
@@ -583,6 +620,7 @@ export default function ExchangeTab() {
                           apiSecret: '',
                           nickname: '',
                           futures: true, // Default to enabled
+                          testnet: false, // Default to mainnet
                         });
                         setError('');
                       }}

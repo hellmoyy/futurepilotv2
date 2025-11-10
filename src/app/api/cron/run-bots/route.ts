@@ -4,6 +4,7 @@ import { BotInstance } from '@/models/BotInstance';
 import { ExchangeConnection } from '@/models/ExchangeConnection';
 import { BitcoinProStrategy } from '@/lib/trading/BitcoinProStrategy';
 import { decryptApiKey } from '@/lib/encryption';
+import { updatePositionPnL } from '@/lib/trading/tradeTracking';
 
 // This endpoint will be called by Upstash Cron
 // Secure it with a secret token
@@ -130,6 +131,14 @@ export async function GET(request: NextRequest) {
             pnlPercent: result.position.pnlPercent || 0,
             openTime: result.position.openTime,
           };
+          
+          // Update real-time P&L from Binance
+          try {
+            const currentPrice = result.position.entryPrice; // TODO: Get real current price
+            await updatePositionPnL(bot._id.toString(), currentPrice);
+          } catch (pnlError) {
+            console.error('Failed to update position P&L:', pnlError);
+          }
         } else {
           // Clear position if no position exists
           bot.currentPosition = undefined;

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import { BotInstance } from '@/models/BotInstance';
 import { ExchangeConnection } from '@/models/ExchangeConnection';
+import { TradingBotConfig } from '@/models/TradingBotConfig';
 import { BitcoinProStrategy } from '@/lib/trading/BitcoinProStrategy';
 import { decryptApiKey } from '@/lib/encryption';
 
@@ -21,7 +22,9 @@ export async function GET(request: NextRequest) {
       createdAt: -1,
     }).lean();
 
-    return NextResponse.json(bots);
+    console.log(`📊 Fetching bots for user ${session.user.id}: Found ${bots.length} bot(s)`);
+
+    return NextResponse.json({ bots }); // Return as { bots: [...] } not just [...]
   } catch (error: any) {
     console.error('Error fetching bots:', error);
     return NextResponse.json(
@@ -61,27 +64,37 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingBot) {
+      console.log('⚠️ Bot already running:', { botId, userId: session.user.id });
       return NextResponse.json(
-        { error: 'Bot is already running', bot: existingBot },
+        { error: 'Bot is already running. Please stop it first before starting again.' },
         { status: 400 }
       );
     }
 
-    // Get exchange connection
+    // Get exchange connection (explicitly select apiKey and apiSecret)
     const exchangeConnection = await ExchangeConnection.findOne({
       _id: exchangeConnectionId,
       userId: session.user.id,
-    });
+    }).select('+apiKey +apiSecret'); // Explicitly select these fields (they are excluded by default)
 
     if (!exchangeConnection) {
+      console.log('❌ Exchange connection not found:', { exchangeConnectionId, userId: session.user.id });
       return NextResponse.json(
         { error: 'Exchange connection not found. Please connect your Binance account first.' },
         { status: 404 }
       );
     }
 
+    console.log('✅ Exchange connection found:', {
+      id: exchangeConnection._id,
+      exchange: exchangeConnection.exchange,
+      hasApiKey: !!exchangeConnection.apiKey,
+      hasApiSecret: !!exchangeConnection.apiSecret
+    });
+
     // Check if API keys exist
     if (!exchangeConnection.apiKey || !exchangeConnection.apiSecret) {
+      console.log('❌ API credentials missing in exchange connection');
       return NextResponse.json(
         { error: 'API credentials are missing. Please reconnect your Binance account.' },
         { status: 400 }
@@ -111,62 +124,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get bot configuration based on botId
-    let botName = '';
-    let symbol = '';
-    let defaultConfig: any = {};
-
-    switch (botId) {
-      case 1: // Bitcoin Pro
-        botName = 'Bitcoin Pro';
-        symbol = 'BTCUSDT';
-        defaultConfig = {
-          leverage: 10,
-          stopLossPercent: 3,
-          takeProfitPercent: 6,
-          positionSizePercent: 10,
-          maxDailyLoss: 100,
-        };
-        break;
-      case 2: // Ethereum Master
-        botName = 'Ethereum Master';
-        symbol = 'ETHUSDT';
-        defaultConfig = {
-          leverage: 10,
-          stopLossPercent: 3,
-          takeProfitPercent: 6,
-          positionSizePercent: 10,
-          maxDailyLoss: 100,
-        };
-        break;
-      case 3: // Safe Trader
-        botName = 'Safe Trader';
-        symbol = 'BTCUSDT'; // Multi-currency in future
-        defaultConfig = {
-          leverage: 5,
-          stopLossPercent: 2,
-          takeProfitPercent: 3,
-          positionSizePercent: 5,
-          maxDailyLoss: 50,
-        };
-        break;
-      case 4: // Aggressive Trader
-        botName = 'Aggressive Trader';
-        symbol = 'BTCUSDT'; // Multi-currency in future
-        defaultConfig = {
-          leverage: 20,
-          stopLossPercent: 5,
-          takeProfitPercent: 10,
-          positionSizePercent: 15,
-          maxDailyLoss: 200,
-        };
-        break;
-      default:
-        return NextResponse.json(
-          { error: 'Invalid bot ID' },
-          { status: 400 }
-        );
+    // Get bot configuration from TradingBotConfig database
+    const tradingBotConfig = await TradingBotConfig.findOne({ botId, isActive: true });
+    
+    if (!tradingBotConfig) {
+      return NextResponse.json(
+        { error: `Bot configuration not found for botId: ${botId}` },
+        { status: 404 }
+      );
     }
+
+    const botName = tradingBotConfig.name; // Use actual bot name from database (e.g., "Alpha Pilot")
+    const symbol = settings?.currency || tradingBotConfig.supportedCurrencies?.[0] || 'BTCUSDT';
+    const defaultConfig = {
+      leverage: tradingBotConfig.defaultSettings?.leverage || 10,
+      stopLossPercent: tradingBotConfig.defaultSettings?.stopLoss || 3,
+      takeProfitPercent: tradingBotConfig.defaultSettings?.takeProfit || 6,
+      positionSizePercent: 10,
+      maxDailyLoss: 100,
+    };
+
+    console.log('✅ Bot config loaded from database:', { botId, botName, symbol });
 
     // Merge default config with user settings (including Tier 1 & 2 features)
     const config = {
@@ -177,7 +155,7 @@ export async function POST(request: NextRequest) {
         stopLossPercent: settings.stopLoss ?? defaultConfig.stopLossPercent,
         takeProfitPercent: settings.takeProfit ?? defaultConfig.takeProfitPercent,
         positionSizePercent: settings.positionSize ?? defaultConfig.positionSizePercent,
-        maxDailyLoss: settings.maxDailyLoss ?? defaultConfig.maxDailyLoss,
+        maxDailyLoss: settings.maxDailyLoss?.amount ?? settings.maxDailyLoss ?? defaultConfig.maxDailyLoss, // Extract amount if object
         // Tier 1 features
         trailingStopLoss: settings.trailingStopLoss ?? { enabled: false, distance: 2 },
         maxPositionSize: settings.maxPositionSize ?? 100,
@@ -199,38 +177,61 @@ export async function POST(request: NextRequest) {
     console.log('⚙️ Bot configuration (with advanced features):', config);
 
     // Create bot instance
-    const botInstance = await BotInstance.create({
-      userId: session.user.id,
-      botId,
-      botName,
-      symbol,
-      status: 'ACTIVE',
-      config,
-      exchangeConnectionId,
-      startedAt: new Date(),
-      statistics: {
-        totalTrades: 0,
-        winningTrades: 0,
-        losingTrades: 0,
-        totalProfit: 0,
-        totalLoss: 0,
-        winRate: 0,
-        avgProfit: 0,
-        dailyPnL: 0,
-        lastResetDate: new Date(),
-      },
-    });
+    try {
+      const botInstance = await BotInstance.create({
+        userId: session.user.id,
+        botId,
+        botName,
+        symbol,
+        status: 'ACTIVE',
+        config,
+        exchangeConnectionId,
+        startedAt: new Date(),
+        statistics: {
+          totalTrades: 0,
+          winningTrades: 0,
+          losingTrades: 0,
+          totalProfit: 0,
+          totalLoss: 0,
+          winRate: 0,
+          avgProfit: 0,
+          dailyPnL: 0,
+          lastResetDate: new Date(),
+        },
+      });
 
-    // Run initial analysis (don't wait for it)
-    runBotAnalysis(botInstance._id.toString(), botId, apiKey, apiSecret).catch(
-      console.error
-    );
+      console.log('✅ Bot instance created:', { 
+        instanceId: botInstance._id, 
+        userId: session.user.id, 
+        botId 
+      });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Bot started successfully',
-      bot: botInstance,
-    });
+      // Run initial analysis (don't wait for it)
+      runBotAnalysis(
+        botInstance._id.toString(), 
+        botId, 
+        apiKey, 
+        apiSecret,
+        exchangeConnectionId,
+        botName
+      ).catch(console.error);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Bot started successfully',
+        bot: botInstance,
+      });
+    } catch (createError: any) {
+      // Handle duplicate key error (race condition)
+      if (createError.code === 11000) {
+        console.log('⚠️ Duplicate bot creation prevented by unique index');
+        return NextResponse.json(
+          { error: 'Bot is already running. Please stop it first before starting again.' },
+          { status: 400 }
+        );
+      }
+      throw createError; // Re-throw other errors
+    }
   } catch (error: any) {
     console.error('Error starting bot:', error);
     return NextResponse.json(
@@ -245,7 +246,9 @@ async function runBotAnalysis(
   botInstanceId: string,
   botId: number,
   apiKey: string,
-  apiSecret: string
+  apiSecret: string,
+  exchangeConnectionId: string,
+  botName: string
 ) {
   try {
     await connectDB();
@@ -258,12 +261,15 @@ async function runBotAnalysis(
     let strategy: any;
 
     switch (botId) {
-      case 1: // Bitcoin Pro
+      case 1: // Bitcoin Pro (Alpha Pilot)
         strategy = new BitcoinProStrategy(
           botInstance.userId.toString(),
           apiKey,
           apiSecret,
-          botInstanceId
+          botInstanceId,
+          exchangeConnectionId,
+          botId,
+          botName
         );
         break;
       // Add other strategies here

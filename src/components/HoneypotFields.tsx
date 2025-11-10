@@ -19,17 +19,31 @@ interface HoneypotFieldsProps {
 
 export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsProps) {
   const [triggered, setTriggered] = useState(false);
+  const [interactionCount, setInteractionCount] = useState(0);
 
-  const handleChange = (fieldName: string) => {
-    console.warn(`🤖 Honeypot triggered: Field "${fieldName}" was filled`);
-    setTriggered(true);
-    
-    if (onTrigger) {
-      onTrigger();
+  const handleChange = (fieldName: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    // Ignore if the value is empty (browser autofill might set it then clear it)
+    if (!event.target.value || event.target.value.trim() === '') {
+      return;
     }
-    
-    if (onChange) {
-      onChange(true);
+
+    // Increment interaction count
+    const newCount = interactionCount + 1;
+    setInteractionCount(newCount);
+
+    // Only trigger if multiple fields are filled (real bot behavior)
+    // Single field might be autofill accident
+    if (newCount >= 2) {
+      console.warn(`🤖 Honeypot triggered: Field "${fieldName}" was filled (${newCount} fields total)`);
+      setTriggered(true);
+      
+      if (onTrigger) {
+        onTrigger();
+      }
+      
+      if (onChange) {
+        onChange(true);
+      }
     }
   };
 
@@ -54,7 +68,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           name="website"
           tabIndex={-1}
           autoComplete="off"
-          onChange={() => handleChange('website')}
+          onChange={(e) => handleChange('website', e)}
         />
       </label>
 
@@ -67,7 +81,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           name="url"
           tabIndex={-1}
           autoComplete="off"
-          onChange={() => handleChange('url')}
+          onChange={(e) => handleChange('url', e)}
         />
       </label>
 
@@ -80,7 +94,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           name="phone"
           tabIndex={-1}
           autoComplete="off"
-          onChange={() => handleChange('phone')}
+          onChange={(e) => handleChange('phone', e)}
         />
       </label>
 
@@ -93,7 +107,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           name="company"
           tabIndex={-1}
           autoComplete="off"
-          onChange={() => handleChange('company')}
+          onChange={(e) => handleChange('company', e)}
         />
       </label>
 
@@ -106,7 +120,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           name="address"
           tabIndex={-1}
           autoComplete="off"
-          onChange={() => handleChange('address')}
+          onChange={(e) => handleChange('address', e)}
         />
       </label>
 
@@ -119,7 +133,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           name="zip"
           tabIndex={-1}
           autoComplete="off"
-          onChange={() => handleChange('zip')}
+          onChange={(e) => handleChange('zip', e)}
         />
       </label>
 
@@ -130,7 +144,7 @@ export default function HoneypotFields({ onTrigger, onChange }: HoneypotFieldsPr
           id="subscribe_field"
           name="subscribe_newsletter"
           tabIndex={-1}
-          onChange={() => handleChange('subscribe_newsletter')}
+          onChange={(e) => handleChange('subscribe_newsletter', e)}
         />
         Subscribe to newsletter
       </label>

@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { verifyAdminAuth } from '@/lib/adminAuth';
-import UserBot from '@/models/UserBot';
+import { BotInstance } from '@/models/BotInstance'; // Use BotInstance instead of UserBot
 import { User } from '@/models/User';
 import mongoose from 'mongoose';
 
 /**
  * GET /api/admin/bot-decision/user-bots
  * 
- * Get paginated list of all user bots with statistics.
+ * Get paginated list of all bot instances (ACTIVE, STOPPED, ERROR, PAUSED)
  * 
  * Query params:
  * - page: number (default 1)
  * - limit: number (default 50)
- * - status: 'active' | 'paused' | 'stopped' (optional filter)
+ * - status: 'ACTIVE' | 'STOPPED' | 'ERROR' | 'PAUSED' (optional filter)
  * - search: string (search by user email/username)
  * 
  * Protected: Admin only
@@ -31,30 +31,23 @@ export async function GET(request: NextRequest) {
     
     await dbConnect();
     
-    // Register User model alias for populate compatibility
-    // UserBot now uses ref 'futurepilotcols' but ensure backward compatibility
-    if (!mongoose.models.User && mongoose.models.futurepilotcols) {
-      const UserModel = mongoose.model('futurepilotcols');
-      mongoose.model('User', UserModel.schema, 'futurepilotcols');
-      console.log('✅ Registered User model alias for populate queries');
-    }
-    
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const status = searchParams.get('status');
+    const statusParam = searchParams.get('status');
     const search = searchParams.get('search');
     
     // Build query
     const query: any = {};
-    if (status) {
-      query.status = status;
+    
+    // Map status filter (lowercase 'active' → uppercase 'ACTIVE')
+    if (statusParam) {
+      query.status = statusParam.toUpperCase();
     }
     
     // If search provided, first find matching users
     let userIds: any[] = [];
     if (search) {
-      const User = (await import('@/models/User')).User;
       const users = await User.find({
         $or: [
           { email: { $regex: search, $options: 'i' } },
@@ -67,35 +60,74 @@ export async function GET(request: NextRequest) {
     }
     
     // Get total count
-    const total = await UserBot.countDocuments(query);
+    const total = await BotInstance.countDocuments(query);
     
-    console.log(`📊 Fetching ${total} bots with query:`, JSON.stringify(query));
-    console.log('🔍 Available models:', Object.keys(mongoose.models));
+    console.log(`📊 Fetching ${total} bot instances with query:`, JSON.stringify(query));
     
-    // Get paginated bots with populate
-    const bots = await UserBot.find(query)
-      .populate('userId', 'email username')
-      .sort({ lastActive: -1 })
+    // Get paginated bot instances with user data
+    const bots = await BotInstance.find(query)
+      .populate('userId', 'email name walletData.gasFeeBalance')
+      .populate('exchangeConnectionId', 'name exchange')
+      .sort({ startedAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
     
-    console.log(`✅ Fetched ${bots.length} bots`);
-    if (bots.length > 0) {
-      console.log('🔍 First bot userId type:', typeof bots[0].userId);
-      console.log('🔍 First bot userId value:', bots[0].userId);
-    }
+    console.log(`✅ Fetched ${bots.length} bot instances`);
     
-    const botsData = bots.map(bot => ({
+    // Transform to match admin UI expectations
+    const botsData = bots.map((bot: any) => ({
       _id: bot._id,
       userId: bot.userId,
-      status: bot.status,
-      lastBalanceCheck: bot.lastBalanceCheck,
-      aiConfig: bot.aiConfig,
-      tradingConfig: bot.tradingConfig,
-      stats: bot.stats,
-      lastActive: bot.lastActive,
-      dailyTradeCount: bot.dailyTradeCount,
+      status: bot.status.toLowerCase(), // ACTIVE → active for UI compatibility
+      botId: bot.botId,
+      botName: bot.botName,
+      symbol: bot.symbol,
+      exchangeConnection: bot.exchangeConnectionId,
+      
+      // Map to UserBot format for backward compatibility
+      lastBalanceCheck: {
+        timestamp: bot.lastAnalysis?.timestamp || bot.startedAt || new Date(),
+        binanceBalance: 0, // TODO: Get from Binance API
+        gasFeeBalance: bot.userId?.walletData?.gasFeeBalance || 0,
+        availableMargin: 0,
+        usedMargin: 0,
+      },
+      
+      aiConfig: {
+        enabled: true,
+        confidenceThreshold: 82,
+        newsWeight: 10,
+        backtestWeight: 5,
+        learningWeight: 3,
+        minGasFeeBalance: 10,
+      },
+      
+      tradingConfig: {
+        riskPercent: bot.config?.riskPercent || 2,
+        maxLeverage: bot.config?.leverage || 10,
+        maxDailyTrades: bot.config?.maxDailyTrades || 50,
+        allowedPairs: [bot.symbol],
+        blacklistPairs: [],
+      },
+      
+      stats: {
+        totalSignalsReceived: bot.statistics?.totalTrades || 0,
+        totalSignalsExecuted: bot.statistics?.totalTrades || 0,
+        totalSignalsRejected: 0,
+        totalTrades: bot.statistics?.totalTrades || 0,
+        winRate: bot.statistics?.winRate || 0,
+        totalProfit: (bot.statistics?.totalProfit || 0) - (bot.statistics?.totalLoss || 0),
+        todayTradeCount: 0, // TODO: Calculate from today's trades
+      },
+      
+      lastActive: bot.lastAnalysis?.timestamp || bot.startedAt,
+      dailyTradeCount: 0,
       createdAt: bot.createdAt,
+      startedAt: bot.startedAt,
+      stoppedAt: bot.stoppedAt,
+      currentPosition: bot.currentPosition,
+      statistics: bot.statistics,
     }));
     
     return NextResponse.json({
@@ -112,12 +144,12 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error: any) {
-    console.error('❌ Error fetching user bots:', error);
+    console.error('❌ Error fetching bot instances:', error);
     
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to fetch user bots',
+        error: error.message || 'Failed to fetch bot instances',
       },
       { status: 500 }
     );

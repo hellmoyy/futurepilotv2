@@ -240,6 +240,7 @@ function parseBacktestOutput(output: string, period: string) {
       winningTrades: 0,
       losingTrades: 0,
       winRate: 0,
+      cooldownsTriggered: 0,
       avgWin: 0,
       avgLoss: 0,
       largestWin: 0,
@@ -386,6 +387,12 @@ function parseBacktestOutput(output: string, period: string) {
       if (line.includes('Losses:') && !line.includes('LOSSES:')) {
         const match = line.match(/Losses:\s*([0-9]+)/);
         if (match) results.losingTrades = parseInt(match[1]);
+      }
+      
+      // Cooldowns Triggered: "Cooldowns Triggered: 1"
+      if (line.includes('Cooldowns Triggered:')) {
+        const match = line.match(/Cooldowns Triggered:\s*([0-9]+)/);
+        if (match) results.cooldownsTriggered = parseInt(match[1]);
       }
       
       // Average Win: "Average Win: $156.47"

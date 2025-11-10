@@ -4,6 +4,12 @@ import { SafetyManager } from './SafetyManager';
 import { TradeManager } from './TradeManager';
 import { PositionMonitor } from './PositionMonitor';
 import { beforeTrade, afterTrade } from './hooks';
+import {
+  createTradeExecution,
+  closeTradeExecution,
+  updateBotStatistics,
+  calculateTradeFees,
+} from './tradeTracking';
 
 export interface TradingConfig {
   symbol: string;
@@ -71,6 +77,9 @@ export class TradingEngine {
   protected botInstanceId: string | null = null;
   private currentTradeId: string | null = null; // Track current trade record
   private positionMonitor: PositionMonitor | null = null; // Position monitor instance
+  private exchangeConnectionId: string | null = null; // Track exchange connection
+  private botId: number | null = null; // Track bot ID
+  private botName: string | null = null; // Track bot name
   // 📊 Advanced Risk Management Counters
   private dailyTradeCount: number = 0;
   private lastTradeResetDate: Date = new Date();
@@ -80,12 +89,18 @@ export class TradingEngine {
     config: TradingConfig,
     apiKey: string,
     apiSecret: string,
-    botInstanceId?: string
+    botInstanceId?: string,
+    exchangeConnectionId?: string,
+    botId?: number,
+    botName?: string
   ) {
     this.userId = userId;
     this.config = config;
     this.binanceApiKey = apiKey;
     this.binanceApiSecret = apiSecret;
+    this.exchangeConnectionId = exchangeConnectionId || null;
+    this.botId = botId || null;
+    this.botName = botName || null;
     
     if (botInstanceId) {
       this.botInstanceId = botInstanceId;
@@ -657,7 +672,7 @@ export class TradingEngine {
           ? entryPrice * (1 + this.config.takeProfitPercent / 100)
           : entryPrice * (1 - this.config.takeProfitPercent / 100);
 
-      // Create Trade record
+      // Create Trade record (old system - still used for compatibility)
       try {
         const trade = await TradeManager.createTrade({
           userId: this.userId,
@@ -677,10 +692,41 @@ export class TradingEngine {
         // Store trade ID for later reference
         this.currentTradeId = trade._id.toString();
 
-        console.log(`✅ Trade record created: ${this.currentTradeId}`);
+        console.log(`✅ Trade record created (old): ${this.currentTradeId}`);
       } catch (tradeError) {
         console.error('❌ Failed to create trade record:', tradeError);
         // Don't throw - order was placed successfully
+      }
+
+      // Create TradeExecution record (NEW - for real tracking)
+      if (this.botInstanceId && this.exchangeConnectionId && this.botId && this.botName) {
+        try {
+          const tradeExecutionId = await createTradeExecution({
+            userId: this.userId,
+            botInstanceId: this.botInstanceId,
+            botId: this.botId,
+            botName: this.botName,
+            symbol: this.config.symbol,
+            side: side === 'BUY' ? 'LONG' : 'SHORT',
+            entryPrice,
+            quantity,
+            leverage: this.config.leverage,
+            stopLoss: stopLossPrice,
+            takeProfit: takeProfitPrice,
+            exchangeConnectionId: this.exchangeConnectionId,
+            orderId: order.orderId?.toString(),
+          });
+
+          // Override currentTradeId with TradeExecution ID
+          this.currentTradeId = tradeExecutionId;
+
+          console.log(`✅ TradeExecution record created: ${tradeExecutionId}`);
+          console.log(`   ${side} ${quantity} ${this.config.symbol} @ $${entryPrice}`);
+          console.log(`   SL: $${stopLossPrice.toFixed(2)} | TP: $${takeProfitPrice.toFixed(2)}`);
+        } catch (execError) {
+          console.error('❌ Failed to create TradeExecution record:', execError);
+          // Don't throw - order was placed successfully
+        }
       }
 
       return order;
@@ -769,16 +815,19 @@ export class TradingEngine {
         reduceOnly: 'true',
       });
 
-      // Update Trade record
+      // Update Trade record (old system - for compatibility)
       if (this.currentTradeId) {
         try {
-          await TradeManager.closeTrade(this.currentTradeId, {
+          // Try to close TradeExecution (NEW system)
+          const fees = calculateTradeFees(position.entryPrice, position.quantity, this.config.leverage);
+          
+          await closeTradeExecution(this.currentTradeId, {
             exitPrice,
-            exitTime: new Date(),
-            notes: `Position closed at $${exitPrice}, P&L: $${position.pnl.toFixed(2)}`,
+            exitReason: 'MANUAL', // Will be updated based on actual reason
+            fees,
           });
 
-          console.log(`✅ Trade record closed: ${this.currentTradeId}`);
+          console.log(`✅ TradeExecution closed: ${this.currentTradeId}`);
           
           // 💰 TRADING COMMISSION: Deduct commission if profitable
           if (position.pnl > 0) {
@@ -797,9 +846,20 @@ export class TradingEngine {
           
           // Clear current trade ID
           this.currentTradeId = null;
-        } catch (tradeError) {
-          console.error('❌ Failed to update trade record:', tradeError);
-          // Don't throw - position was closed successfully
+        } catch (tradeError: any) {
+          console.error('❌ Failed to close TradeExecution:', tradeError);
+          
+          // Fallback: Try old TradeManager system
+          try {
+            await TradeManager.closeTrade(this.currentTradeId!, {
+              exitPrice,
+              exitTime: new Date(),
+              notes: `Position closed at $${exitPrice}, P&L: $${position.pnl.toFixed(2)}`,
+            });
+            console.log(`✅ Trade record closed (old system): ${this.currentTradeId}`);
+          } catch (oldError) {
+            console.error('❌ Failed to update old trade record:', oldError);
+          }
         }
       }
 
