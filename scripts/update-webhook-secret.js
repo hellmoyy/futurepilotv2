@@ -152,10 +152,10 @@ async function main() {
       // Add new line
       info('Adding MORALIS_WEBHOOK_SECRET to .env.local...');
       
-      // Find MORALIS_BSC_TESTNET_STREAM_ID line and add after it
-      if (envContent.includes('MORALIS_BSC_TESTNET_STREAM_ID')) {
+      // Find MORALIS_BSC_STREAM_ID line and add after it
+      if (envContent.includes('MORALIS_BSC_STREAM_ID')) {
         envContent = envContent.replace(
-          /MORALIS_BSC_TESTNET_STREAM_ID=.*/,
+          /MORALIS_BSC_STREAM_ID=.*/,
           (match) => `${match}\nMORALIS_WEBHOOK_SECRET=${secret}`
         );
       } else {

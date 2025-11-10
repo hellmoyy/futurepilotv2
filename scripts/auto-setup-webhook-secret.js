@@ -107,10 +107,10 @@ function updateEnvFile(secret) {
   if (secretRegex.test(envContent)) {
     envContent = envContent.replace(secretRegex, `MORALIS_WEBHOOK_SECRET=${secret}`);
   } else {
-    // Add after MORALIS_BSC_TESTNET_STREAM_ID
-    if (envContent.includes('MORALIS_BSC_TESTNET_STREAM_ID')) {
+    // Add after MORALIS_BSC_STREAM_ID
+    if (envContent.includes('MORALIS_BSC_STREAM_ID')) {
       envContent = envContent.replace(
-        /MORALIS_BSC_TESTNET_STREAM_ID=.*/,
+        /MORALIS_BSC_STREAM_ID=.*/,
         (match) => `${match}\nMORALIS_WEBHOOK_SECRET=${secret}`
       );
     } else {
@@ -134,7 +134,7 @@ async function main() {
 
   // Check environment variables
   const apiKey = process.env.MORALIS_API_KEY;
-  const streamId = process.env.MORALIS_BSC_TESTNET_STREAM_ID;
+  const streamId = process.env.MORALIS_BSC_STREAM_ID;
 
   if (!apiKey) {
     failure('MORALIS_API_KEY tidak ditemukan di .env.local');
@@ -144,9 +144,9 @@ async function main() {
   }
 
   if (!streamId) {
-    failure('MORALIS_BSC_TESTNET_STREAM_ID tidak ditemukan di .env.local');
+    failure('MORALIS_BSC_STREAM_ID tidak ditemukan di .env.local');
     console.log('');
-    info('Pastikan MORALIS_BSC_TESTNET_STREAM_ID sudah di-set di .env.local');
+    info('Pastikan MORALIS_BSC_STREAM_ID sudah di-set di .env.local');
     process.exit(1);
   }
 
@@ -183,7 +183,7 @@ async function main() {
       info('Cek API key di: https://admin.moralis.io/settings');
     } else if (error.message.includes('404')) {
       warning('Stream ID tidak ditemukan');
-      info('Pastikan MORALIS_BSC_TESTNET_STREAM_ID benar');
+      info('Pastikan MORALIS_BSC_STREAM_ID benar');
     } else if (error.message.includes('403')) {
       warning('Tidak punya permission untuk update stream');
       info('Pastikan API key punya write access');

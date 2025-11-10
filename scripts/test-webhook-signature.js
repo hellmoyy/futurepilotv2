@@ -88,8 +88,8 @@ function testSignatureGeneration() {
   // Test payload (same structure as Moralis sends)
   const testPayload = {
     confirmed: true,
-    chainId: '0x61', // BSC Testnet
-    streamId: process.env.MORALIS_BSC_TESTNET_STREAM_ID || 'test-stream',
+    chainId: '0x61', // BSC Testnet (use 0x38 for mainnet)
+    streamId: process.env.MORALIS_BSC_STREAM_ID || 'test-stream',
     block: {
       number: '12345',
       hash: '0xabc123',
@@ -225,8 +225,8 @@ function generateCurlCommand() {
   const webhookUrl = 'http://localhost:3000/api/webhook/moralis';
   const testPayload = {
     confirmed: true,
-    chainId: '0x61',
-    streamId: process.env.MORALIS_BSC_TESTNET_STREAM_ID || 'test-stream',
+    chainId: '0x61', // BSC Testnet (use 0x38 for mainnet)
+    streamId: process.env.MORALIS_BSC_STREAM_ID || 'test-stream',
     erc20Transfers: [
       {
         transactionHash: '0xtest_manual_webhook_' + Date.now(),
@@ -289,7 +289,7 @@ function runTests() {
     console.log('');
     console.log('1. Login to Moralis Dashboard: https://admin.moralis.io/');
     console.log('2. Navigate: Dashboard → Streams');
-    console.log('3. Find stream ID: ' + (process.env.MORALIS_BSC_TESTNET_STREAM_ID || 'YOUR_STREAM_ID'));
+    console.log('3. Find stream ID: ' + (process.env.MORALIS_BSC_STREAM_ID || 'YOUR_STREAM_ID'));
     console.log('4. Click stream name to open details');
     console.log('5. Find "Webhook Secret" section');
     console.log('6. Click "Show" or "Copy" button');
