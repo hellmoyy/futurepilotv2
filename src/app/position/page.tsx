@@ -116,7 +116,11 @@ export default function PositionPage() {
         throw new Error(`Failed to fetch positions: ${response.status}`);
       }
       
-      const data = await response.json();
+      const result = await response.json();
+      
+      // API returns { bots: [...] } not just [...]
+      const data = Array.isArray(result) ? result : (result.bots || []);
+      
       const activePositions = data.filter((bot: Position) => 
         bot.status === 'ACTIVE' && bot.currentPosition
       );
@@ -146,7 +150,11 @@ export default function PositionPage() {
         throw new Error(`Failed to fetch trades: ${response.status}`);
       }
       
-      const data = await response.json();
+      const result = await response.json();
+      
+      // Ensure we have an array
+      const data = Array.isArray(result) ? result : (result.trades || []);
+      
       setTrades(data.filter((trade: Trade) => trade.status === 'closed'));
     } catch (error) {
       console.error('Error fetching trades:', error);
