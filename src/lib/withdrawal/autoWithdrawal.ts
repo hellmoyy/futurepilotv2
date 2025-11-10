@@ -215,7 +215,7 @@ export async function processAutoWithdrawal(
     console.log(`   New Balance: $${updatedUser.totalEarnings}`);
 
     // Create transaction record for withdrawal
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    const networkMode = process.env.NETWORK_MODE || 'mainnet';
     await Transaction.create([
       {
         userId: user._id,
@@ -265,7 +265,7 @@ export async function processAutoWithdrawal(
 
     // Send success notification to user (email optional, won't fail withdrawal)
     try {
-      const networkMode = process.env.NETWORK_MODE || 'testnet';
+      const networkMode = process.env.NETWORK_MODE || 'mainnet';
       const explorerUrl = networkMode === 'mainnet'
         ? `https://etherscan.io/tx/${transferResult.txHash}`
         : `https://sepolia.etherscan.io/tx/${transferResult.txHash}`;

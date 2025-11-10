@@ -27,7 +27,7 @@ const USDT_ABI = [
  * Get Commission Wallet credentials based on network mode
  */
 export function getCommissionWallet() {
-  const networkMode = process.env.NETWORK_MODE || 'testnet';
+  const networkMode = process.env.NETWORK_MODE || 'mainnet';
   
   if (networkMode === 'mainnet') {
     // Mainnet commission wallet
@@ -342,7 +342,7 @@ export function validateCommissionWallet(): {
   errors: string[];
 } {
   const errors: string[] = [];
-  const networkMode = process.env.NETWORK_MODE || 'testnet';
+  const networkMode = process.env.NETWORK_MODE || 'mainnet';
 
   if (networkMode === 'mainnet') {
     if (!process.env.COMMISSION_WALLET_ADDRESS) {

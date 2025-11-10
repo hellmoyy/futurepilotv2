@@ -89,7 +89,7 @@ export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
  * Get current network mode from environment
  */
 export function getNetworkMode(): NetworkMode {
-  const mode = process.env.NETWORK_MODE || process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
+  const mode = process.env.NETWORK_MODE || process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet';
   return mode as NetworkMode;
 }
 
@@ -189,7 +189,7 @@ export function formatNetworkName(networkKey: NetworkKey): string {
  */
 export function useNetworkMode(): NetworkMode {
   if (typeof window !== 'undefined') {
-    return (process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet') as NetworkMode;
+    return (process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet') as NetworkMode;
   }
   return 'testnet';
 }

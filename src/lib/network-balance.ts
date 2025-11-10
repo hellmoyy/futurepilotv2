@@ -9,7 +9,7 @@ export type NetworkMode = 'mainnet' | 'testnet';
  * Get current network mode from environment
  */
 export function getNetworkMode(): NetworkMode {
-  return (process.env.NETWORK_MODE || process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet') as NetworkMode;
+  return (process.env.NETWORK_MODE || process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet') as NetworkMode;
 }
 
 /**

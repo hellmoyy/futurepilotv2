@@ -44,7 +44,7 @@ export const GAS_FEE_CONFIG = {
  * Get gas fee configuration based on current network mode
  */
 export function getGasFeeConfig() {
-  const networkMode = process.env.NETWORK_MODE || 'testnet';
+  const networkMode = process.env.NETWORK_MODE || 'mainnet';
   return GAS_FEE_CONFIG[networkMode as 'mainnet' | 'testnet'];
 }
 

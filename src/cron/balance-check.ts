@@ -48,7 +48,8 @@ interface IUser {
 
 // Helper to get network-aware balance
 function getUserBalance(user: IUser): number {
-  const networkMode = process.env.NETWORK_MODE || 'testnet';
+  // ✅ Get network mode (mainnet by default)
+  const networkMode = process.env.NETWORK_MODE || 'mainnet';
   
   if (!user.walletData) return 0;
   

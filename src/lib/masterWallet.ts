@@ -60,7 +60,7 @@ export const MASTER_WALLET_CONFIG = {
 
 // Get available networks based on NETWORK_MODE
 export function getAvailableNetworks(): string[] {
-  const networkMode = process.env.NETWORK_MODE || 'testnet';
+  const networkMode = process.env.NETWORK_MODE || 'mainnet';
   
   if (networkMode === 'mainnet') {
     return ['ETHEREUM_MAINNET', 'BSC_MAINNET'];
