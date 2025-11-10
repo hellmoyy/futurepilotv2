@@ -3,29 +3,23 @@
  * 
  * POST /api/signal-center/control
  * Admin endpoint to start/stop signal generation
+ * 
+ * ✅ FIXED: Now persists state to MongoDB (no more in-memory)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/adminAuth';
+import { connectDB } from '@/lib/mongodb';
+import SignalCenterState from '@/models/SignalCenterState';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-interface ControlState {
-  running: boolean;
-  startedAt: number | null;
-  config: any;
-}
-
-// In-memory state (will be replaced with Redis in production)
-let signalCenterState: ControlState = {
-  running: false,
-  startedAt: null,
-  config: null,
-};
-
 export async function POST(request: NextRequest) {
   try {
+    // ===== DATABASE CONNECTION =====
+    await connectDB();
+    
     // ===== ADMIN AUTH CHECK =====
     const authResult = await verifyAdminAuth(request);
     
@@ -47,57 +41,54 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    const adminEmail = authResult.admin?.email || 'unknown';
+    
     // ===== START SIGNAL CENTER =====
     if (action === 'start') {
-      if (signalCenterState.running) {
+      try {
+        const state = await SignalCenterState.startSignalCenter(adminEmail, config);
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Signal Center started successfully',
+          state: {
+            running: state.running,
+            startedAt: state.startedAt?.getTime() || null,
+            startedBy: state.startedBy,
+            config: state.config,
+          },
+        });
+      } catch (error: any) {
         return NextResponse.json({
           success: false,
-          error: 'Signal Center already running',
-          state: signalCenterState,
-        });
+          error: error.message || 'Failed to start Signal Center',
+        }, { status: 400 });
       }
-      
-      signalCenterState = {
-        running: true,
-        startedAt: Date.now(),
-        config: config || null,
-      };
-      
-      console.log('🚀 Signal Center STARTED by admin:', authResult.admin?.email);
-      
-      return NextResponse.json({
-        success: true,
-        message: 'Signal Center started successfully',
-        state: signalCenterState,
-      });
     }
     
     // ===== STOP SIGNAL CENTER =====
     if (action === 'stop') {
-      if (!signalCenterState.running) {
+      try {
+        const { state, uptime } = await SignalCenterState.stopSignalCenter(adminEmail);
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Signal Center stopped successfully',
+          uptime,
+          state: {
+            running: state.running,
+            startedAt: state.startedAt?.getTime() || null,
+            stoppedAt: state.stoppedAt?.getTime() || null,
+            stoppedBy: state.stoppedBy,
+            totalUptime: state.uptime,
+          },
+        });
+      } catch (error: any) {
         return NextResponse.json({
           success: false,
-          error: 'Signal Center not running',
-          state: signalCenterState,
-        });
+          error: error.message || 'Failed to stop Signal Center',
+        }, { status: 400 });
       }
-      
-      const uptime = Date.now() - (signalCenterState.startedAt || 0);
-      
-      signalCenterState = {
-        running: false,
-        startedAt: null,
-        config: null,
-      };
-      
-      console.log('🛑 Signal Center STOPPED by admin:', authResult.admin?.email, `(uptime: ${Math.floor(uptime / 1000)}s)`);
-      
-      return NextResponse.json({
-        success: true,
-        message: 'Signal Center stopped successfully',
-        uptime,
-        state: signalCenterState,
-      });
     }
     
     return NextResponse.json(
@@ -119,6 +110,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // ===== DATABASE CONNECTION =====
+    await connectDB();
+    
     // ===== ADMIN AUTH CHECK =====
     const authResult = await verifyAdminAuth(request);
     
@@ -129,13 +123,25 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Return current state
+    // Get current state from database
+    const state = await SignalCenterState.getCurrentState();
+    
+    const uptime = state.running && state.startedAt
+      ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000)
+      : 0;
+    
     return NextResponse.json({
       success: true,
-      state: signalCenterState,
-      uptime: signalCenterState.running
-        ? Date.now() - (signalCenterState.startedAt || 0)
-        : 0,
+      state: {
+        running: state.running,
+        startedAt: state.startedAt?.getTime() || null,
+        startedBy: state.startedBy,
+        stoppedAt: state.stoppedAt?.getTime() || null,
+        stoppedBy: state.stoppedBy,
+        config: state.config,
+        totalUptime: state.uptime,
+      },
+      uptime,
     });
   } catch (error: any) {
     console.error('❌ Get Signal Center state error:', error);
