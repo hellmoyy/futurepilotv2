@@ -8,7 +8,7 @@ export default function CustodialWalletPage() {
   const [masterWalletBalances, setMasterWalletBalances] = useState<any>(null);
   const [commissionWalletBalance, setCommissionWalletBalance] = useState<any>(null);
   
-  // ✅ MAINNET ONLY - No more testnet switching
+  // ✅ MAINNET ONLY 
   const [selectedNetwork, setSelectedNetwork] = useState<'BSC_MAINNET' | 'ETHEREUM_MAINNET'>('BSC_MAINNET');
   const [minAmount, setMinAmount] = useState(10);
   const [balanceLoading, setBalanceLoading] = useState(false);

@@ -10,7 +10,6 @@ interface ExchangeConnection {
   exchange: 'binance' | 'bybit' | 'kucoin' | 'okx';
   nickname: string;
   isActive: boolean;
-  testnet: boolean;
   permissions: {
     spot?: boolean;
     futures?: boolean;
@@ -65,7 +64,6 @@ export default function SettingsPage() {
     apiKey: '',
     apiSecret: '',
     nickname: '',
-    testnet: false,
     spot: false,
     futures: false,
   });
@@ -147,7 +145,6 @@ export default function SettingsPage() {
           apiKey: formData.apiKey,
           apiSecret: formData.apiSecret,
           nickname: formData.nickname || `${exchangeInfo[selectedExchange].name} Account`,
-          testnet: formData.testnet,
           permissions: {
             spot: formData.spot,
             futures: formData.futures,
@@ -175,7 +172,6 @@ export default function SettingsPage() {
         apiKey: '',
         apiSecret: '',
         nickname: '',
-        testnet: false,
         spot: false,
         futures: false,
       });
@@ -624,7 +620,6 @@ export default function SettingsPage() {
                             apiKey: '',
                             apiSecret: '',
                             nickname: '',
-                            testnet: false,
                             spot: false,
                             futures: false,
                           });

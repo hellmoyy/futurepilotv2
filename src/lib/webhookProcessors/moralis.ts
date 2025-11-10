@@ -38,19 +38,15 @@ interface MoralisWebhookPayload {
   erc20Transfers: MoralisERC20Transfer[];
 }
 
-// USDT Contract Addresses
+// USDT Contract Addresses (Mainnet only)
 const USDT_CONTRACTS = {
   ETHEREUM_MAINNET: process.env.USDT_ERC20_CONTRACT?.toLowerCase() || '0xdac17f958d2ee523a2206206994597c13d831ec7',
   BSC_MAINNET: process.env.USDT_BEP20_CONTRACT?.toLowerCase() || '0x55d398326f99059ff775485246999027b3197955',
-  ETHEREUM_TESTNET: process.env.TESTNET_USDT_ERC20_CONTRACT?.toLowerCase() || '0x46484aee842a735fbf4c05af7e371792cf52b498',
-  BSC_TESTNET: process.env.TESTNET_USDT_BEP20_CONTRACT?.toLowerCase() || '0x46484aee842a735fbf4c05af7e371792cf52b498',
 };
 
 const CHAIN_NETWORKS = {
-  '0x1': 'ERC20',
-  '0x38': 'BEP20',
-  '0xaa36a7': 'ERC20',
-  '0x61': 'BEP20',
+  '0x1': 'ERC20',    // Ethereum Mainnet
+  '0x38': 'BEP20',   // BSC Mainnet
 } as const;
 
 /**
@@ -94,12 +90,10 @@ export async function processMoralisWebhookPayload(payload: MoralisWebhookPayloa
         contract: transfer.contract,
       });
       
-      // Verify it's a USDT transfer
+      // Verify it's a USDT transfer (mainnet only)
       const contractAddress = transfer.contract.toLowerCase();
       const isUSDT = contractAddress === USDT_CONTRACTS.ETHEREUM_MAINNET || 
-                     contractAddress === USDT_CONTRACTS.BSC_MAINNET ||
-                     contractAddress === USDT_CONTRACTS.ETHEREUM_TESTNET ||
-                     contractAddress === USDT_CONTRACTS.BSC_TESTNET;
+                     contractAddress === USDT_CONTRACTS.BSC_MAINNET;
       
       if (!isUSDT) {
         console.log('⚠️ Not a USDT transfer, skipping...', contractAddress);

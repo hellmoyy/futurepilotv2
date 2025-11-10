@@ -1,6 +1,5 @@
 /**
- * Gas Fee Configuration
- * Different gas fee reserves for mainnet vs testnet
+ * Gas Fee Configuration (Mainnet only)
  */
 
 export const GAS_FEE_CONFIG = {
@@ -20,36 +19,18 @@ export const GAS_FEE_CONFIG = {
       minDeposit: 10, // Minimum $10 USDT deposit
       minWithdrawal: 10, // Minimum $10 USDT withdrawal
     }
-  },
-  testnet: {
-    // Testnet uses free faucet tokens, much smaller reserves needed
-    ethereum: {
-      reserve: 0.0001, // 0.0001 SepoliaETH (free from faucet)
-      displayName: 'SepoliaETH',
-      minForWithdrawal: 0.00005,
-    },
-    bsc: {
-      reserve: 0.001, // 0.001 tBNB (free from faucet)
-      displayName: 'tBNB',
-      minForWithdrawal: 0.0005,
-    },
-    usdt: {
-      minDeposit: 1, // Minimum $1 USDT deposit (for testing)
-      minWithdrawal: 1, // Minimum $1 USDT withdrawal
-    }
   }
 };
 
 /**
- * Get gas fee configuration based on current network mode
+ * Get gas fee configuration (always mainnet)
  */
 export function getGasFeeConfig() {
-  const networkMode = process.env.NETWORK_MODE || 'mainnet';
-  return GAS_FEE_CONFIG[networkMode as 'mainnet' | 'testnet'];
+  return GAS_FEE_CONFIG.mainnet;
 }
 
 /**
- * Get minimum deposit amount based on network mode
+ * Get minimum deposit amount (always mainnet)
  */
 export function getMinDepositAmount(): number {
   const config = getGasFeeConfig();
