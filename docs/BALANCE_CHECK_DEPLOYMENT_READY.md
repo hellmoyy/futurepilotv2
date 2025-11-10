@@ -157,7 +157,7 @@ Created:      2025-11-02T10:00:00.000Z
 ┌─────────────────────────────────────────────────────────────┐
 │ 3. Query All Active Users                                   │
 │    - Status ≠ banned                                        │
-│    - Get walletData.balance (testnet/mainnet)              │
+│    - Get walletData.mainnetBalance                         │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼

@@ -183,11 +183,9 @@ USDT_ERC20_CONTRACT=0xdAC17F958D2ee523a2206206994597C13D831ec7
 TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
 TESTNET_USDT_ERC20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
 
-# RPC URLs
+# RPC URLs (Mainnet)
 BSC_RPC_URL=https://bsc-dataseed1.binance.org
 ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/...
-TESTNET_BSC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
-TESTNET_ETHEREUM_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/...
 
 # Encryption
 ENCRYPTION_SECRET_KEY=your-secret-key
@@ -407,11 +405,11 @@ curl -X POST http://localhost:3000/api/admin/sweep-wallets \
 
 ### Test Custom Token
 ```bash
-# Custom token on Ethereum Sepolia
+# Custom token on Ethereum Mainnet
 curl -X POST http://localhost:3000/api/admin/sweep-wallets \
   -H "Content-Type: application/json" \
   -d '{
-    "network": "ETHEREUM_TESTNET",
+    "network": "ETHEREUM_MAINNET",
     "minAmount": 100,
     "tokenType": "CUSTOM",
     "customTokenAddress": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"

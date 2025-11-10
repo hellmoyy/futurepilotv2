@@ -340,13 +340,13 @@ npm run dev
 ### Functions:
 
 #### `getNetworkMode(): NetworkMode`
-Returns current network mode ('mainnet' | 'testnet')
+Returns current network mode (always 'mainnet')
 
 #### `getAvailableNetworks(): NetworkConfig[]`
 Returns array of available network configs based on mode
 
 #### `getAvailableNetworkKeys(): NetworkKey[]`
-Returns array of available network keys (['BSC_TESTNET', 'ETHEREUM_TESTNET'])
+Returns array of available network keys (['BSC_MAINNET', 'ETHEREUM_MAINNET'])
 
 #### `getNetworkConfig(key: NetworkKey): NetworkConfig | undefined`
 Get detailed config for specific network

@@ -100,8 +100,7 @@ export async function POST(request: NextRequest) {
       
       const validation = await validateBinanceCredentials(
         apiKey,
-        apiSecret,
-        false // Mainnet only
+        apiSecret
       );
 
       if (!validation.valid) {

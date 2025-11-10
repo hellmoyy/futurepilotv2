@@ -58,7 +58,7 @@ interface IExchangeConnection {
   apiSecret: string;     // Encrypted with AES-256
   nickname?: string;
   isActive: boolean;
-  testnet: boolean;
+  testnet: boolean;      // Always false (mainnet only)
   permissions: {
     spot?: boolean;
     futures?: boolean;

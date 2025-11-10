@@ -257,7 +257,7 @@ const result = await processMoralisWebhookPayload(webhookPayload);
 
 **Logic:**
 1. Validate confirmed transfers
-2. Verify USDT contracts (testnet + mainnet)
+2. Verify USDT contracts (mainnet)
 3. Find user by wallet address
 4. Check duplicate `txHash`
 5. Create transaction record
@@ -390,7 +390,7 @@ Dashboard auto-refreshes every **30 seconds** to show latest data.
 MONGODB_URI=mongodb+srv://...
 
 # Network Mode (affects balance updates)
-NETWORK_MODE=testnet  # or 'mainnet'
+NETWORK_MODE=mainnet
 
 # Webhook Secrets (for signature verification)
 MORALIS_API_KEY=your_moralis_api_key

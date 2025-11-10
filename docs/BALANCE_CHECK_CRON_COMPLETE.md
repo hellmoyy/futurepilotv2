@@ -23,7 +23,7 @@ Successfully created complete Balance Check Cron system for monitoring user gas 
 - ✅ GET endpoint - View statistics (no notifications)
 - ✅ Dual authentication (query parameter + header)
 - ✅ Three alert levels (WARNING/CRITICAL/CANNOT_TRADE)
-- ✅ Network-aware balance (testnet vs mainnet)
+- ✅ Network-aware balance (mainnet)
 - ✅ Per-user error handling (continues on failures)
 - ✅ Performance logging (duration, stats)
 - ✅ Force dynamic (no caching)

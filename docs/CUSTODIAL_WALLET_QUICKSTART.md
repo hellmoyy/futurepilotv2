@@ -12,7 +12,7 @@
 - ✅ Created `/src/app/administrator/custodial-wallet/page.tsx`
 - ✅ Full-featured sweep interface
 - ✅ Master wallet balance display
-- ✅ Network selector (BSC Testnet/Mainnet, Ethereum)
+- ✅ Network selector (BSC Mainnet, Ethereum Mainnet)
 - ✅ Minimum amount filter
 - ✅ Auto-refresh balance
 - ✅ Detailed results table with TX links
@@ -45,7 +45,6 @@
 
 ### **Sweep Configuration**
 - 🌐 Network selector dropdown
-  - 🧪 BSC Testnet (Testing)
   - 🟢 BSC Mainnet (Production)
   - 🔷 Ethereum Mainnet (Production)
 - 💵 Minimum amount input (USDT)
@@ -151,7 +150,7 @@ Login: admin@futurepilot.pro / pisanggoreng
 - Should fetch USDT balance from blockchain
 
 ### 5. Test Sweep (After Funding):
-- Select network (BSC Testnet)
+- Select network (BSC Mainnet)
 - Set minimum amount (10 USDT)
 - Click sweep button
 - Confirm dialog
@@ -170,17 +169,15 @@ MASTER_WALLET_PRIVATE_KEY=0x910e028f...
 NEXT_PUBLIC_MASTER_WALLET_ADDRESS=0xdCdE1CCE20E4E7b10921e3b7C54ea4291bB1F7A1
 
 # Network RPC URLs
-TESTNET_BSC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
 BSC_RPC_URL=https://1rpc.io/bnb
 ETHEREUM_RPC_URL=https://ethereum.publicnode.com
 
-# USDT Contracts
-TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
+# USDT Contracts (Mainnet)
 USDT_BEP20_CONTRACT=0x55d398326f99059fF775485246999027B3197955
 USDT_ERC20_CONTRACT=0xdAC17F958D2ee523a2206206994597C13D831ec7
 
 # Network Mode
-NETWORK_MODE=testnet
+NETWORK_MODE=mainnet
 ```
 
 ---
@@ -207,18 +204,18 @@ NETWORK_MODE=testnet
 
 ## 🎯 Next Steps
 
-### Phase 1: Testing (TODAY)
-1. Fund master wallet with BNB (testnet faucet)
+### Phase 1: Testing
+1. Fund master wallet with BNB (mainnet)
 2. Create 3 test users
 3. Fund each user with 10 USDT
 4. Test sweep functionality
 5. Verify results in table
 6. Check TX on BscScan
 
-### Phase 2: Production (TOMORROW)
+### Phase 2: Production
 1. Review security checklist
 2. Backup mnemonic phrase offline
-3. Test on mainnet with small amounts
+3. Monitor sweep operations
 4. Deploy to production
 5. Monitor for 24 hours
 

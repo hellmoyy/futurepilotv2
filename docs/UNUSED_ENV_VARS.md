@@ -90,11 +90,11 @@ CRYPTO_NEWS_API_KEY=lmrkgq8qw5dkldggrm3dz6vpuy5iudnzt2kmbrmo
 
 ### Trading
 - ✅ `BINANCE_API_SECRET` - Binance trading
-- ✅ `BINANCE_TESTNET` - Network mode flag
+- ✅ `BINANCE_TESTNET` - Network mode flag (always false)
 
 ### Mainnet Configuration
-- ✅ `NETWORK_MODE` - mainnet/testnet
-- ✅ `NEXT_PUBLIC_NETWORK_MODE` - Frontend network mode
+- ✅ `NETWORK_MODE` - mainnet only
+- ✅ `NEXT_PUBLIC_NETWORK_MODE` - Frontend network mode (mainnet)
 - ✅ `ETHEREUM_RPC_URL` - Ethereum RPC
 - ✅ `BSC_RPC_URL` - BSC RPC
 - ✅ `USDT_ERC20_CONTRACT` - USDT contract (Ethereum)
