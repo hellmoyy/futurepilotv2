@@ -28,8 +28,6 @@ const NETWORKS = {
 };
 
 export async function GET(request: NextRequest) {
-
-export async function GET(request: NextRequest) {
   // Verify cron secret for security
   const authHeader = request.headers.get('authorization');
   const tokenFromQuery = request.nextUrl.searchParams.get('token');
@@ -231,7 +229,7 @@ export async function GET(request: NextRequest) {
             console.error(`❌ Error checking ${address}: ${errorMsg}`);
             results.errors.push(`${user.email}: ${errorMsg}`);
           }
-        }
+        } // End of for loop for userAddresses
 
         results.totalDepositsFound += networkDeposits;
         results.newDepositsProcessed += networkProcessed;
@@ -243,7 +241,7 @@ export async function GET(request: NextRequest) {
         console.error(`❌ ${errorMsg}`);
         results.errors.push(errorMsg);
       }
-    }
+    } // End of for loop for NETWORKS
 
     console.log(`🎉 Deposit monitoring completed: ${results.newDepositsProcessed} new deposits processed`);
 
