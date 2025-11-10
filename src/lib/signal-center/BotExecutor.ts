@@ -38,11 +38,10 @@ export class BotExecutor {
   constructor(
     userId: mongoose.Types.ObjectId,
     apiKey: string,
-    apiSecret: string,
-    useTestnet: boolean = false
+    apiSecret: string
   ) {
     this.userId = userId;
-    this.trader = new FuturesTrader(apiKey, apiSecret, useTestnet);
+    this.trader = new FuturesTrader(apiKey, apiSecret);
   }
   
   /**

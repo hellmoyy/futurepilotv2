@@ -72,13 +72,11 @@ export class SignalListener extends EventEmitter {
         return { success: false, error: 'Bot not enabled in settings' };
       }
       
-      // Initialize bot executor
-      const useTestnet = process.env.BINANCE_TESTNET === 'true';
+      // Initialize bot executor (mainnet only)
       this.botExecutor = new BotExecutor(
         this.userId,
         user.binanceApiKey,
-        user.binanceApiSecret,
-        useTestnet
+        user.binanceApiSecret
       );
       
       // Subscribe to signal broadcaster

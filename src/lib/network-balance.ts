@@ -1,75 +1,56 @@
 /**
  * Network Balance Helper
- * Handles separate balances for testnet vs mainnet
+ * Mainnet-only balance management
  */
-
-export type NetworkMode = 'mainnet' | 'testnet';
 
 /**
- * Get current network mode from environment
+ * Get the balance field name (mainnet only)
  */
-export function getNetworkMode(): NetworkMode {
-  return (process.env.NETWORK_MODE || process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet') as NetworkMode;
+export function getBalanceField(): 'walletData.mainnetBalance' {
+  return 'walletData.mainnetBalance';
 }
 
 /**
- * Get the correct balance field name based on network mode
+ * Get user's balance (mainnet only)
  */
-export function getBalanceField(networkMode?: NetworkMode): 'walletData.balance' | 'walletData.mainnetBalance' {
-  const mode = networkMode || getNetworkMode();
-  return mode === 'mainnet' ? 'walletData.mainnetBalance' : 'walletData.balance';
-}
-
-/**
- * Get user's balance for current network
- */
-export function getUserBalance(user: any, networkMode?: NetworkMode): number {
-  const mode = networkMode || getNetworkMode();
+export function getUserBalance(user: any): number {
   if (!user?.walletData) return 0;
-  
-  return mode === 'mainnet' 
-    ? (user.walletData.mainnetBalance || 0)
-    : (user.walletData.balance || 0);
+  return user.walletData.mainnetBalance || 0;
 }
 
 /**
- * Update user's balance for current network
+ * Update user's balance (mainnet only)
  * Returns the MongoDB update object
  */
-export function createBalanceUpdate(amount: number, networkMode?: NetworkMode) {
-  const field = getBalanceField(networkMode);
-  return { $inc: { [field]: amount } };
+export function createBalanceUpdate(amount: number) {
+  return { $inc: { 'walletData.mainnetBalance': amount } };
 }
 
 /**
- * Set user's balance for current network
+ * Set user's balance (mainnet only)
  * Returns the MongoDB update object
  */
-export function setBalanceUpdate(amount: number, networkMode?: NetworkMode) {
-  const field = getBalanceField(networkMode);
-  return { $set: { [field]: amount } };
+export function setBalanceUpdate(amount: number) {
+  return { $set: { 'walletData.mainnetBalance': amount } };
 }
 
 /**
- * Get network display name
+ * Get network display name (always Mainnet)
  */
-export function getNetworkDisplayName(networkMode?: NetworkMode): string {
-  const mode = networkMode || getNetworkMode();
-  return mode === 'mainnet' ? 'Mainnet' : 'Testnet';
+export function getNetworkDisplayName(): string {
+  return 'Mainnet';
 }
 
 /**
- * Check if user is on mainnet
+ * Check if user is on mainnet (always true)
  */
 export function isMainnet(): boolean {
-  return getNetworkMode() === 'mainnet';
+  return true;
 }
 
 /**
- * Format balance with network indicator
+ * Format balance (mainnet only)
  */
-export function formatBalanceWithNetwork(balance: number, networkMode?: NetworkMode): string {
-  const mode = networkMode || getNetworkMode();
-  const network = mode === 'mainnet' ? '' : ' (Testnet)';
-  return `$${balance.toFixed(2)}${network}`;
+export function formatBalanceWithNetwork(balance: number): string {
+  return `$${balance.toFixed(2)}`;
 }

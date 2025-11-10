@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
-import { getUserBalance, getNetworkMode } from '@/lib/network-balance';
+import { getUserBalance } from '@/lib/network-balance';
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic';
@@ -60,15 +60,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get balance for current network mode
+    // Get balance (mainnet only)
     const balance = getUserBalance(user);
-    const networkMode = getNetworkMode();
 
     return NextResponse.json({
       erc20Address: user.walletData.erc20Address,
       bep20Address: user.walletData.bep20Address,
       balance,
-      networkMode, // Include network mode in response
+      networkMode: 'mainnet', // Always mainnet
       mainnetBalance: user.walletData.mainnetBalance || 0, // Current balance
       totalPersonalDeposit: user.totalPersonalDeposit || 0, // For tier progress
       membershipLevel: user.membershipLevel || 'bronze' // For tier display

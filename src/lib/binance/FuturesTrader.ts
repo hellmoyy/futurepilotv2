@@ -1,14 +1,13 @@
 import crypto from 'crypto';
 
 /**
- * Binance Futures Trader
+ * Binance Futures Trader (Mainnet only)
  * 
  * Execute trades on Binance Futures API with proper risk management
  * Supports MARKET/LIMIT orders, stop loss, take profit, and position management
  */
 
 const BINANCE_FUTURES_API = 'https://fapi.binance.com';
-const BINANCE_TESTNET_API = 'https://testnet.binancefuture.com';
 
 export interface OrderParams {
   symbol: string;
@@ -49,16 +48,14 @@ export interface OrderResult {
 export class FuturesTrader {
   private apiKey: string;
   private apiSecret: string;
-  private useTestnet: boolean;
   
-  constructor(apiKey: string, apiSecret: string, useTestnet: boolean = false) {
+  constructor(apiKey: string, apiSecret: string) {
     this.apiKey = apiKey;
     this.apiSecret = apiSecret;
-    this.useTestnet = useTestnet;
   }
   
   private getBaseUrl(): string {
-    return this.useTestnet ? BINANCE_TESTNET_API : BINANCE_FUTURES_API;
+    return BINANCE_FUTURES_API;
   }
   
   /**

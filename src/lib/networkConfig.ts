@@ -1,11 +1,9 @@
 /**
  * Network Configuration Helper
- * Centralized network configuration for all blockchain interactions
- * Supports 4 networks with automatic filtering based on NETWORK_MODE
+ * Mainnet-only network configuration for all blockchain interactions
  */
 
-export type NetworkKey = 'BSC_MAINNET' | 'ETHEREUM_MAINNET' | 'BSC_TESTNET' | 'ETHEREUM_TESTNET';
-export type NetworkMode = 'mainnet' | 'testnet';
+export type NetworkKey = 'BSC_MAINNET' | 'ETHEREUM_MAINNET';
 
 export interface NetworkConfig {
   key: NetworkKey;
@@ -22,9 +20,8 @@ export interface NetworkConfig {
   moralisChainId: string; // Moralis format (0x1, 0x38, etc)
 }
 
-// All network configurations
+// Mainnet network configurations only
 export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
-  // Mainnet Networks
   BSC_MAINNET: {
     key: 'BSC_MAINNET',
     name: 'BNB Smart Chain Mainnet',
@@ -53,71 +50,20 @@ export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
     usdtContract: process.env.USDT_ERC20_CONTRACT || '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     moralisChainId: '0x1',
   },
-  
-  // Testnet Networks
-  BSC_TESTNET: {
-    key: 'BSC_TESTNET',
-    name: 'BNB Smart Chain Testnet',
-    chainId: 97,
-    rpcUrl: process.env.TESTNET_BSC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545',
-    explorerUrl: 'https://testnet.bscscan.com',
-    nativeCurrency: {
-      name: 'tBNB',
-      symbol: 'tBNB',
-      decimals: 18,
-    },
-    usdtContract: process.env.TESTNET_USDT_BEP20_CONTRACT || '0x46484Aee842A735Fbf4C05Af7e371792cf52b498',
-    moralisChainId: '0x61',
-  },
-  ETHEREUM_TESTNET: {
-    key: 'ETHEREUM_TESTNET',
-    name: 'Ethereum Sepolia Testnet',
-    chainId: 11155111,
-    rpcUrl: process.env.TESTNET_ETHEREUM_RPC_URL || 'https://rpc.ankr.com/eth_sepolia',
-    explorerUrl: 'https://sepolia.etherscan.io',
-    nativeCurrency: {
-      name: 'Sepolia ETH',
-      symbol: 'SepoliaETH',
-      decimals: 18,
-    },
-    usdtContract: process.env.TESTNET_USDT_ERC20_CONTRACT || '0x46484Aee842A735Fbf4C05Af7e371792cf52b498',
-    moralisChainId: '0xaa36a7',
-  },
 };
 
 /**
- * Get current network mode from environment
- */
-export function getNetworkMode(): NetworkMode {
-  const mode = process.env.NETWORK_MODE || process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet';
-  return mode as NetworkMode;
-}
-
-/**
- * Get available networks based on NETWORK_MODE
- * Returns only mainnet or testnet networks
+ * Get available networks (mainnet only)
  */
 export function getAvailableNetworks(): NetworkConfig[] {
-  const mode = getNetworkMode();
-  
-  if (mode === 'mainnet') {
-    return [NETWORKS.BSC_MAINNET, NETWORKS.ETHEREUM_MAINNET];
-  } else {
-    return [NETWORKS.BSC_TESTNET, NETWORKS.ETHEREUM_TESTNET];
-  }
+  return [NETWORKS.BSC_MAINNET, NETWORKS.ETHEREUM_MAINNET];
 }
 
 /**
- * Get available network keys
+ * Get available network keys (mainnet only)
  */
 export function getAvailableNetworkKeys(): NetworkKey[] {
-  const mode = getNetworkMode();
-  
-  if (mode === 'mainnet') {
-    return ['BSC_MAINNET', 'ETHEREUM_MAINNET'];
-  } else {
-    return ['BSC_TESTNET', 'ETHEREUM_TESTNET'];
-  }
+  return ['BSC_MAINNET', 'ETHEREUM_MAINNET'];
 }
 
 /**
@@ -142,32 +88,24 @@ export function getNetworkByMoralisChainId(moralisChainId: string): NetworkConfi
 }
 
 /**
- * Validate if network is available in current mode
+ * Validate if network is available (always true for mainnet keys)
  */
 export function isNetworkAvailable(networkKey: NetworkKey): boolean {
-  const availableKeys = getAvailableNetworkKeys();
-  return availableKeys.includes(networkKey);
+  return networkKey === 'BSC_MAINNET' || networkKey === 'ETHEREUM_MAINNET';
 }
 
 /**
- * Get default network for current mode
+ * Get default network (BSC Mainnet)
  */
 export function getDefaultNetwork(): NetworkConfig {
-  const mode = getNetworkMode();
-  
-  if (mode === 'mainnet') {
-    return NETWORKS.BSC_MAINNET;
-  } else {
-    return NETWORKS.BSC_TESTNET;
-  }
+  return NETWORKS.BSC_MAINNET;
 }
 
 /**
- * Get all Moralis chain IDs for current mode
+ * Get all Moralis chain IDs (mainnet only)
  */
 export function getAvailableMoralisChainIds(): string[] {
-  const networks = getAvailableNetworks();
-  return networks.map(network => network.moralisChainId);
+  return ['0x38', '0x1'];
 }
 
 /**
@@ -176,26 +114,10 @@ export function getAvailableMoralisChainIds(): string[] {
 export function formatNetworkName(networkKey: NetworkKey): string {
   const config = getNetworkConfig(networkKey);
   if (!config) return networkKey;
-  
-  const mode = getNetworkMode();
-  const icon = mode === 'mainnet' ? '🟢' : '🧪';
-  
-  return `${icon} ${config.name}`;
-}
-
-/**
- * Client-side hook to get network mode
- * (use in React components)
- */
-export function useNetworkMode(): NetworkMode {
-  if (typeof window !== 'undefined') {
-    return (process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet') as NetworkMode;
-  }
-  return 'testnet';
+  return `🟢 ${config.name}`;
 }
 
 // Export constants for easy access
-export const NETWORK_MODE = getNetworkMode();
 export const AVAILABLE_NETWORKS = getAvailableNetworks();
 export const AVAILABLE_NETWORK_KEYS = getAvailableNetworkKeys();
 export const DEFAULT_NETWORK = getDefaultNetwork();

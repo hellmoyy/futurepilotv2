@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 /**
- * Binance API client for validation and account operations
+ * Binance API client for validation and account operations (Mainnet only)
  */
 export class BinanceClient {
   private apiKey: string;
@@ -9,15 +9,11 @@ export class BinanceClient {
   private baseUrl: string;
   private futuresBaseUrl: string;
 
-  constructor(apiKey: string, apiSecret: string, testnet: boolean = false) {
+  constructor(apiKey: string, apiSecret: string) {
     this.apiKey = apiKey;
     this.apiSecret = apiSecret;
-    this.baseUrl = testnet 
-      ? 'https://testnet.binance.vision/api'
-      : 'https://api.binance.com/api';
-    this.futuresBaseUrl = testnet
-      ? 'https://testnet.binancefuture.com/fapi'
-      : 'https://fapi.binance.com/fapi';
+    this.baseUrl = 'https://api.binance.com/api';
+    this.futuresBaseUrl = 'https://fapi.binance.com/fapi';
   }
 
   /**
@@ -424,21 +420,19 @@ export class BinanceClient {
 }
 
 /**
- * Validate Binance API credentials
+ * Validate Binance API credentials (Mainnet only)
  * @param apiKey - Binance API key
  * @param apiSecret - Binance API secret
- * @param testnet - Whether to use testnet (default: false)
  * @returns Validation result
  */
 export async function validateBinanceCredentials(
   apiKey: string,
-  apiSecret: string,
-  testnet: boolean = false
+  apiSecret: string
 ): Promise<{
   valid: boolean;
   message: string;
   accountInfo?: any;
 }> {
-  const client = new BinanceClient(apiKey, apiSecret, testnet);
+  const client = new BinanceClient(apiKey, apiSecret);
   return await client.validateApiKey();
 }
