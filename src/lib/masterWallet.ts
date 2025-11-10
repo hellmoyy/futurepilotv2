@@ -1,5 +1,5 @@
 /**
- * Master Wallet Configuration
+ * Master Wallet Configuration (Mainnet Only)
  * This is the central wallet that will hold all user funds
  */
 
@@ -11,9 +11,8 @@ export const MASTER_WALLET_CONFIG = {
   PRIVATE_KEY: process.env.MASTER_WALLET_PRIVATE_KEY || '',
   ADDRESS: process.env.MASTER_WALLET_ADDRESS || '',
   
-  // Network configs
+  // Network configs (Mainnet only)
   NETWORKS: {
-    // Mainnet
     ETHEREUM_MAINNET: {
       name: 'Ethereum Mainnet',
       rpc: process.env.ETHEREUM_RPC_URL,
@@ -28,29 +27,12 @@ export const MASTER_WALLET_CONFIG = {
       gasLimit: 100000,
       explorer: 'https://bscscan.com',
     },
-    // Testnet
-    ETHEREUM_TESTNET: {
-      name: 'Ethereum Sepolia',
-      rpc: process.env.TESTNET_ETHEREUM_RPC_URL,
-      chainId: 11155111,
-      gasLimit: 100000,
-      explorer: 'https://sepolia.etherscan.io',
-    },
-    BSC_TESTNET: {
-      name: 'BSC Testnet',
-      rpc: process.env.TESTNET_BSC_RPC_URL,
-      chainId: 97,
-      gasLimit: 100000,
-      explorer: 'https://testnet.bscscan.com',
-    }
   },
   
-  // USDT Contracts
+  // USDT Contracts (Mainnet only)
   USDT_CONTRACTS: {
     ETHEREUM_MAINNET: process.env.USDT_ERC20_CONTRACT,
     BSC_MAINNET: process.env.USDT_BEP20_CONTRACT,
-    ETHEREUM_TESTNET: process.env.TESTNET_USDT_ERC20_CONTRACT,
-    BSC_TESTNET: process.env.TESTNET_USDT_BEP20_CONTRACT,
   },
   
   // Sweep thresholds
@@ -58,15 +40,9 @@ export const MASTER_WALLET_CONFIG = {
   MIN_BALANCE_KEEP: 0.001, // Keep 0.001 BNB/ETH for gas
 };
 
-// Get available networks based on NETWORK_MODE
+// Get available networks (always mainnet)
 export function getAvailableNetworks(): string[] {
-  const networkMode = process.env.NETWORK_MODE || 'mainnet';
-  
-  if (networkMode === 'mainnet') {
-    return ['ETHEREUM_MAINNET', 'BSC_MAINNET'];
-  } else {
-    return ['ETHEREUM_TESTNET', 'BSC_TESTNET'];
-  }
+  return ['ETHEREUM_MAINNET', 'BSC_MAINNET'];
 }
 
 // Get network config by key
