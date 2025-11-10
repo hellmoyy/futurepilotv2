@@ -7,11 +7,16 @@ export default function CustodialWalletPage() {
   const [sweepResults, setSweepResults] = useState<any>(null);
   const [masterWalletBalances, setMasterWalletBalances] = useState<any>(null);
   const [commissionWalletBalance, setCommissionWalletBalance] = useState<any>(null);
-  const [selectedNetwork, setSelectedNetwork] = useState<'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET'>('BSC_TESTNET');
+  
+  // ✅ Get default network from environment (mainnet vs testnet)
+  const defaultNetworkMode = (process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet') as 'testnet' | 'mainnet';
+  const defaultNetwork = defaultNetworkMode === 'mainnet' ? 'BSC_MAINNET' : 'BSC_TESTNET';
+  
+  const [selectedNetwork, setSelectedNetwork] = useState<'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET'>(defaultNetwork);
   const [minAmount, setMinAmount] = useState(10);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [commissionBalanceLoading, setCommissionBalanceLoading] = useState(false);
-  const [networkMode, setNetworkMode] = useState<'testnet' | 'mainnet'>('testnet');
+  const [networkMode, setNetworkMode] = useState<'testnet' | 'mainnet'>(defaultNetworkMode);
   const [tokenType, setTokenType] = useState<'USDT' | 'NATIVE' | 'CUSTOM'>('USDT');
   const [customTokenAddress, setCustomTokenAddress] = useState('');
   const [tokenDecimals, setTokenDecimals] = useState(18); // Default 18 for testnet USDT

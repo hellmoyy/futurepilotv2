@@ -70,8 +70,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    
+    // ✅ Get network mode from environment
+    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    
+    // ✅ Set default network based on mode
+    const defaultNetwork = networkMode === 'mainnet' ? 'BSC_MAINNET' : 'BSC_TESTNET';
+    
     const { 
-      network = 'BSC_TESTNET', 
+      network = defaultNetwork, 
       minAmount = 10,
       tokenType = 'USDT' as TokenType,
       customTokenAddress 
@@ -101,8 +108,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate network based on NETWORK_MODE
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    // Validate network based on NETWORK_MODE (networkMode already declared above)
     const availableNetworks = networkMode === 'mainnet' 
       ? ['BSC_MAINNET', 'ETHEREUM_MAINNET']
       : ['BSC_TESTNET', 'ETHEREUM_TESTNET'];
@@ -120,6 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔄 Starting wallet sweep...');
+    console.log('Network Mode:', networkMode);
     console.log('Network:', network);
     console.log('Network Mode:', networkMode);
     console.log('Token Type:', tokenType);
