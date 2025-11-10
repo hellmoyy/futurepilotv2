@@ -30,21 +30,61 @@ export function getCommissionWallet() {
   const networkMode = process.env.NETWORK_MODE || 'testnet';
   
   if (networkMode === 'mainnet') {
+    // Mainnet commission wallet
+    const address = process.env.COMMISSION_WALLET_ADDRESS;
+    const privateKey = process.env.COMMISSION_WALLET_PRIVATE_KEY;
+    const rpcUrl = process.env.ETHEREUM_RPC_URL;
+    const usdtContract = process.env.USDT_ERC20_CONTRACT;
+
+    // Validate all required variables
+    if (!address) {
+      throw new Error('❌ COMMISSION_WALLET_ADDRESS not set in environment variables (mainnet mode)');
+    }
+    if (!privateKey) {
+      throw new Error('❌ COMMISSION_WALLET_PRIVATE_KEY not set in environment variables (mainnet mode)');
+    }
+    if (!rpcUrl) {
+      throw new Error('❌ ETHEREUM_RPC_URL not set in environment variables (mainnet mode)');
+    }
+    if (!usdtContract) {
+      throw new Error('❌ USDT_ERC20_CONTRACT not set in environment variables (mainnet mode)');
+    }
+
     return {
-      address: process.env.COMMISSION_WALLET_ADDRESS!,
-      privateKey: process.env.COMMISSION_WALLET_PRIVATE_KEY!,
+      address,
+      privateKey,
       network: 'mainnet',
-      rpcUrl: process.env.ETHEREUM_RPC_URL!,
-      usdtContract: process.env.USDT_ERC20_CONTRACT!,
+      rpcUrl,
+      usdtContract,
       decimals: parseInt(process.env.USDT_ERC20_DECIMAL || '6'),
     };
   } else {
+    // Testnet commission wallet
+    const address = process.env.TESTNET_COMMISSION_WALLET_ADDRESS;
+    const privateKey = process.env.TESTNET_COMMISSION_WALLET_PRIVATE_KEY;
+    const rpcUrl = process.env.TESTNET_ETHEREUM_RPC_URL;
+    const usdtContract = process.env.TESTNET_USDT_ERC20_CONTRACT;
+
+    // Validate all required variables
+    if (!address) {
+      throw new Error('❌ TESTNET_COMMISSION_WALLET_ADDRESS not set in environment variables (testnet mode)');
+    }
+    if (!privateKey) {
+      throw new Error('❌ TESTNET_COMMISSION_WALLET_PRIVATE_KEY not set in environment variables (testnet mode)');
+    }
+    if (!rpcUrl) {
+      throw new Error('❌ TESTNET_ETHEREUM_RPC_URL not set in environment variables (testnet mode)');
+    }
+    if (!usdtContract) {
+      throw new Error('❌ TESTNET_USDT_ERC20_CONTRACT not set in environment variables (testnet mode)');
+    }
+
     return {
-      address: process.env.TESTNET_COMMISSION_WALLET_ADDRESS!,
-      privateKey: process.env.TESTNET_COMMISSION_WALLET_PRIVATE_KEY!,
+      address,
+      privateKey,
       network: 'testnet',
-      rpcUrl: process.env.TESTNET_ETHEREUM_RPC_URL!,
-      usdtContract: process.env.TESTNET_USDT_ERC20_CONTRACT!,
+      rpcUrl,
+      usdtContract,
       decimals: parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18'),
     };
   }

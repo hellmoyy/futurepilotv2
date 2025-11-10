@@ -41,21 +41,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch commission wallet balances (ETH and USDT)
-    const [usdtData, ethData] = await Promise.all([
-      getCommissionWalletBalance(),
-      getCommissionWalletEthBalance(),
-    ]);
+    // Check network mode for debugging
+    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    console.log(`🔍 Commission Wallet - Network Mode: ${networkMode}`);
 
-    return NextResponse.json({
-      success: true,
-      address: usdtData.address,
-      network: usdtData.network,
-      ethBalance: ethData.balance.toFixed(6), // ETH balance (for gas)
-      usdtBalance: usdtData.balance.toFixed(2), // USDT balance
-      rawEthBalance: ethData.balanceWei.toString(),
-      rawUsdtBalance: usdtData.balanceWei.toString(),
-    });
+    // Fetch commission wallet balances (ETH and USDT)
+    try {
+      const [usdtData, ethData] = await Promise.all([
+        getCommissionWalletBalance(),
+        getCommissionWalletEthBalance(),
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        address: usdtData.address,
+        network: usdtData.network,
+        ethBalance: ethData.balance.toFixed(6), // ETH balance (for gas)
+        usdtBalance: usdtData.balance.toFixed(2), // USDT balance
+        rawEthBalance: ethData.balanceWei.toString(),
+        rawUsdtBalance: usdtData.balanceWei.toString(),
+      });
+    } catch (walletError: any) {
+      // More detailed error for configuration issues
+      console.error('❌ Commission wallet configuration error:', walletError.message);
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: walletError.message || 'Commission wallet not configured',
+          networkMode: networkMode,
+          hint: networkMode === 'mainnet' 
+            ? 'Set COMMISSION_WALLET_ADDRESS and COMMISSION_WALLET_PRIVATE_KEY in Railway'
+            : 'Set TESTNET_COMMISSION_WALLET_ADDRESS and TESTNET_COMMISSION_WALLET_PRIVATE_KEY in Railway'
+        },
+        { status: 500 }
+      );
+    }
 
   } catch (error: any) {
     console.error('Error fetching commission wallet balance:', error);
