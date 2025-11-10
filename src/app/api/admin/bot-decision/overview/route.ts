@@ -8,6 +8,8 @@ import NewsEvent from '@/models/NewsEvent';
 import LearningPattern from '@/models/LearningPattern';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/bot-decision/overview
  * 

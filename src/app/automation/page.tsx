@@ -63,8 +63,8 @@ export default function AutomationPage() {
     { id: 1, time: new Date().toLocaleTimeString('en-US', { hour12: false }), type: 'info', message: '🔄 System ready. Start bot to begin trading...', color: 'text-gray-400' },
   ]);
 
-  // Add log helper function
-  const addLog = (type: 'signal' | 'open' | 'close' | 'profit' | 'loss' | 'info', message: string, color: string) => {
+  // Add log helper function - wrapped in useCallback to prevent re-creation
+  const addLog = useCallback((type: 'signal' | 'open' | 'close' | 'profit' | 'loss' | 'info', message: string, color: string) => {
     const now = new Date();
     const time = now.toLocaleTimeString('en-US', { hour12: false });
     
@@ -78,7 +78,7 @@ export default function AutomationPage() {
       };
       return [newLog, ...prev].slice(0, 50); // Keep last 50 logs
     });
-  };
+  }, []);
 
   // Load Lottie animation
   useEffect(() => {
@@ -485,6 +485,7 @@ export default function AutomationPage() {
         addLog('info', '⏸️ Bot stopped. Ready to restart...', 'text-yellow-400');
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [botInstance?._id, botInstance?.currentPosition]); // Only re-run when bot ID or position changes
   
   // Monitor bot health - Auto-stop if conditions not met
@@ -986,7 +987,7 @@ export default function AutomationPage() {
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-green-400">Ready to Trade</p>
                             <p className="text-xs text-green-300/80 mt-1">
-                              ✅ Exchange connected | ✅ Balance: ${userBalance.toFixed(2)} | Click "Start Bot" to begin!
+                              ✅ Exchange connected | ✅ Balance: ${userBalance.toFixed(2)} | Click &quot;Start Bot&quot; to begin!
                             </p>
                           </div>
                         </div>

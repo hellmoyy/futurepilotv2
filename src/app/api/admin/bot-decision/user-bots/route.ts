@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import dbConnect from '@/lib/mongodb';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 import { BotInstance } from '@/models/BotInstance'; // Use BotInstance instead of UserBot

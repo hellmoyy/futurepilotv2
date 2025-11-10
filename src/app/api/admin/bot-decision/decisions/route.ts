@@ -4,6 +4,8 @@ import { verifyAdminAuth } from '@/lib/adminAuth';
 import AIDecision from '@/models/AIDecision';
 import { User } from '@/models/User';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/bot-decision/decisions
  * 
