@@ -364,5 +364,5 @@ Result: TP hit → $200 profit
 ---
 
 **Generated:** November 10, 2025  
-**Data Source:** Binance Testnet Futures API  
+**Data Source:** Binance mainnet Futures API  
 **Analysis Method:** Triple Timeframe Confirmation (1m, 3m, 5m)

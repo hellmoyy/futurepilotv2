@@ -38,7 +38,7 @@ npm install moralis
 ### 4. **Network Detection Fixed** ✅
 **File:** `/src/app/topup/page.tsx`
 
-- Shows "Mainnet" (hijau) atau "Testnet" (kuning)
+- Shows "Mainnet" (hijau) 
 - Auto-detect dari RPC URLs
 - USDT logo ditambahkan di center QR code
 

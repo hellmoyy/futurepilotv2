@@ -1,6 +1,15 @@
 # 🚀 MAINNET MIGRATION GUIDE
 
-Guide lengkap untuk migrasi FuturePilot dari Testnet ke Mainnet.
+## ⚠️ MIGRATION COMPLETED - FOR REFERENCE ONLY
+
+**This guide is for HISTORICAL REFERENCE only.** FuturePilot platform has completed migration and now operates **MAINNET ONLY**.
+
+Migration completed on: November 2025
+Current status: ✅ Production Mainnet
+
+---
+
+## ARCHIVE: Guide lengkap untuk migrasi FuturePilot dari Testnet ke Mainnet
 
 **Status:** ✅ Environment variables sudah di-set ke mainnet
 **Network Mode:** `NETWORK_MODE=mainnet`

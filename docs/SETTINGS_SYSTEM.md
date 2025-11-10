@@ -78,7 +78,6 @@ src/
 - API key management
 - Balance display
 - Test connection
-- Testnet support
 - Spot & Futures permissions
 
 **Old URL:** `/settings` (renamed)

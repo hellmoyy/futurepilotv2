@@ -478,6 +478,11 @@ describe('Trading Commission System', () => {
 2. **Build Admin Dashboard:**
    - Page: `/administrator/trading-commissions`
    - Show: Total revenue, commission by user, date range filter
+
+3. **Production Testing:**
+   - Test with real Binance mainnet (paper trading first)
+   - Monitor commission deductions
+   - Verify auto-close behavior
    - Export: CSV/PDF reports
 
 3. **Build User Dashboard:**

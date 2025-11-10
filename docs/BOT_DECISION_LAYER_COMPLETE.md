@@ -572,7 +572,7 @@ MONGODB_URI=mongodb://...
 DEEPSEEK_API_KEY=sk-...
 NEXT_PUBLIC_APP_URL=https://...
 
-# Trading
+# Trading (Mainnet Only)
 NETWORK_MODE=mainnet
 BINANCE_TESTNET=false
 
@@ -674,7 +674,7 @@ const PRODUCTION_SETTINGS = {
    - Connect Signal Generator with AI Decision Engine
    - Implement `beforeTrade()` hook
    - Add `shouldAutoClose()` monitoring
-   - Test with Binance Testnet
+   - Test with real Binance mainnet (paper trading)
 
 2. **UI Enhancements**
    - Add real-time signal feed
@@ -766,7 +766,7 @@ const PRODUCTION_SETTINGS = {
 
 **The system is ready for:**
 - ✅ Integration with Signal Generator
-- ✅ Binance Testnet trading
+- ✅ Binance Mainnet trading (production ready)
 - ✅ Production deployment (after testing)
 - ✅ User onboarding
 - ✅ Performance monitoring

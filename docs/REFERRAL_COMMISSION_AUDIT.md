@@ -391,7 +391,7 @@ Return success response
 1. Review dan approve solusi ini
 2. Implementasi code changes
 3. Create test cases
-4. Deploy ke testnet
+4. Deploy ke mainnet
 5. Monitor dan fix bugs
 6. Deploy ke mainnet
 

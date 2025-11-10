@@ -171,17 +171,13 @@ const tx = await contract.connect(userWallet).transfer(
 MASTER_WALLET_ADDRESS=0x...
 MASTER_WALLET_PRIVATE_KEY=0x...
 
-# Network Mode
-NETWORK_MODE=testnet
-NEXT_PUBLIC_NETWORK_MODE=testnet
+# Network Mode (Mainnet Only)
+NETWORK_MODE=mainnet
+NEXT_PUBLIC_NETWORK_MODE=mainnet
 
 # USDT Contracts (Mainnet)
 USDT_BEP20_CONTRACT=0x55d398326f99059fF775485246999027B3197955
 USDT_ERC20_CONTRACT=0xdAC17F958D2ee523a2206206994597C13D831ec7
-
-# USDT Contracts (Testnet)
-TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
-TESTNET_USDT_ERC20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498
 
 # RPC URLs (Mainnet)
 BSC_RPC_URL=https://bsc-dataseed1.binance.org
@@ -200,8 +196,7 @@ ENCRYPTION_SECRET_KEY=your-secret-key
 
 ### 2. Network Mode Validation
 - NETWORK_MODE env variable controls available networks
-- Testnet mode: Only BSC_TESTNET and ETHEREUM_TESTNET
-- Mainnet mode: Only BSC_MAINNET and ETHEREUM_MAINNET
+- Mainnet mode only: BSC_MAINNET and ETHEREUM_MAINNET
 
 ### 3. Custom Token Validation
 - Validates Ethereum address format
@@ -266,11 +261,11 @@ ENCRYPTION_SECRET_KEY=your-secret-key
 
 ## Example Scenarios
 
-### Scenario 1: USDT Sweep (Testnet)
+### Scenario 1: USDT Sweep (Mainnet)
 ```typescript
 Request:
 {
-  network: 'BSC_TESTNET',
+  network: 'BSC_MAINNET',
   minAmount: 10,
   tokenType: 'USDT'
 }
@@ -286,7 +281,7 @@ Response:
     tokenType: 'USDT',
     tokenSymbol: 'USDT',
     masterWallet: '0xdCdE1CCE20E4E7b10921e3b7C54ea4291bB1F7A1',
-    network: 'BSC_TESTNET'
+    network: 'BSC_MAINNET'
   }
 }
 ```
@@ -295,7 +290,7 @@ Response:
 ```typescript
 Request:
 {
-  network: 'BSC_TESTNET',
+  network: 'BSC_MAINNET',
   minAmount: 0.01,
   tokenType: 'NATIVE'
 }
@@ -311,7 +306,7 @@ Response:
     tokenType: 'NATIVE',
     tokenSymbol: 'BNB',
     masterWallet: '0xdCdE1CCE20E4E7b10921e3b7C54ea4291bB1F7A1',
-    network: 'BSC_TESTNET'
+    network: 'BSC_MAINNET'
   }
 }
 ```
@@ -320,7 +315,7 @@ Response:
 ```typescript
 Request:
 {
-  network: 'ETHEREUM_TESTNET',
+  network: 'ETHEREUM_MAINNET',
   minAmount: 100,
   tokenType: 'CUSTOM',
   customTokenAddress: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'  // UNI token
@@ -337,7 +332,7 @@ Response:
     tokenType: 'CUSTOM',
     tokenSymbol: 'UNI',
     masterWallet: '0xdCdE1CCE20E4E7b10921e3b7C54ea4291bB1F7A1',
-    network: 'ETHEREUM_TESTNET'
+    network: 'ETHEREUM_MAINNET'
   }
 }
 ```
@@ -366,7 +361,7 @@ Response:
 
 4. **Network Mismatch**
    ```
-   Error: Invalid network for testnet mode
+   Error: Invalid network for mode
    Solution: Check NETWORK_MODE env variable
    ```
 
@@ -381,11 +376,11 @@ Response:
 
 ### Test USDT Sweep
 ```bash
-# Testnet BSC USDT
+# Mainnet BSC USDT
 curl -X POST http://localhost:3000/api/admin/sweep-wallets \
   -H "Content-Type: application/json" \
   -d '{
-    "network": "BSC_TESTNET",
+    "network": "BSC_MAINNET",
     "minAmount": 10,
     "tokenType": "USDT"
   }'
@@ -393,11 +388,11 @@ curl -X POST http://localhost:3000/api/admin/sweep-wallets \
 
 ### Test Native Sweep
 ```bash
-# Testnet BSC BNB
+# Mainnet BSC BNB
 curl -X POST http://localhost:3000/api/admin/sweep-wallets \
   -H "Content-Type: application/json" \
   -d '{
-    "network": "BSC_TESTNET",
+    "network": "BSC_MAINNET",
     "minAmount": 0.01,
     "tokenType": "NATIVE"
   }'
@@ -467,7 +462,7 @@ const gasReserve = ethers.parseEther('0.0005'); // Changed from 0.001
 
 ---
 
-**Last Updated:** December 2024  
+**Last Updated:** November 2025  
 **Status:** ✅ Production Ready  
-**Network Support:** 4 networks (BSC/ETH, Testnet/Mainnet)  
+**Network Support:** 2 networks (BSC Mainnet, Ethereum Mainnet)  
 **Token Support:** 3 types (USDT, Native, Custom)

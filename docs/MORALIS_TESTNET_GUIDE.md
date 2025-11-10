@@ -1,6 +1,14 @@
 # 🧪 Testing Moralis Integration - BSC Testnet
 
-## ✅ Setup Complete!
+## ⚠️ DEPRECATED - MAINNET ONLY
+
+**This guide is DEPRECATED.** FuturePilot platform now operates **MAINNET ONLY**.
+
+For historical reference and development purposes only. Do not use for production.
+
+---
+
+## ✅ Setup Complete! (Testnet - Deprecated)
 
 Stream ID: `100e00c2-1091-4787-9725-943dd7694d2b`
 Network: BSC Testnet (Chain ID: 0x61)

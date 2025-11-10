@@ -238,7 +238,7 @@ DEEPSEEK_API_KEY=sk-...
 CRYPTONEWS_API_KEY=lmrk...
 
 # Network
-NETWORK_MODE=testnet
+NETWORK_MODE=mainnet
 ```
 
 ### Dev Server Configuration
