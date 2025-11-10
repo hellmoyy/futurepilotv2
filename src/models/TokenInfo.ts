@@ -18,7 +18,7 @@ const TokenInfoSchema = new Schema<ITokenInfo>(
     network: {
       type: String,
       required: true,
-      enum: ['BSC_TESTNET', 'ETHEREUM_TESTNET', 'BSC_MAINNET', 'ETHEREUM_MAINNET'],
+      enum: ['BSC_MAINNET', 'ETHEREUM_MAINNET'],
     },
     tokenAddress: {
       type: String,

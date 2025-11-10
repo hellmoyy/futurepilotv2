@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { exchange, apiKey, apiSecret, nickname, testnet, permissions } = body;
+    const { exchange, apiKey, apiSecret, nickname, permissions } = body;
 
     // Validation
     if (!exchange || !apiKey || !apiSecret) {
@@ -81,11 +81,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if connection already exists
+    // ✅ MAINNET ONLY - Check if connection already exists
     const existingConnection = await ExchangeConnection.findOne({
       userId: user._id,
       exchange,
-      testnet: testnet || false,
     });
 
     if (existingConnection) {
@@ -95,14 +94,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate Binance API credentials before saving
+    // ✅ MAINNET ONLY - Validate Binance API credentials before saving
     if (exchange === 'binance') {
       console.log('🔍 Validating Binance API credentials...');
       
       const validation = await validateBinanceCredentials(
         apiKey,
         apiSecret,
-        testnet || false
+        false // Mainnet only
       );
 
       if (!validation.valid) {
@@ -131,7 +130,6 @@ export async function POST(request: NextRequest) {
       apiKey, // Will be encrypted by pre-save middleware
       apiSecret, // Will be encrypted by pre-save middleware
       nickname: nickname || `${exchange} Account`,
-      testnet: testnet || false,
       permissions: permissions || { spot: false, futures: false, margin: false },
       isActive: true,
       lastConnected: new Date(), // Set initial connection time
@@ -145,7 +143,6 @@ export async function POST(request: NextRequest) {
       exchange: connection.exchange,
       nickname: connection.nickname,
       isActive: connection.isActive,
-      testnet: connection.testnet,
       permissions: connection.permissions,
       createdAt: connection.createdAt,
     };
@@ -227,7 +224,6 @@ export async function PUT(request: NextRequest) {
       exchange: connection.exchange,
       nickname: connection.nickname,
       isActive: connection.isActive,
-      testnet: connection.testnet,
       permissions: connection.permissions,
       lastConnected: connection.lastConnected,
       updatedAt: connection.updatedAt,

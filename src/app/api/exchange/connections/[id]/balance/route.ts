@@ -54,8 +54,8 @@ export async function GET(
       );
     }
 
-    // Get balances from Binance
-    const binanceClient = new BinanceClient(decryptedApiKey, decryptedApiSecret, connection.testnet);
+    // Get balances from Binance (mainnet only)
+    const binanceClient = new BinanceClient(decryptedApiKey, decryptedApiSecret, false);
     
     let spotBalance = 0;
     let futuresBalance = 0;

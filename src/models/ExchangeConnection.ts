@@ -8,7 +8,6 @@ export interface IExchangeConnection extends Document {
   apiSecret: string;
   nickname?: string;
   isActive: boolean;
-  testnet: boolean;
   permissions?: {
     spot?: boolean;
     futures?: boolean;
@@ -54,10 +53,6 @@ const ExchangeConnectionSchema = new Schema<IExchangeConnection>(
     isActive: {
       type: Boolean,
       default: true,
-    },
-    testnet: {
-      type: Boolean,
-      default: false,
     },
     permissions: {
       spot: {
