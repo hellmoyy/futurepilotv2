@@ -5,7 +5,7 @@ import { Transaction } from '@/models/Transaction';
 import { ethers } from 'ethers';
 
 // ✅ Get network mode and USDT contracts from environment
-const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
+const NETWORK_MODE = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
 const USDT_CONTRACTS = {
   ERC20: NETWORK_MODE === 'mainnet' 
     ? (process.env.USDT_ERC20_CONTRACT || '0xdAC17F958D2ee523a2206206994597C13D831ec7')

@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // ✅ Get network mode from environment
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    // ✅ Get network mode from environment (default to mainnet for production)
+    const networkMode = process.env.NETWORK_MODE || 'mainnet';
     
     // ✅ Set default network based on mode
     const defaultNetwork = networkMode === 'mainnet' ? 'BSC_MAINNET' : 'BSC_TESTNET';

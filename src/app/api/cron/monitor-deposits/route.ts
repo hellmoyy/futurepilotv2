@@ -12,7 +12,7 @@ const USDT_ABI = [
 ];
 
 // Network configurations
-const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
+const NETWORK_MODE = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
 
 const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
   ethereum: {

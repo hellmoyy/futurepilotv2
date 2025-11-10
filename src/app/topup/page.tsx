@@ -62,7 +62,7 @@ export default function TopUpPage() {
   const [showNewDepositNotification, setShowNewDepositNotification] = useState(false);
   
   // Detect network type from NETWORK_MODE env variable
-  const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
+  const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet'; // Default to mainnet for production
   const isMainnet = networkMode === 'mainnet';
   
   // Get minimum deposit based on network mode

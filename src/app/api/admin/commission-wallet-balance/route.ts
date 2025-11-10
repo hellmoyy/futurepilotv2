@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check network mode for debugging
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
     console.log(`🔍 Commission Wallet - Network Mode: ${networkMode}`);
 
     // Fetch commission wallet balances (ETH and USDT)

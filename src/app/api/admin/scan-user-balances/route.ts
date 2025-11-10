@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get request body
     const body = await request.json();
     const { networkMode } = body;
-    const mode = networkMode || process.env.NETWORK_MODE || 'testnet';
+    const mode = networkMode || process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
 
     // Connect to database
     await connectDB();

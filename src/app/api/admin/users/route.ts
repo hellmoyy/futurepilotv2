@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get network mode
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
 
     // Fetch all users
     const users = await User.find({})

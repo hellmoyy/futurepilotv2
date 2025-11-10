@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDB();
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
     
     // Get all users
     const allUsers = await User.find({}).lean();

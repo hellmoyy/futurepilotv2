@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Get network mode
-    const networkMode = process.env.NETWORK_MODE || 'testnet';
+    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
     
     // Get master wallet address
     const masterWalletAddress = process.env.MASTER_WALLET_ADDRESS;

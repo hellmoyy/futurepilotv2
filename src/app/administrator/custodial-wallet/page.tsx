@@ -46,16 +46,12 @@ export default function CustodialWalletPage() {
 
   const getExplorerUrl = (network: string) => {
     switch (network) {
-      case 'BSC_TESTNET':
-        return 'https://testnet.bscscan.com';
       case 'BSC_MAINNET':
         return 'https://bscscan.com';
-      case 'ETHEREUM_TESTNET':
-        return 'https://sepolia.etherscan.io';
       case 'ETHEREUM_MAINNET':
         return 'https://etherscan.io';
       default:
-        return 'https://testnet.bscscan.com';
+        return 'https://bscscan.com'; // Default to BSC mainnet
     }
   };
 

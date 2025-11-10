@@ -17,7 +17,7 @@ const USDT_ABI = [
 // ✅ NOTE: Now using centralized rate limiter from @/lib/rateLimit
 // Old local implementation removed to avoid duplication
 
-const NETWORK_MODE = process.env.NETWORK_MODE || 'testnet';
+const NETWORK_MODE = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
 
 const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
   bsc: {
