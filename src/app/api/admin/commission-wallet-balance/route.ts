@@ -41,11 +41,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check network mode for debugging
-    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
-    console.log(`🔍 Commission Wallet - Network Mode: ${networkMode}`);
-
-    // Fetch commission wallet balances (ETH and USDT)
+    // ✅ MAINNET ONLY - Fetch commission wallet balances (ETH and USDT)
     try {
       const [usdtData, ethData] = await Promise.all([
         getCommissionWalletBalance(),
@@ -69,10 +65,7 @@ export async function GET(request: NextRequest) {
         { 
           success: false, 
           error: walletError.message || 'Commission wallet not configured',
-          networkMode: networkMode,
-          hint: networkMode === 'mainnet' 
-            ? 'Set COMMISSION_WALLET_ADDRESS and COMMISSION_WALLET_PRIVATE_KEY in Railway'
-            : 'Set TESTNET_COMMISSION_WALLET_ADDRESS and TESTNET_COMMISSION_WALLET_PRIVATE_KEY in Railway'
+          hint: 'Set COMMISSION_WALLET_ADDRESS and COMMISSION_WALLET_PRIVATE_KEY in Railway'
         },
         { status: 500 }
       );

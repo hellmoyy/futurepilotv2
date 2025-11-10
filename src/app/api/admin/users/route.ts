@@ -25,10 +25,7 @@ export async function GET(request: NextRequest) {
     // Connect to database
     await connectDB();
 
-    // Get network mode
-    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
-
-    // Fetch all users
+    // ✅ MAINNET ONLY - Fetch all users
     const users = await User.find({})
       .select('-password -verificationToken -binanceApiKey -binanceApiSecret -twoFactorSecret')
       .sort({ createdAt: -1 })
@@ -40,12 +37,10 @@ export async function GET(request: NextRequest) {
       bannedAt: users[0]?.bannedAt,
     }); // Debug log
 
-    // Add network-aware balance field
+    // ✅ MAINNET ONLY - Add mainnet balance field
     const usersWithBalance = users.map((user: any) => ({
       ...user,
-      balance: networkMode === 'mainnet' 
-        ? (user.walletData?.mainnetBalance || 0)
-        : (user.walletData?.balance || 0)
+      balance: user.walletData?.mainnetBalance || 0
     }));
 
     console.log('Sample user after mapping:', {

@@ -36,8 +36,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    // Get network mode
-    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
+    // ✅ MAINNET ONLY - Statistics
 
     // 1. Total Users
     const totalUsers = await User.countDocuments();
@@ -71,14 +70,13 @@ export async function GET(request: NextRequest) {
     ]);
     const totalDepositAmount = depositAggregate.length > 0 ? depositAggregate[0].totalAmount : 0;
 
-    // 6. Total balance in system (network-aware)
-    const balanceField = networkMode === 'mainnet' ? 'walletData.mainnetBalance' : 'walletData.balance';
+    // 6. Total balance in system (mainnet only)
     const balanceAggregate = await User.aggregate([
       {
         $group: {
           _id: null,
           totalBalance: { 
-            $sum: networkMode === 'mainnet' ? '$walletData.mainnetBalance' : '$walletData.balance'
+            $sum: '$walletData.mainnetBalance'
           }
         }
       }
@@ -156,7 +154,6 @@ export async function GET(request: NextRequest) {
         totalWithdrawals: totalWithdrawals.toFixed(2),
         withdrawalCount,
         newUsersToday,
-        networkMode,
       },
       membershipBreakdown,
       recentTransactions: recentTransactions.map(tx => ({

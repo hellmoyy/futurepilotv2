@@ -7,9 +7,8 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDB();
-    const networkMode = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
     
-    // Get all users
+    // ✅ MAINNET ONLY - Get all users
     const allUsers = await User.find({}).lean();
     
     const usersWithBalance = allUsers.filter((u: any) => 
@@ -27,7 +26,7 @@ export async function GET() {
         $group: {
           _id: null,
           totalBalance: { 
-            $sum: networkMode === 'mainnet' ? '$walletData.mainnetBalance' : '$walletData.balance'
+            $sum: '$walletData.mainnetBalance'
           },
           count: { $sum: 1 }
         }
@@ -35,7 +34,6 @@ export async function GET() {
     ]);
     
     return NextResponse.json({
-      networkMode,
       totalUsers: allUsers.length,
       usersWithBalance,
       aggregationResult: balanceAggregate,
