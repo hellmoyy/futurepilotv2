@@ -94,7 +94,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ CRITICAL: Rate limiting to prevent abuse
+    await connectDB();
+
+    // ✅ IMPORTANT: Check if user already has wallet BEFORE rate limiting
+    // This prevents rate limit errors for users who already have wallets
+    const user = await User.findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // If wallet already exists, return it immediately (no rate limit needed)
+    if (user.walletData?.erc20Address) {
+      return NextResponse.json({
+        erc20Address: user.walletData.erc20Address,
+        bep20Address: user.walletData.bep20Address,
+        balance: user.walletData.balance || 0
+      });
+    }
+
+    // ✅ Only apply rate limit for NEW wallet generation
+    // Relaxed limits for better UX (user might accidentally double-click)
     const rateLimiter = (await import('@/lib/rateLimit')).default;
     const { RateLimitConfigs } = await import('@/lib/rateLimit');
     const rateLimitResult = rateLimiter.check(
@@ -109,32 +131,12 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json(
         { 
-          error: `Rate limit exceeded. Please wait ${waitTime} seconds before generating a wallet again.`,
+          error: `Rate limit exceeded. Please wait ${waitTime} seconds before trying again.`,
           retryAfter: waitTime,
           rateLimitExceeded: true
         },
         { status: 429 }
       );
-    }
-
-    await connectDB();
-
-    // Check if user already has wallet
-    const user = await User.findOne({ email: session.user.email });
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if wallet already exists
-    if (user.walletData?.erc20Address) {
-      return NextResponse.json({
-        erc20Address: user.walletData.erc20Address,
-        bep20Address: user.walletData.bep20Address,
-        balance: user.walletData.balance || 0
-      });
     }
 
     // Generate new wallet

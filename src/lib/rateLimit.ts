@@ -189,11 +189,11 @@ export const RateLimitConfigs = {
     windowMs: 15 * 60 * 1000, // 15 minutes
     blockDurationMs: 5 * 60 * 1000, // 5 minutes
   },
-  // ✅ WALLET ENDPOINTS: Strict limits
+  // ✅ WALLET ENDPOINTS: Balanced limits for UX
   WALLET_GENERATE: {
-    maxAttempts: 3,
-    windowMs: 60 * 1000, // 1 minute
-    blockDurationMs: 5 * 60 * 1000, // 5 minutes
+    maxAttempts: 5, // Allow 5 attempts (in case of double-click or retry)
+    windowMs: 2 * 60 * 1000, // 2 minutes (more relaxed)
+    blockDurationMs: 3 * 60 * 1000, // 3 minutes block
   },
   WALLET_GET: {
     maxAttempts: 60,
