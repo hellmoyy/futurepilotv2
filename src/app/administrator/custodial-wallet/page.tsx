@@ -8,18 +8,14 @@ export default function CustodialWalletPage() {
   const [masterWalletBalances, setMasterWalletBalances] = useState<any>(null);
   const [commissionWalletBalance, setCommissionWalletBalance] = useState<any>(null);
   
-  // ✅ Get default network from environment (mainnet vs testnet)
-  const defaultNetworkMode = (process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet') as 'testnet' | 'mainnet';
-  const defaultNetwork = defaultNetworkMode === 'mainnet' ? 'BSC_MAINNET' : 'BSC_TESTNET';
-  
-  const [selectedNetwork, setSelectedNetwork] = useState<'BSC_TESTNET' | 'ETHEREUM_TESTNET' | 'BSC_MAINNET' | 'ETHEREUM_MAINNET'>(defaultNetwork);
+  // ✅ MAINNET ONLY - No more testnet switching
+  const [selectedNetwork, setSelectedNetwork] = useState<'BSC_MAINNET' | 'ETHEREUM_MAINNET'>('BSC_MAINNET');
   const [minAmount, setMinAmount] = useState(10);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [commissionBalanceLoading, setCommissionBalanceLoading] = useState(false);
-  const [networkMode, setNetworkMode] = useState<'testnet' | 'mainnet'>(defaultNetworkMode);
   const [tokenType, setTokenType] = useState<'USDT' | 'NATIVE' | 'CUSTOM'>('USDT');
   const [customTokenAddress, setCustomTokenAddress] = useState('');
-  const [tokenDecimals, setTokenDecimals] = useState(18); // Default 18 for testnet USDT
+  const [tokenDecimals, setTokenDecimals] = useState(18); // Default 18 for BEP20, will be 6 for ERC20
   const [tokenSymbol, setTokenSymbol] = useState('USDT');
   const [tokenName, setTokenName] = useState('Tether USD');
   const [tokenInfoLoading, setTokenInfoLoading] = useState(false);
@@ -32,19 +28,8 @@ export default function CustodialWalletPage() {
   const [failedTxPage, setFailedTxPage] = useState(1);
   const failedTxPerPage = 10;
 
-  // Auto-fetch balance and network mode on mount
+  // Auto-fetch balance on mount
   useEffect(() => {
-    // Get network mode from env (via API or client-side check)
-    const mode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'testnet';
-    setNetworkMode(mode as 'testnet' | 'mainnet');
-    
-    // Set default network based on mode
-    if (mode === 'mainnet') {
-      setSelectedNetwork('BSC_MAINNET');
-    } else {
-      setSelectedNetwork('BSC_TESTNET');
-    }
-    
     fetchMasterWalletBalance();
     fetchCommissionWalletBalance();
   }, []);
@@ -174,17 +159,9 @@ export default function CustodialWalletPage() {
         console.log('✅ Token info loaded:', data);
       } else {
         console.error('Failed to fetch token info:', data.error);
-        // Set defaults on error based on network
+        // Set defaults on error based on network (mainnet only)
         if (tokenType === 'USDT') {
-          // Use correct decimals based on network
-          let defaultDecimals = 6;
-          if (selectedNetwork === 'BSC_TESTNET' || selectedNetwork === 'ETHEREUM_TESTNET') {
-            defaultDecimals = 18; // Testnet USDT uses 18 decimals
-          } else if (selectedNetwork === 'BSC_MAINNET') {
-            defaultDecimals = 18; // BSC mainnet USDT uses 18 decimals
-          } else if (selectedNetwork === 'ETHEREUM_MAINNET') {
-            defaultDecimals = 6; // Ethereum mainnet USDT uses 6 decimals
-          }
+          const defaultDecimals = selectedNetwork === 'BSC_MAINNET' ? 18 : 6; // BSC: 18, ETH: 6
           setTokenDecimals(defaultDecimals);
           setTokenSymbol('USDT');
           setTokenName('Tether USD');
@@ -212,7 +189,7 @@ export default function CustodialWalletPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          networkMode: networkMode,
+          networkMode: 'mainnet', // Always mainnet
         }),
       });
 
@@ -378,12 +355,8 @@ export default function CustodialWalletPage() {
               </svg>
               <span>{commissionBalanceLoading ? 'Loading...' : 'Refresh Balance'}</span>
             </button>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              networkMode === 'mainnet' 
-                ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
-                : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
-            }`}>
-              {networkMode === 'mainnet' ? '🟢 MAINNET' : '🟡 TESTNET'}
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/50">
+              🟢 MAINNET
             </span>
           </div>
         </div>
@@ -395,10 +368,7 @@ export default function CustodialWalletPage() {
               <p className="text-gray-400 text-xs mb-2 font-semibold uppercase tracking-wide">Wallet Address</p>
               <div className="flex items-center space-x-2">
                 <p className="text-white font-mono text-xs break-all">
-                  {networkMode === 'mainnet' 
-                    ? (process.env.NEXT_PUBLIC_COMMISSION_WALLET_ADDRESS || 'Not configured')
-                    : (process.env.NEXT_PUBLIC_COMMISSION_WALLET_ADDRESS || 'Not configured')
-                  }
+                  {process.env.NEXT_PUBLIC_COMMISSION_WALLET_ADDRESS || 'Not configured'}
                 </p>
                 <button
                   onClick={() => {
@@ -526,10 +496,10 @@ export default function CustodialWalletPage() {
             <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700">
               <p className="text-gray-400 text-xs">
                 <span className="font-semibold">Network Mode:</span>{' '}
-                <span className={`font-bold ${networkMode === 'mainnet' ? 'text-green-400' : 'text-yellow-400'}`}>
-                  {networkMode === 'mainnet' ? '🟢 MAINNET' : '🟡 TESTNET'}
+                <span className="font-bold text-green-400">
+                  🟢 MAINNET
                 </span>
-                {' '}- Scanning {networkMode === 'mainnet' ? 'Ethereum & BSC Mainnet' : 'Sepolia & BSC Testnet'}
+                {' '}- Scanning Ethereum & BSC Mainnet
               </p>
             </div>
 
@@ -566,7 +536,7 @@ export default function CustodialWalletPage() {
           <div className="bg-gray-800/30 rounded-lg p-8 border border-gray-700 text-center">
             <p className="text-gray-400">Click &ldquo;Scan All Users&rdquo; to fetch real-time USDT balances from blockchain</p>
             <p className="text-gray-500 text-sm mt-2">
-              This will scan all user wallets on {networkMode === 'mainnet' ? 'Ethereum & BSC Mainnet' : 'Sepolia & BSC Testnet'}
+              This will scan all user wallets on Ethereum & BSC Mainnet
             </p>
           </div>
         )}
@@ -588,20 +558,11 @@ export default function CustodialWalletPage() {
               }}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
             >
-              {networkMode === 'testnet' ? (
-                <>
-                  <option value="BSC_TESTNET">🧪 BSC Testnet</option>
-                  <option value="ETHEREUM_TESTNET">🧪 Ethereum Sepolia Testnet</option>
-                </>
-              ) : (
-                <>
-                  <option value="BSC_MAINNET">🟢 BSC Mainnet</option>
-                  <option value="ETHEREUM_MAINNET">🔷 Ethereum Mainnet</option>
-                </>
-              )}
+              <option value="BSC_MAINNET">🟢 BSC Mainnet</option>
+              <option value="ETHEREUM_MAINNET">🔷 Ethereum Mainnet</option>
             </select>
             <p className="text-gray-500 text-xs mt-1">
-              Current mode: <span className="text-purple-400 font-semibold">{networkMode.toUpperCase()}</span>
+              Current mode: <span className="text-green-400 font-semibold">MAINNET</span>
             </p>
           </div>
 
