@@ -24,11 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get request body
-    const body = await request.json();
-    const { networkMode } = body;
-    const mode = networkMode || process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
-
+    // ✅ MAINNET ONLY - No network mode selection needed
     // Connect to database
     await connectDB();
 
@@ -37,7 +33,7 @@ export async function POST(request: NextRequest) {
       'walletData.erc20Address': { $exists: true, $ne: null }
     }).select('email walletData.erc20Address walletData.bep20Address').lean();
 
-    console.log(`📊 Scanning ${users.length} user wallets on ${mode}...`);
+    console.log(`📊 Scanning ${users.length} user wallets on MAINNET...`);
 
     // ✅ MAINNET ONLY configuration
     const ethProvider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
@@ -126,7 +122,6 @@ export async function POST(request: NextRequest) {
       grandTotal: erc20Total + bep20Total,
       erc20Count,
       bep20Count,
-      networkMode: mode,
       topUsers,
       scannedAt: new Date().toISOString()
     };

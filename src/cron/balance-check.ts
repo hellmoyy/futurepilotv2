@@ -46,18 +46,10 @@ interface IUser {
   };
 }
 
-// Helper to get network-aware balance
+// ✅ MAINNET ONLY - Helper to get user balance
 function getUserBalance(user: IUser): number {
-  // ✅ Get network mode (mainnet by default)
-  const networkMode = process.env.NETWORK_MODE || 'mainnet';
-  
   if (!user.walletData) return 0;
-  
-  if (networkMode === 'mainnet') {
-    return user.walletData.mainnetBalance || 0;
-  } else {
-    return user.walletData.balance || 0;
-  }
+  return user.walletData.mainnetBalance || 0;
 }
 
 // Balance thresholds

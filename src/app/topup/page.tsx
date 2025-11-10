@@ -61,12 +61,8 @@ export default function TopUpPage() {
   const [lastBalance, setLastBalance] = useState<number>(0);
   const [showNewDepositNotification, setShowNewDepositNotification] = useState(false);
   
-  // Detect network type from NETWORK_MODE env variable
-  const networkMode = process.env.NEXT_PUBLIC_NETWORK_MODE || 'mainnet'; // Default to mainnet for production
-  const isMainnet = networkMode === 'mainnet';
-  
-  // Get minimum deposit based on network mode
-  const minDepositAmount = isMainnet ? 10 : 1; // $10 for mainnet, $1 for testnet
+  // ✅ MAINNET ONLY - Minimum deposit $10
+  const minDepositAmount = 10;
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -559,10 +555,8 @@ export default function TopUpPage() {
                     <span>Deposit Addresses</span>
                   </h3>
                   <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs">
-                    <span className={`w-2 h-2 rounded-full animate-pulse ${isMainnet ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
-                    <span className={`font-medium ${isMainnet ? 'text-green-400' : 'text-yellow-400'}`}>
-                      {isMainnet ? 'Mainnet' : 'Testnet'}
-                    </span>
+                    <span className="w-2 h-2 rounded-full animate-pulse bg-green-400"></span>
+                    <span className="font-medium text-green-400">Mainnet</span>
                   </div>
                 </div>
 
@@ -710,7 +704,7 @@ export default function TopUpPage() {
                     <p className="text-xs text-green-300 light:text-green-600">
                       • ERC-20: ~2-5 minutes<br/>
                       • BEP-20: ~30 seconds<br/>
-                      • Minimum: ${minDepositAmount} USDT {!isMainnet && '(Testnet)'}
+                      • Minimum: ${minDepositAmount} USDT
                     </p>
                   </div>
                 </div>
