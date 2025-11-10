@@ -872,7 +872,7 @@ Result: API dapat PIN, verification works!
 **Before running app:**
 - [ ] `.env` exists di root folder
 - [ ] `PIN_SIGNAL_CONFIGURATION=366984` ada di `.env`
-- [ ] `NETWORK_MODE=testnet` or `mainnet` sesuai kebutuhan
+- [ ] `NETWORK_MODE=mainnet` (hardcoded, mainnet-only)
 - [ ] Restart dev server setelah edit `.env`
 - [ ] `.env.local` TIDAK digunakan (untuk avoid confusion)
 
@@ -1108,25 +1108,24 @@ Maximum Drawdown: <20% (well-managed)
 
 ## 💰 CUSTODIAL WALLET & BALANCE SYSTEM
 
-### 📊 Network-Isolated Balance Architecture
+### 📊 Mainnet-Only Balance Architecture
 
 **Database Structure:**
 ```typescript
 User.walletData {
-  balance: number           // Testnet balance (Sepolia + BSC Testnet)
   mainnetBalance: number    // Mainnet balance (Ethereum + BSC)
-  erc20Address: string      // Ethereum address (same for testnet/mainnet)
-  bep20Address: string      // BSC address (same for testnet/mainnet)
+  erc20Address: string      // Ethereum address
+  bep20Address: string      // BSC address
   encryptedPrivateKey: string
 }
 ```
 
-**Network Mode Switching:**
-- Set via `NETWORK_MODE=testnet` or `NETWORK_MODE=mainnet` in `.env.local`
+**Network Mode:**
+- Platform is **MAINNET ONLY** - `NETWORK_MODE=mainnet` (hardcoded)
 - Helper library: `/src/lib/network-balance.ts`
-  - `getUserBalance(user)` - Returns correct balance based on network mode
-  - `createBalanceUpdate(amount)` - Creates MongoDB update for correct field
-  - `getBalanceField()` - Returns 'walletData.balance' or 'walletData.mainnetBalance'
+  - `getUserBalance(user)` - Returns mainnetBalance
+  - `createBalanceUpdate(amount)` - Updates mainnetBalance field
+  - `getBalanceField()` - Returns 'walletData.mainnetBalance'
 
 ### 🔍 Balance Discrepancy Detection & Resolution
 
@@ -1219,11 +1218,11 @@ const Transaction = mongoose.model('transactions', TransactionSchema);
 
 **User Accounts Summary (Custodial Wallet Page):**
 - Real-time blockchain balance scanning
-- Network-aware (testnet vs mainnet)
+- Mainnet-only (BSC + Ethereum)
 - Shows:
   - Total users with wallets
-  - ERC20 total balance (Ethereum/Sepolia)
-  - BEP20 total balance (BSC/BSC Testnet)
+  - ERC20 total balance (Ethereum Mainnet)
+  - BEP20 total balance (BSC Mainnet)
   - Grand total USDT
   - Top 10 users by balance
 - Endpoint: `POST /api/admin/scan-user-balances`
@@ -1232,7 +1231,7 @@ const Transaction = mongoose.model('transactions', TransactionSchema);
 **Dashboard Stats:**
 - Endpoint: `GET /api/admin/dashboard-stats`
 - Returns: totalUsers, totalBalance, totalDeposits, totalEarnings, etc.
-- Network-aware balance aggregation
+- Mainnet balance aggregation only
 - Force-dynamic, no caching
 
 **Transaction Management:**
@@ -1241,14 +1240,6 @@ const Transaction = mongoose.model('transactions', TransactionSchema);
 - Stats filtered by `status='confirmed'`
 
 ### 🔐 USDT Contract Addresses
-
-**Testnet:**
-```bash
-TESTNET_USDT_ERC20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498  # Sepolia
-TESTNET_USDT_BEP20_CONTRACT=0x46484Aee842A735Fbf4C05Af7e371792cf52b498  # BSC Testnet
-TESTNET_USDT_ERC20_DECIMAL=18
-TESTNET_USDT_BEP20_DECIMAL=18
-```
 
 **Mainnet:**
 ```bash
@@ -1260,10 +1251,6 @@ USDT_BEP20_DECIMAL=18  # BSC USDT uses 18 decimals
 
 **RPC Endpoints (No Rate Limits):**
 ```bash
-# Testnet
-TESTNET_ETHEREUM_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
-TESTNET_BSC_RPC_URL=https://bsc-testnet-rpc.publicnode.com
-
 # Mainnet
 ETHEREUM_RPC_URL=https://ethereum-rpc.publicnode.com
 BSC_RPC_URL=https://bsc-rpc.publicnode.com
@@ -1281,8 +1268,7 @@ BSC_RPC_URL=https://bsc-rpc.publicnode.com
 
 3. **❌ Don't forget network mode when querying balances**
    - Always use `getUserBalance()` helper
-   - Wrong: `user.walletData.balance` (could be testnet or mainnet)
-   - Right: `getUserBalance(user)` (network-aware)
+   - Platform is mainnet-only: `getUserBalance(user)` returns mainnetBalance
 
 4. **❌ Don't use wrong collection names**
    - User collection: `futurepilotcol` (not `users`)
