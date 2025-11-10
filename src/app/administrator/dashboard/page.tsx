@@ -50,11 +50,9 @@ export default function AdminDashboardPage() {
             </h2>
             <p className="text-purple-100">
               You have full access to manage the FuturePilot platform.
-              {stats && (
-                <span className="ml-2 text-purple-200">
-                  ({stats.networkMode === 'mainnet' ? '🟢 Mainnet' : '🟡 Testnet'})
-                </span>
-              )}
+              <span className="ml-2 text-purple-200">
+                🟢 Mainnet
+              </span>
             </p>
           </div>
           <button

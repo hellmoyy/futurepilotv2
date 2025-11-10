@@ -69,8 +69,7 @@ export async function GET(request: NextRequest) {
       bep20Address: user.walletData.bep20Address,
       balance,
       networkMode, // Include network mode in response
-      testnetBalance: user.walletData.balance || 0, // For debugging
-      mainnetBalance: user.walletData.mainnetBalance || 0, // For debugging
+      mainnetBalance: user.walletData.mainnetBalance || 0, // Current balance
       totalPersonalDeposit: user.totalPersonalDeposit || 0, // For tier progress
       membershipLevel: user.membershipLevel || 'bronze' // For tier display
     });

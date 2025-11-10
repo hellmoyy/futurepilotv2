@@ -94,7 +94,7 @@ async function checkUserBalances() {
     // Check each user's balance
     for (const user of users) {
       try {
-        // Get network-aware balance (testnet vs mainnet)
+        // ✅ MAINNET ONLY - Get user balance
         const balance = getUserBalance(user);
 
         // Categorize balance level
