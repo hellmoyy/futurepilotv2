@@ -71,11 +71,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // ✅ Get network mode from environment (default to mainnet for production)
-    const networkMode = process.env.NETWORK_MODE || 'mainnet';
-    
-    // ✅ Set default network based on mode
-    const defaultNetwork = networkMode === 'mainnet' ? 'BSC_MAINNET' : 'BSC_TESTNET';
+    // ✅ MAINNET ONLY - Default to BSC Mainnet
+    const defaultNetwork = 'BSC_MAINNET';
     
     const { 
       network = defaultNetwork, 
@@ -108,17 +105,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate network based on NETWORK_MODE (networkMode already declared above)
-    const availableNetworks = networkMode === 'mainnet' 
-      ? ['BSC_MAINNET', 'ETHEREUM_MAINNET']
-      : ['BSC_TESTNET', 'ETHEREUM_TESTNET'];
+    // ✅ MAINNET ONLY - Validate network
+    const availableNetworks = ['BSC_MAINNET', 'ETHEREUM_MAINNET'];
     
     if (!availableNetworks.includes(network)) {
       return NextResponse.json(
         { 
-          error: `Invalid network for ${networkMode} mode`, 
+          error: 'Invalid network for mainnet mode', 
           availableNetworks,
-          currentMode: networkMode,
           providedNetwork: network
         },
         { status: 400 }
@@ -126,9 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔄 Starting wallet sweep...');
-    console.log('Network Mode:', networkMode);
     console.log('Network:', network);
-    console.log('Network Mode:', networkMode);
     console.log('Token Type:', tokenType);
     console.log('Min amount:', minAmount);
     if (tokenType === 'CUSTOM') {
@@ -146,9 +138,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Network configuration (4 networks)
+    // ✅ MAINNET ONLY - Network configuration
     const networkConfig = {
-      // Mainnet
       BSC_MAINNET: {
         name: 'BSC Mainnet',
         rpc: process.env.BSC_RPC_URL,
@@ -162,21 +153,6 @@ export async function POST(request: NextRequest) {
         usdtContract: process.env.USDT_ERC20_CONTRACT,
         chainId: 1,
         explorer: 'https://etherscan.io',
-      },
-      // Testnet
-      BSC_TESTNET: {
-        name: 'BSC Testnet',
-        rpc: process.env.TESTNET_BSC_RPC_URL,
-        usdtContract: process.env.TESTNET_USDT_BEP20_CONTRACT,
-        chainId: 97,
-        explorer: 'https://testnet.bscscan.com',
-      },
-      ETHEREUM_TESTNET: {
-        name: 'Ethereum Sepolia',
-        rpc: process.env.TESTNET_ETHEREUM_RPC_URL,
-        usdtContract: process.env.TESTNET_USDT_ERC20_CONTRACT,
-        chainId: 11155111,
-        explorer: 'https://sepolia.etherscan.io',
       },
     };
 
@@ -208,18 +184,10 @@ export async function POST(request: NextRequest) {
       tokenContract = new ethers.Contract(config.usdtContract!, TOKEN_ABI, provider);
       tokenSymbol = 'USDT';
       
-      // Get decimals from env based on network
-      if (network === 'BSC_TESTNET') {
-        tokenDecimals = parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18');
-      } else if (network === 'ETHEREUM_TESTNET') {
-        tokenDecimals = parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18');
-      } else if (network === 'BSC_MAINNET') {
-        tokenDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
-      } else if (network === 'ETHEREUM_MAINNET') {
-        tokenDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
-      } else {
-        tokenDecimals = 6; // Default fallback
-      }
+      // ✅ MAINNET ONLY - Get decimals from env based on network
+      tokenDecimals = network === 'BSC_MAINNET'
+        ? parseInt(process.env.USDT_BEP20_DECIMAL || '18')
+        : parseInt(process.env.USDT_ERC20_DECIMAL || '6'); // ETHEREUM_MAINNET
     } else if (tokenType === 'CUSTOM') {
       tokenContract = new ethers.Contract(customTokenAddress, TOKEN_ABI, provider);
       try {

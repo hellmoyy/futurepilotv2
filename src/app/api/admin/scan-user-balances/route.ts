@@ -39,35 +39,21 @@ export async function POST(request: NextRequest) {
 
     console.log(`📊 Scanning ${users.length} user wallets on ${mode}...`);
 
-    // Setup providers and contracts based on network mode
-    let ethProvider, bscProvider, ethUsdtContract, bscUsdtContract;
-    let ethUsdtAddress, bscUsdtAddress, ethDecimals, bscDecimals;
-
-    if (mode === 'mainnet') {
-      // Mainnet configuration
-      ethProvider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
-      bscProvider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL);
-      ethUsdtAddress = process.env.USDT_ERC20_CONTRACT!;
-      bscUsdtAddress = process.env.USDT_BEP20_CONTRACT!;
-      ethDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
-      bscDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
-    } else {
-      // Testnet configuration
-      ethProvider = new ethers.JsonRpcProvider(process.env.TESTNET_ETHEREUM_RPC_URL);
-      bscProvider = new ethers.JsonRpcProvider(process.env.TESTNET_BSC_RPC_URL);
-      ethUsdtAddress = process.env.TESTNET_USDT_ERC20_CONTRACT!;
-      bscUsdtAddress = process.env.TESTNET_USDT_BEP20_CONTRACT!;
-      ethDecimals = parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18');
-      bscDecimals = parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18');
-    }
+    // ✅ MAINNET ONLY configuration
+    const ethProvider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC_URL);
+    const bscProvider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL);
+    const ethUsdtAddress = process.env.USDT_ERC20_CONTRACT!;
+    const bscUsdtAddress = process.env.USDT_BEP20_CONTRACT!;
+    const ethDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+    const bscDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
 
     // ERC20 ABI (balanceOf function)
     const erc20Abi = [
       'function balanceOf(address owner) view returns (uint256)'
     ];
 
-    ethUsdtContract = new ethers.Contract(ethUsdtAddress, erc20Abi, ethProvider);
-    bscUsdtContract = new ethers.Contract(bscUsdtAddress, erc20Abi, bscProvider);
+    const ethUsdtContract = new ethers.Contract(ethUsdtAddress, erc20Abi, ethProvider);
+    const bscUsdtContract = new ethers.Contract(bscUsdtAddress, erc20Abi, bscProvider);
 
     // Scan all user balances
     const userBalances: any[] = [];

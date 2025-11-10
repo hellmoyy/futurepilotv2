@@ -11,15 +11,11 @@ import { notificationManager } from '@/lib/notifications/NotificationManager';
 import { Settings } from '@/models/Settings';
 
 const USDT_ABI = [
-  "event Transfer(address indexed from, address indexed to, uint256 value)",
+  'event Transfer(address indexed from, address indexed to, uint256 value)'
 ];
 
-// ✅ NOTE: Now using centralized rate limiter from @/lib/rateLimit
-// Old local implementation removed to avoid duplication
-
-const NETWORK_MODE = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
-
-const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
+// ✅ MAINNET ONLY - Network configurations
+const NETWORKS = {
   bsc: {
     rpc: process.env.BSC_RPC_URL,
     contract: process.env.USDT_BEP20_CONTRACT,
@@ -30,18 +26,10 @@ const NETWORK_CONFIG = NETWORK_MODE === 'mainnet' ? {
     contract: process.env.USDT_ERC20_CONTRACT,
     name: 'Ethereum Mainnet',
   }
-} : {
-  bsc: {
-    rpc: process.env.TESTNET_BSC_RPC_URL,
-    contract: process.env.TESTNET_USDT_BEP20_CONTRACT,
-    name: 'BSC Testnet',
-  },
-  ethereum: {
-    rpc: process.env.TESTNET_ETHEREUM_RPC_URL,
-    contract: process.env.TESTNET_USDT_ERC20_CONTRACT,
-    name: 'Ethereum Sepolia Testnet',
-  }
 };
+
+// ✅ NOTE: Now using centralized rate limiter from @/lib/rateLimit
+// Old local implementation removed to avoid duplication
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,7 +96,7 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`Checking BSC for ${user.email}...`);
         const bscResult = await checkNetwork(
-          NETWORK_CONFIG.bsc,
+          NETWORKS.bsc,
           user.walletData.bep20Address,
           user,
           'bsc'
@@ -128,7 +116,7 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`Checking Ethereum for ${user.email}...`);
         const ethResult = await checkNetwork(
-          NETWORK_CONFIG.ethereum,
+          NETWORKS.ethereum,
           user.walletData.erc20Address,
           user,
           'ethereum'
@@ -203,16 +191,12 @@ async function checkNetwork(
         continue;
       }
 
-      // Get decimals from env
+      // Get decimals from env (mainnet only)
       let usdtDecimals = 6;
       if (networkKey === 'bsc') {
-        usdtDecimals = NETWORK_MODE === 'testnet' 
-          ? parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18')
-          : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
+        usdtDecimals = parseInt(process.env.USDT_BEP20_DECIMAL || '18');
       } else if (networkKey === 'ethereum') {
-        usdtDecimals = NETWORK_MODE === 'testnet'
-          ? parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18')
-          : parseInt(process.env.USDT_ERC20_DECIMAL || '6');
+        usdtDecimals = parseInt(process.env.USDT_ERC20_DECIMAL || '6');
       }
 
       const amount = eventLog.args?.[2] ? parseFloat(ethers.formatUnits(eventLog.args[2], usdtDecimals)) : 0;

@@ -4,28 +4,18 @@ import { User } from '@/models/User';
 import { Transaction } from '@/models/Transaction';
 import { ethers } from 'ethers';
 
-// ✅ Get network mode and USDT contracts from environment
-const NETWORK_MODE = process.env.NETWORK_MODE || 'mainnet'; // Default to mainnet for production
+// ✅ MAINNET ONLY - USDT contracts and RPC providers
 const USDT_CONTRACTS = {
-  ERC20: NETWORK_MODE === 'mainnet' 
-    ? (process.env.USDT_ERC20_CONTRACT || '0xdAC17F958D2ee523a2206206994597C13D831ec7')
-    : (process.env.TESTNET_USDT_ERC20_CONTRACT || '0x46484Aee842A735Fbf4C05Af7e371792cf52b498'),
-  BEP20: NETWORK_MODE === 'mainnet'
-    ? (process.env.USDT_BEP20_CONTRACT || '0x55d398326f99059fF775485246999027B3197955')
-    : (process.env.TESTNET_USDT_BEP20_CONTRACT || '0x46484Aee842A735Fbf4C05Af7e371792cf52b498'),
+  ERC20: process.env.USDT_ERC20_CONTRACT || '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  BEP20: process.env.USDT_BEP20_CONTRACT || '0x55d398326f99059fF775485246999027B3197955',
 };
 
-// RPC Providers (use your own RPC endpoints for production)
 const PROVIDERS = {
   ERC20: new ethers.JsonRpcProvider(
-    NETWORK_MODE === 'mainnet'
-      ? (process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com')
-      : (process.env.TESTNET_ETHEREUM_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com')
+    process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com'
   ),
   BEP20: new ethers.JsonRpcProvider(
-    NETWORK_MODE === 'mainnet'
-      ? (process.env.BSC_RPC_URL || 'https://bsc-rpc.publicnode.com')
-      : (process.env.TESTNET_BSC_RPC_URL || 'https://bsc-testnet-rpc.publicnode.com')
+    process.env.BSC_RPC_URL || 'https://bsc-rpc.publicnode.com'
   ),
 };
 
@@ -97,14 +87,10 @@ export async function POST(request: NextRequest) {
       
       const toAddress = event.args.to.toLowerCase();
       
-      // ✅ Use correct decimals based on network
+      // ✅ MAINNET ONLY - Use correct decimals based on network
       const decimals = network === 'ERC20'
-        ? (NETWORK_MODE === 'mainnet' 
-            ? parseInt(process.env.USDT_ERC20_DECIMAL || '6')
-            : parseInt(process.env.TESTNET_USDT_ERC20_DECIMAL || '18'))
-        : (NETWORK_MODE === 'mainnet'
-            ? parseInt(process.env.USDT_BEP20_DECIMAL || '18')
-            : parseInt(process.env.TESTNET_USDT_BEP20_DECIMAL || '18'));
+        ? parseInt(process.env.USDT_ERC20_DECIMAL || '6')
+        : parseInt(process.env.USDT_BEP20_DECIMAL || '18');
       
       const amount = parseFloat(ethers.formatUnits(event.args.value, decimals));
 
