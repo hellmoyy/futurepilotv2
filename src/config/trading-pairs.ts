@@ -322,7 +322,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.ETH,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 100,
       maxPositionSize: 30000,
       minOrderSize: 10,
@@ -330,7 +330,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 100,
       minDailyVolume: 5000000000, // $5B minimum
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['major', 'high-volume', 'stable', 'popular'],
   },
   
@@ -341,7 +341,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.BNB,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 75,
       maxPositionSize: 20000,
       minOrderSize: 10,
@@ -349,7 +349,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 10,
       minDailyVolume: 1000000000, // $1B minimum
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['major', 'high-volume', 'exchange-token'],
   },
   
@@ -362,7 +362,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.SOL,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -371,7 +371,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minDailyVolume: 500000000, // $500M minimum
       maxVolatility: 10,  // Skip jika volatility > 10%
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'high-volume', 'volatile', 'defi'],
   },
   
@@ -382,7 +382,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.ADA,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -390,7 +390,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 0.1,
       minDailyVolume: 300000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'medium-volume', 'stable'],
   },
   
@@ -401,7 +401,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.DOT,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -409,7 +409,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 200000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'medium-volume'],
   },
   
@@ -420,7 +420,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.AVAX,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -428,7 +428,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 200000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'defi', 'medium-volume'],
   },
   
@@ -439,7 +439,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.ATOM,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -447,7 +447,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 100000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'cosmos', 'medium-volume'],
   },
   
@@ -458,7 +458,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.TRX,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 25,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -466,7 +466,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 0.01,
       minDailyVolume: 200000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'medium-volume'],
   },
   
@@ -477,7 +477,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.APT,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 25,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -485,7 +485,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 100000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer1', 'new', 'medium-volume'],
   },
   
@@ -498,7 +498,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.MATIC,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -506,7 +506,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 0.1,
       minDailyVolume: 200000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer2', 'scaling', 'medium-volume'],
   },
   
@@ -517,7 +517,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.ARB,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 25,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -525,7 +525,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 0.1,
       minDailyVolume: 100000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer2', 'ethereum', 'new'],
   },
   
@@ -536,7 +536,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.OP,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 25,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -544,7 +544,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 0.5,
       minDailyVolume: 50000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['layer2', 'ethereum', 'optimistic-rollup'],
   },
   
@@ -557,7 +557,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.LINK,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -565,7 +565,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 200000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['defi', 'oracle', 'medium-volume'],
   },
   
@@ -576,7 +576,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.UNI,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -584,7 +584,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 100000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['defi', 'dex', 'medium-volume'],
   },
   
@@ -595,7 +595,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.FIL,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 25,
       maxPositionSize: 10000,
       minOrderSize: 10,
@@ -603,7 +603,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 1,
       minDailyVolume: 100000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['defi', 'storage', 'medium-volume'],
   },
   
@@ -616,7 +616,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.XRP,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -624,7 +624,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 0.1,
       minDailyVolume: 500000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['major', 'payment', 'high-volume'],
   },
   
@@ -635,7 +635,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.LTC,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 50,
       maxPositionSize: 15000,
       minOrderSize: 10,
@@ -643,7 +643,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minPrice: 10,
       minDailyVolume: 200000000,
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['major', 'payment', 'medium-volume'],
   },
   
@@ -656,7 +656,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
     metadata: COIN_METADATA.DOGE,
     settings: {
       ...DEFAULT_PAIR_SETTINGS,
-      enabled: true,
+      enabled: false, // ❌ DISABLED - Only BTC active
       maxLeverage: 25,          // Lower leverage untuk meme coins
       maxPositionSize: 5000,    // Smaller position size
       minOrderSize: 10,
@@ -665,7 +665,7 @@ export const TRADING_PAIRS: Record<string, TradingPair> = {
       minDailyVolume: 500000000,
       maxVolatility: 15,        // Higher volatility threshold
     },
-    status: 'active',
+    status: 'inactive',
     tags: ['meme', 'volatile', 'high-risk', 'medium-volume'],
   },
   
